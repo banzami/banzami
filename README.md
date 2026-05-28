@@ -236,6 +236,7 @@ cd reference && cargo run --bin sandbox-operator
 | Ledger inspection | `GET /ledger/{id}` | Stable |
 | Settlement simulation | `POST /settlement/batches` | Stable |
 | Live event stream (SSE) | `GET /events` | Stable |
+| Financial trace API | `GET /traces/{trace_id}` | Stable |
 | Operator manifest | `GET /.well-known/banzami/operator.json` | Experimental |
 
 ```bash
@@ -249,6 +250,13 @@ curl -X POST http://localhost:3100/transfers \
 
 # Watch events live
 curl -N http://localhost:3100/events
+
+# Trace a full payment flow — every reference operation is traceable
+TRACE=$(curl -s -X POST http://localhost:3100/transfers \
+  -H 'Content-Type: application/json' \
+  -d '{"from_wallet_id":"sandbox-consumer-1","to_wallet_id":"sandbox-merchant-1","amount_minor":50000,"currency":"AOA"}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['trace_id'])")
+curl http://localhost:3100/traces/$TRACE
 ```
 
 Full docs: [`docs/reference-operator.md`](docs/reference-operator.md) ·
@@ -284,6 +292,35 @@ Consumer Wallet  ──ledger transfer──▶  Merchant Wallet
 ```
 
 All surfaces derive from it: QR, @handle, pay links, checkout. Reference models: Pix, UPI, M-Pesa — not card-first.
+
+---
+
+## Financial traceability
+
+Every reference operation is fully traceable across API calls, events, ledger
+postings, and simulated settlement.
+
+Three identifiers thread through every operation:
+
+| Identifier | Scope | Purpose |
+|------------|-------|---------|
+| `trace_id` | Full flow | Shared across the entire payment lifecycle (PR → transfer → ledger → events) |
+| `correlation_id` | Current step | Narrows the trace to the current aggregate (changes per layer) |
+| `causation_id` | Direct cause | Links a transfer back to the PR or QR that triggered it |
+
+```bash
+# After any transfer, QR payment, or payment request — inspect the full causal chain:
+curl http://localhost:3100/traces/{trace_id}
+```
+
+The response shows a sorted timeline plus typed slices: transfers, ledger entries,
+events, payment requests, QR codes, and settlement batches — all linked by `trace_id`.
+
+The demo wallet's **Trace** tab makes this visual: every transfer row, payment
+request, settlement batch, and event shows a clickable `trace_id` chip that
+opens the full causal chain view.
+
+See [`docs/observability/financial-tracing.md`](docs/observability/financial-tracing.md).
 
 ---
 

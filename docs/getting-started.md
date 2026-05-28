@@ -365,15 +365,96 @@ events.
 
 ---
 
+## Walkthrough 4 — Trace your first payment
+
+Every operation in Banzami creates a `trace_id` that links the full causal
+chain: the originating operation, resulting transfers, ledger postings, events,
+and eventual settlement.
+
+### Step 1 — Execute a transfer and capture its trace_id
+
+```bash
+curl -s -X POST http://localhost:3100/transfers \
+  -H 'Content-Type: application/json' \
+  -d '{"from_wallet_id":"sandbox-consumer-1","to_wallet_id":"sandbox-merchant-1","amount_minor":75000,"currency":"AOA"}'
+```
+
+The response includes `"trace_id": "tr-..."`. Copy it.
+
+### Step 2 — Inspect the full causal chain
+
+```bash
+curl http://localhost:3100/traces/tr-{your-trace-id} | python3 -m json.tool
+```
+
+The response contains:
+
+| Section | Contents |
+|---------|----------|
+| `timeline` | Sorted list of all operations — timestamps, types, summaries |
+| `transfers` | The transfer that was executed |
+| `ledger_entries` | Both the DEBIT and CREDIT entries |
+| `events` | `payment.sent` and `payment.received` events |
+| `payment_requests` | Empty — this was a direct transfer |
+| `qr_codes` | Empty — this was a direct transfer |
+
+### Step 3 — Trace a QR payment flow
+
+```bash
+# Generate QR
+QR=$(curl -s -X POST http://localhost:3100/qr \
+  -H 'Content-Type: application/json' \
+  -d '{"merchant_wallet_id":"sandbox-merchant-1","amount_minor":50000,"currency":"AOA"}')
+QR_ID=$(echo $QR | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+QR_TRACE=$(echo $QR | python3 -c "import sys,json; print(json.load(sys.stdin)['trace_id'])")
+
+# Pay QR
+curl -X POST http://localhost:3100/qr/$QR_ID/pay \
+  -H 'Content-Type: application/json' \
+  -d '{"consumer_wallet_id":"sandbox-consumer-1"}'
+
+# Trace the full flow — QR + transfer + ledger + events all in one view
+curl http://localhost:3100/traces/$QR_TRACE | python3 -m json.tool
+```
+
+This time the trace includes:
+- `qr_codes`: the QR code that was generated (status: `paid`)
+- `transfers`: the transfer caused by the QR payment (`causation_id === qr_id`)
+- `ledger_entries`: both DEBIT and CREDIT entries
+- `events`: `qr.generated`, `payment.sent`, `payment.received`, `qr.paid`
+
+### Step 4 — List all traces
+
+```bash
+curl http://localhost:3100/traces
+```
+
+Returns all distinct `trace_id`s currently in memory. In the demo wallet,
+click the **Trace** tab to see the same list with click-to-inspect.
+
+### Identifier reference
+
+| Identifier | Value in QR flow |
+|------------|-----------------|
+| `trace_id` | Same on: QR code, transfer, both ledger entries, all events |
+| `correlation_id` | Transfer: `transfer_id`. Ledger entries: `transfer_id`. Events: `transfer_id`. |
+| `causation_id` | Transfer only: `qr_id` — the QR that caused this transfer |
+
+Full tracing documentation: [`docs/observability/financial-tracing.md`](observability/financial-tracing.md)
+
+---
+
 ## Next steps
 
 | I want to… | Start here |
 |------------|-----------|
 | Read the full API docs | [`docs/reference-api.md`](reference-api.md) |
+| Understand financial tracing | [`docs/observability/financial-tracing.md`](observability/financial-tracing.md) |
 | Understand the kernel crates | [`core/crates/`](../core/crates/) |
 | Build a custom provider | [`docs/reference-operator.md`](reference-operator.md) |
 | Follow a contributor journey | [`docs/contributor-journeys.md`](contributor-journeys.md) |
 | Understand what is stable | [`docs/stability.md`](stability.md) |
+| Read the compatibility policy | [`docs/compatibility.md`](compatibility.md) |
 | Read architecture decisions | [`docs/adr/`](adr/) |
 | Explore protocol RFCs | [`docs/rfc/`](rfc/) |
 | Run the mock routing engine | [`reference/mock-routing/`](../reference/mock-routing/) |
