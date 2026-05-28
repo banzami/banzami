@@ -1,0 +1,34 @@
+version: "3.9"
+
+# Banzami Reference Environment
+#
+# Starts the sandbox operator locally — no database, no cloud services required.
+# All state is in-memory and resets on container restart.
+#
+# Usage:
+#   docker compose up
+#
+# The sandbox operator listens on http://localhost:3100
+#
+# This is NOT a production financial system. It uses simulated providers:
+# - FakeAcquirer      — HMAC-signed fake payment callbacks (no bank)
+# - SimulatedSettlement — instant fake settlement (no external transfer)
+# - StdoutNotifications — events logged to console
+
+services:
+  sandbox:
+    build:
+      context: ..
+      dockerfile: reference/Dockerfile
+    ports:
+      - "3100:3100"
+    environment:
+      PORT: "3100"
+      RUST_LOG: "sandbox_operator=debug,banzami=debug,info"
+    restart: "no"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:3100/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
