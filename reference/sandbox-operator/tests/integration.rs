@@ -366,6 +366,282 @@ async fn settlement_batch_without_receipts_is_rejected() {
 }
 
 // ---------------------------------------------------------------------------
+// Trace API
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn list_traces_empty_initially() {
+    let app = build_router();
+    let res = app.oneshot(get("/traces")).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    let json = body_json(res.into_body()).await;
+    assert_eq!(json["count"], 0);
+    assert_eq!(json["trace_ids"].as_array().unwrap().len(), 0);
+}
+
+#[tokio::test]
+async fn transfer_creates_trace_entry() {
+    let app = build_router();
+
+    app.clone().oneshot(post_json("/transfers", serde_json::json!({
+        "from_wallet_id": "sandbox-consumer-1",
+        "to_wallet_id":   "sandbox-merchant-1",
+        "amount_minor":   1_000,
+        "currency":       "AOA",
+    }))).await.unwrap();
+
+    let res = app.oneshot(get("/traces")).await.unwrap();
+    let json = body_json(res.into_body()).await;
+    assert!(json["count"].as_i64().unwrap() > 0, "trace list must be non-empty after transfer");
+}
+
+#[tokio::test]
+async fn transfer_response_includes_trace_id() {
+    let app = build_router();
+
+    let res = app.oneshot(post_json("/transfers", serde_json::json!({
+        "from_wallet_id": "sandbox-consumer-1",
+        "to_wallet_id":   "sandbox-merchant-1",
+        "amount_minor":   2_000,
+        "currency":       "AOA",
+    }))).await.unwrap();
+    let json = body_json(res.into_body()).await;
+    let trace_id = json["trace_id"].as_str().expect("transfer must have trace_id");
+    assert!(trace_id.starts_with("tr-"), "trace_id must start with tr-");
+}
+
+#[tokio::test]
+async fn get_trace_returns_full_view() {
+    let app = build_router();
+
+    // Create transfer and capture trace_id.
+    let res = app.clone().oneshot(post_json("/transfers", serde_json::json!({
+        "from_wallet_id": "sandbox-consumer-1",
+        "to_wallet_id":   "sandbox-merchant-1",
+        "amount_minor":   5_000,
+        "currency":       "AOA",
+    }))).await.unwrap();
+    let txfr = body_json(res.into_body()).await;
+    let trace_id = txfr["trace_id"].as_str().unwrap().to_string();
+
+    let res = app.oneshot(get(&format!("/traces/{trace_id}"))).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    let trace = body_json(res.into_body()).await;
+    assert_eq!(trace["trace_id"], trace_id);
+    assert!(trace["timeline"].as_array().unwrap().len() > 0);
+    assert_eq!(trace["transfers"].as_array().unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn get_unknown_trace_returns_404() {
+    let app = build_router();
+    let res = app.oneshot(get("/traces/tr-does-not-exist")).await.unwrap();
+    assert_eq!(res.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn trace_view_contains_both_ledger_entries() {
+    let app = build_router();
+
+    let res = app.clone().oneshot(post_json("/transfers", serde_json::json!({
+        "from_wallet_id": "sandbox-consumer-1",
+        "to_wallet_id":   "sandbox-merchant-1",
+        "amount_minor":   3_000,
+        "currency":       "AOA",
+    }))).await.unwrap();
+    let txfr = body_json(res.into_body()).await;
+    let trace_id = txfr["trace_id"].as_str().unwrap().to_string();
+
+    let res = app.oneshot(get(&format!("/traces/{trace_id}"))).await.unwrap();
+    let trace = body_json(res.into_body()).await;
+    let entries = trace["ledger_entries"].as_array().unwrap();
+    assert_eq!(entries.len(), 2, "one DEBIT and one CREDIT per transfer");
+    let kinds: Vec<_> = entries.iter().map(|e| e["kind"].as_str().unwrap()).collect();
+    assert!(kinds.contains(&"DEBIT"),  "must have DEBIT entry");
+    assert!(kinds.contains(&"CREDIT"), "must have CREDIT entry");
+}
+
+#[tokio::test]
+async fn trace_view_contains_payment_events() {
+    let app = build_router();
+
+    let res = app.clone().oneshot(post_json("/transfers", serde_json::json!({
+        "from_wallet_id": "sandbox-consumer-1",
+        "to_wallet_id":   "sandbox-merchant-1",
+        "amount_minor":   4_000,
+        "currency":       "AOA",
+    }))).await.unwrap();
+    let txfr = body_json(res.into_body()).await;
+    let trace_id = txfr["trace_id"].as_str().unwrap().to_string();
+
+    let res = app.oneshot(get(&format!("/traces/{trace_id}"))).await.unwrap();
+    let trace = body_json(res.into_body()).await;
+    let events = trace["events"].as_array().unwrap();
+    let event_types: Vec<_> = events.iter().map(|e| e["event_type"].as_str().unwrap()).collect();
+    assert!(event_types.contains(&"payment.sent"),     "must include payment.sent event");
+    assert!(event_types.contains(&"payment.received"), "must include payment.received event");
+}
+
+#[tokio::test]
+async fn payment_request_has_trace_id() {
+    let app = build_router();
+
+    let res = app.oneshot(post_json("/payment-requests", serde_json::json!({
+        "to_wallet_id": "sandbox-merchant-1",
+        "amount_minor": 7_500,
+        "currency":     "AOA",
+        "description":  "trace test PR",
+    }))).await.unwrap();
+    let pr = body_json(res.into_body()).await;
+    let trace_id = pr["trace_id"].as_str().expect("payment_request must have trace_id");
+    assert!(trace_id.starts_with("tr-"));
+}
+
+#[tokio::test]
+async fn payment_request_payment_shares_trace_id_with_transfer() {
+    let app = build_router();
+
+    // Create PR.
+    let res = app.clone().oneshot(post_json("/payment-requests", serde_json::json!({
+        "to_wallet_id": "sandbox-merchant-1",
+        "amount_minor": 6_000,
+        "currency":     "AOA",
+    }))).await.unwrap();
+    let pr = body_json(res.into_body()).await;
+    let pr_trace_id = pr["trace_id"].as_str().unwrap().to_string();
+    let pr_id       = pr["id"].as_str().unwrap().to_string();
+
+    // Pay the PR.
+    let res = app.clone().oneshot(post_json(
+        &format!("/payment-requests/{pr_id}/pay"),
+        serde_json::json!({ "from_wallet_id": "sandbox-consumer-1" }),
+    )).await.unwrap();
+    let paid_pr = body_json(res.into_body()).await;
+    let transfer_id = paid_pr["transfer_id"].as_str().unwrap().to_string();
+
+    // Lookup trace — transfer must be under the same trace_id as the PR.
+    let res = app.oneshot(get(&format!("/traces/{pr_trace_id}"))).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    let trace = body_json(res.into_body()).await;
+    let transfers = trace["transfers"].as_array().unwrap();
+    assert!(
+        transfers.iter().any(|t| t["id"] == transfer_id),
+        "trace must contain the transfer that paid the PR"
+    );
+}
+
+#[tokio::test]
+async fn pr_payment_transfer_has_causation_id_of_pr() {
+    let app = build_router();
+
+    // Create and pay a PR.
+    let res = app.clone().oneshot(post_json("/payment-requests", serde_json::json!({
+        "to_wallet_id": "sandbox-merchant-1",
+        "amount_minor": 8_000,
+        "currency":     "AOA",
+    }))).await.unwrap();
+    let pr = body_json(res.into_body()).await;
+    let pr_id = pr["id"].as_str().unwrap().to_string();
+
+    let res = app.clone().oneshot(post_json(
+        &format!("/payment-requests/{pr_id}/pay"),
+        serde_json::json!({ "from_wallet_id": "sandbox-consumer-1" }),
+    )).await.unwrap();
+    let paid = body_json(res.into_body()).await;
+    let transfer_id = paid["transfer_id"].as_str().unwrap().to_string();
+
+    // Fetch the transfer and check causation_id.
+    let res = app.oneshot(get("/transfers")).await.unwrap();
+    let list = body_json(res.into_body()).await;
+    let transfers = list["transfers"].as_array().unwrap();
+    let txfr = transfers.iter().find(|t| t["id"] == transfer_id).expect("transfer not found");
+    assert_eq!(txfr["causation_id"], pr_id,
+        "transfer caused by PR must carry the PR id as causation_id");
+}
+
+#[tokio::test]
+async fn qr_payment_shares_trace_id_with_transfer() {
+    let app = build_router();
+
+    // Generate QR.
+    let res = app.clone().oneshot(post_json("/qr", serde_json::json!({
+        "merchant_wallet_id": "sandbox-merchant-1",
+        "amount_minor":       9_000,
+        "currency":           "AOA",
+        "description":        "trace-qr test",
+    }))).await.unwrap();
+    let qr = body_json(res.into_body()).await;
+    let qr_trace_id = qr["trace_id"].as_str().unwrap().to_string();
+    let qr_id       = qr["id"].as_str().unwrap().to_string();
+
+    // Pay QR.
+    let res = app.clone().oneshot(post_json(
+        &format!("/qr/{qr_id}/pay"),
+        serde_json::json!({ "consumer_wallet_id": "sandbox-consumer-1" }),
+    )).await.unwrap();
+    let paid = body_json(res.into_body()).await;
+    let transfer_id = paid["transfer_id"].as_str().unwrap().to_string();
+
+    // Trace must contain the transfer.
+    let res = app.oneshot(get(&format!("/traces/{qr_trace_id}"))).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    let trace = body_json(res.into_body()).await;
+    let transfers = trace["transfers"].as_array().unwrap();
+    assert!(
+        transfers.iter().any(|t| t["id"] == transfer_id),
+        "trace must contain the transfer that paid the QR"
+    );
+}
+
+#[tokio::test]
+async fn qr_payment_transfer_has_causation_id_of_qr() {
+    let app = build_router();
+
+    let res = app.clone().oneshot(post_json("/qr", serde_json::json!({
+        "merchant_wallet_id": "sandbox-merchant-1",
+        "amount_minor":       11_000,
+        "currency":           "AOA",
+    }))).await.unwrap();
+    let qr = body_json(res.into_body()).await;
+    let qr_id = qr["id"].as_str().unwrap().to_string();
+
+    let res = app.clone().oneshot(post_json(
+        &format!("/qr/{qr_id}/pay"),
+        serde_json::json!({ "consumer_wallet_id": "sandbox-consumer-1" }),
+    )).await.unwrap();
+    let paid = body_json(res.into_body()).await;
+    let transfer_id = paid["transfer_id"].as_str().unwrap().to_string();
+
+    let res = app.oneshot(get("/transfers")).await.unwrap();
+    let list = body_json(res.into_body()).await;
+    let transfers = list["transfers"].as_array().unwrap();
+    let txfr = transfers.iter().find(|t| t["id"] == transfer_id).expect("transfer not found");
+    assert_eq!(txfr["causation_id"], qr_id,
+        "transfer caused by QR payment must carry the QR id as causation_id");
+}
+
+#[tokio::test]
+async fn settlement_batch_has_trace_id() {
+    let app = build_router();
+
+    // Create incoming transfer first.
+    app.clone().oneshot(post_json("/transfers", serde_json::json!({
+        "from_wallet_id": "sandbox-consumer-1",
+        "to_wallet_id":   "sandbox-merchant-1",
+        "amount_minor":   20_000,
+        "currency":       "AOA",
+    }))).await.unwrap();
+
+    let res = app.oneshot(post_json("/settlement/batches", serde_json::json!({
+        "wallet_id": "sandbox-merchant-1",
+    }))).await.unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    let batch = body_json(res.into_body()).await;
+    let trace_id = batch["trace_id"].as_str().expect("settlement batch must have trace_id");
+    assert!(trace_id.starts_with("tr-"));
+}
+
+// ---------------------------------------------------------------------------
 // Event history
 // ---------------------------------------------------------------------------
 

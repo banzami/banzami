@@ -16,7 +16,7 @@ use futures::StreamExt as _;
 use tokio_stream::wrappers::BroadcastStream;
 
 use crate::manifest::build_manifest;
-use crate::state::{AppState, WalletType};
+use crate::state::{AppState, TraceView, WalletType};
 
 // ---------------------------------------------------------------------------
 // Router
@@ -51,6 +51,9 @@ pub fn build_router() -> Router {
         // Events
         .route("/events",         get(sse_events))
         .route("/events/history", get(events_history))
+        // Traces
+        .route("/traces",         get(list_traces))
+        .route("/traces/:id",     get(get_trace))
         .with_state(state)
 }
 
@@ -157,6 +160,7 @@ async fn create_transfer(
             currency,
             req.note.unwrap_or_default(),
             req.idempotency_key,
+            None,
         )
         .map_err(|e| err(StatusCode::UNPROCESSABLE_ENTITY, e))?;
 
@@ -386,6 +390,26 @@ async fn events_history(
         "count":  history.len(),
         "events": history,
     }))
+}
+
+// ---------------------------------------------------------------------------
+// Traces
+// ---------------------------------------------------------------------------
+
+async fn list_traces(
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    let ids = state.list_trace_ids();
+    Json(serde_json::json!({ "count": ids.len(), "trace_ids": ids }))
+}
+
+async fn get_trace(
+    State(state): State<Arc<AppState>>,
+    Path(id):     Path<String>,
+) -> Result<Json<TraceView>, (StatusCode, Json<serde_json::Value>)> {
+    let view = state.get_trace(&id)
+        .ok_or_else(|| err(StatusCode::NOT_FOUND, format!("trace {id} not found")))?;
+    Ok(Json(view))
 }
 
 // ---------------------------------------------------------------------------
