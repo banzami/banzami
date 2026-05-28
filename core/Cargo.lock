@@ -99,6 +99,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "banzami-capabilities"
+version = "0.1.0"
+dependencies = [
+ "banzami-types",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "banzami-compliance"
 version = "0.1.0"
 dependencies = [

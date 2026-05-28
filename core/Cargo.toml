@@ -18,6 +18,7 @@ members = [
     "crates/banzami-payment-links",
     "crates/banzami-acquiring",
     "crates/banzami-notifications",
+    "crates/banzami-capabilities",
 ]
 resolver = "2"
 
@@ -54,6 +55,7 @@ banzami-qr              = { path = "crates/banzami-qr" }
 banzami-payment-links   = { path = "crates/banzami-payment-links" }
 banzami-acquiring       = { path = "crates/banzami-acquiring" }
 banzami-notifications   = { path = "crates/banzami-notifications" }
+banzami-capabilities    = { path = "crates/banzami-capabilities" }
 
 # Serialization
 serde      = { version = "1", features = ["derive"] }
