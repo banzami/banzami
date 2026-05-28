@@ -7,6 +7,39 @@
 
 ---
 
+## Start here — run the sandbox
+
+Before touching any crate, reading any ADR, or building any integration:
+**run the sandbox operator**.
+
+```bash
+git clone https://github.com/banzami/banzami
+cd banzami/reference
+cargo run --bin sandbox-operator
+```
+
+Then open `reference/demo-wallet/index.html` in your browser.
+
+In five minutes you will have executed real wallet transfers, QR payments,
+payment requests, settlement batches, and a live event stream — all against
+the Banzami financial kernel, with zero cloud infrastructure.
+
+```bash
+# Verify the kernel is running
+curl http://localhost:3100/health
+
+# Send your first transfer
+curl -X POST http://localhost:3100/transfers \
+  -H 'Content-Type: application/json' \
+  -d '{"from_wallet_id":"sandbox-consumer-1","to_wallet_id":"sandbox-merchant-1","amount_minor":50000,"currency":"AOA"}'
+```
+
+Full walkthrough: [`docs/getting-started.md`](docs/getting-started.md)  
+Full API reference: [`docs/reference-api.md`](docs/reference-api.md)  
+OpenAPI spec: [`contracts/openapi/reference-operator.yaml`](contracts/openapi/reference-operator.yaml)
+
+---
+
 ## What is Banzami?
 
 Banzami is the **open-source financial infrastructure kernel** that operators, developers, and fintech builders use to create instant, wallet-native payment networks.
@@ -141,6 +174,16 @@ banzami/
 
 ---
 
+## Sandbox architecture
+
+![Sandbox operator architecture](docs/images/reference/sandbox-architecture.svg)
+
+The sandbox operator wires the Banzami kernel crates together with four simulated
+providers (FakeAcquirer, SimulatedSettlement, StdoutNotifications, MockRouting)
+and exposes a REST API + SSE event stream on `:3100`. No external services required.
+
+---
+
 ## Financial core — quick start
 
 The core is a Rust workspace. Each crate is independently usable.
@@ -172,38 +215,45 @@ See [`core/README.md`](core/README.md) for full documentation.
 
 ---
 
-## Local sandbox — quick start
+## Local sandbox — full feature set
 
-The reference operator provides a fully local payment sandbox. No database, no cloud
-services, no API keys required.
+The sandbox operator is the **official local development target** for Banzami.
+Run it before touching any kernel crate or building any integration.
 
 ```bash
-# Clone the repo
-git clone https://github.com/banzami/banzami
-cd banzami
-
-# Option 1 — Cargo
 cd reference && cargo run --bin sandbox-operator
-
-# Option 2 — Docker
-cd reference && docker compose up
+# Then: open reference/demo-wallet/index.html
 ```
 
-The sandbox exposes a REST API at `http://localhost:3100` with in-memory wallets,
-double-entry transfers, and simulated acquiring and settlement providers.
+**What the sandbox provides:**
+
+| Feature | Endpoint | Status |
+|---------|----------|--------|
+| Wallet management | `GET/POST /wallets` | Stable |
+| P2P transfers (double-entry) | `POST /transfers` | Stable |
+| Payment requests (pull payments) | `POST /payment-requests` | Stable |
+| QR payment flow | `POST /qr` | Stable |
+| Ledger inspection | `GET /ledger/{id}` | Stable |
+| Settlement simulation | `POST /settlement/batches` | Stable |
+| Live event stream (SSE) | `GET /events` | Stable |
+| Operator manifest | `GET /.well-known/banzami/operator.json` | Experimental |
 
 ```bash
-# Check health
+# Health check
 curl http://localhost:3100/health
 
-# Transfer between seed wallets
+# Transfer
 curl -X POST http://localhost:3100/transfers \
   -H 'Content-Type: application/json' \
-  -d '{"from_wallet_id":"sandbox-consumer-1","to_wallet_id":"sandbox-merchant-1","amount_minor":50000,"currency":"AOA","note":"test"}'
+  -d '{"from_wallet_id":"sandbox-consumer-1","to_wallet_id":"sandbox-merchant-1","amount_minor":50000,"currency":"AOA"}'
+
+# Watch events live
+curl -N http://localhost:3100/events
 ```
 
-See [`docs/reference-operator.md`](docs/reference-operator.md) for full API reference
-and provider documentation.
+Full docs: [`docs/reference-operator.md`](docs/reference-operator.md) ·
+[`docs/reference-api.md`](docs/reference-api.md) ·
+[`contracts/openapi/reference-operator.yaml`](contracts/openapi/reference-operator.yaml)
 
 ---
 
@@ -275,6 +325,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Contributions welcome to:
 - Contracts (OpenAPI, webhook schemas, QR spec)
 - Integrations (plugins, adapters)
 - Documentation and examples
+
+**New contributors:** start with [`docs/getting-started.md`](docs/getting-started.md)
+and [`docs/contributor-journeys.md`](docs/contributor-journeys.md).  
+**Understand what is stable:** [`docs/stability.md`](docs/stability.md)
 
 ---
 
