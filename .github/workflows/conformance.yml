@@ -1,0 +1,282 @@
+name: Conformance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ─── Vector validation ────────────────────────────────────────────────
+  # Ensures all vector files are valid JSON and contain required fields.
+  validate-vectors:
+    name: Validate conformance vectors
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JSON syntax for all vector files
+        run: |
+          set -euo pipefail
+          fail=0
+          for f in conformance/vectors/*.json conformance/*/suite.json conformance/report-schema.json conformance/manifests/schema.json conformance/capabilities/schema.json; do
+            if ! python3 -c "import json, sys; json.load(open('$f'))" 2>/dev/null; then
+              echo "INVALID JSON: $f"
+              fail=1
+            else
+              echo "OK: $f"
+            fi
+          done
+          exit $fail
+
+      - name: Validate vector IDs are unique across files
+        run: |
+          python3 - <<'EOF'
+          import json, glob, sys
+          seen = {}
+          fail = False
+          for path in glob.glob("conformance/vectors/*.json"):
+              data = json.load(open(path))
+              for v in data.get("vectors", []):
+                  vid = v.get("id")
+                  if vid in seen:
+                      print(f"DUPLICATE ID: {vid} in {path} (first seen in {seen[vid]})")
+                      fail = True
+                  else:
+                      seen[vid] = path
+          if not fail:
+              print(f"All {len(seen)} vector IDs are unique.")
+          sys.exit(1 if fail else 0)
+          EOF
+
+  # ─── OpenAPI compatibility ─────────────────────────────────────────────
+  # Detects breaking changes in the OpenAPI spec vs the last committed version.
+  openapi-compat:
+    name: OpenAPI compatibility check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for OpenAPI breaking changes
+        run: |
+          set -euo pipefail
+          SPEC="reference/sandbox-operator/openapi.yaml"
+          if [ ! -f "$SPEC" ]; then
+            echo "No OpenAPI spec found at $SPEC — skipping"
+            exit 0
+          fi
+          # Compare current vs HEAD~1 if the file changed
+          if git diff --quiet HEAD~1 HEAD -- "$SPEC"; then
+            echo "OpenAPI spec unchanged — no compat check needed"
+            exit 0
+          fi
+          git show HEAD~1:"$SPEC" > /tmp/openapi-old.yaml 2>/dev/null || { echo "No previous spec — skipping"; exit 0; }
+          bash tools/check-openapi-compatibility.sh /tmp/openapi-old.yaml "$SPEC"
+
+  # ─── Schema compatibility ──────────────────────────────────────────────
+  # Ensures conformance suite schemas are structurally valid.
+  schema-compat:
+    name: Schema compatibility check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate report-schema.json is a valid JSON Schema
+        run: |
+          python3 - <<'EOF'
+          import json, sys
+          schema = json.load(open("conformance/report-schema.json"))
+          required_keys = {"$schema", "title", "type", "required", "properties"}
+          missing = required_keys - set(schema.keys())
+          if missing:
+              print(f"report-schema.json missing keys: {missing}")
+              sys.exit(1)
+          print("report-schema.json structure OK")
+          EOF
+
+      - name: Validate manifests/schema.json is a valid JSON Schema
+        run: |
+          python3 - <<'EOF'
+          import json, sys
+          schema = json.load(open("conformance/manifests/schema.json"))
+          required_keys = {"$schema", "title", "type", "required", "properties"}
+          missing = required_keys - set(schema.keys())
+          if missing:
+              print(f"manifests/schema.json missing keys: {missing}")
+              sys.exit(1)
+          print("manifests/schema.json structure OK")
+          EOF
+
+  # ─── QR compatibility ─────────────────────────────────────────────────
+  # Validates QR payload format vectors decode correctly.
+  qr-compat:
+    name: QR payload compatibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate QR vector payloads decode correctly
+        run: |
+          python3 - <<'EOF'
+          import json, base64, sys
+
+          vectors = json.load(open("conformance/sdk/suite.json"))
+          fail = False
+          for suite in vectors.get("sub_suites", []):
+              if suite["id"] != "qr-parsing":
+                  continue
+              for case in suite.get("cases", []):
+                  inp = case.get("input", "")
+                  expected = case.get("expected")
+                  if not expected:
+                      continue
+                  for prefix in ["BANZAMI-SBX:", "BANZAMI:"]:
+                      if inp.startswith(prefix):
+                          raw = inp[len(prefix):]
+                          # Pad base64 if needed
+                          pad = (4 - len(raw) % 4) % 4
+                          try:
+                              decoded = json.loads(base64.b64decode(raw + "=" * pad).decode())
+                              for k, v in expected.items():
+                                  if decoded.get(k) != v:
+                                      print(f"FAIL {case['id']}: field {k!r} expected {v!r} got {decoded.get(k)!r}")
+                                      fail = True
+                              if not fail:
+                                  print(f"OK: {case['id']}")
+                          except Exception as e:
+                              print(f"FAIL {case['id']}: decode error: {e}")
+                              fail = True
+          sys.exit(1 if fail else 0)
+          EOF
+
+  # ─── Trace contract ────────────────────────────────────────────────────
+  # Ensures trace vector IDs referenced in the traces suite exist in vectors.
+  trace-contract:
+    name: Trace contract check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate trace vector references exist
+        run: |
+          python3 - <<'EOF'
+          import json, sys, glob
+
+          # Collect all defined vector IDs
+          defined = set()
+          for path in glob.glob("conformance/vectors/*.json"):
+              data = json.load(open(path))
+              for v in data.get("vectors", []):
+                  defined.add(v["id"])
+
+          # Collect all referenced vector IDs from suites
+          referenced = set()
+          for path in glob.glob("conformance/*/suite.json"):
+              data = json.load(open(path))
+              for suite in data.get("sub_suites", []):
+                  for vid in suite.get("vectors", []):
+                      referenced.add(vid)
+
+          missing = referenced - defined
+          if missing:
+              print(f"FAIL: {len(missing)} vector IDs referenced but not defined:")
+              for vid in sorted(missing):
+                  print(f"  {vid}")
+              sys.exit(1)
+          print(f"All {len(referenced)} referenced vector IDs exist in {len(defined)} defined vectors.")
+          EOF
+
+  # ─── Manifest validation ───────────────────────────────────────────────
+  # Validates operator manifest schema structure.
+  manifest-validation:
+    name: Manifest schema validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate operator manifest schema
+        run: |
+          python3 - <<'EOF'
+          import json, sys
+
+          schema = json.load(open("conformance/manifests/schema.json"))
+          required = schema.get("required", [])
+          expected_required = ["operator_id", "environment", "simulated", "production_allowed", "capabilities"]
+          missing = [f for f in expected_required if f not in required]
+          if missing:
+              print(f"FAIL: manifest schema missing required fields: {missing}")
+              sys.exit(1)
+
+          caps_schema = schema.get("$defs", {}).get("Capabilities", {})
+          cap_required = caps_schema.get("required", [])
+          for cap in ["supports_wallets", "supports_qr", "supports_settlement"]:
+              if cap not in cap_required:
+                  print(f"FAIL: Capabilities schema missing required field: {cap}")
+                  sys.exit(1)
+
+          print("Manifest schema OK")
+          EOF
+
+  # ─── Reference operator conformance ───────────────────────────────────
+  # Runs the conformance runner against the reference sandbox operator.
+  # Fails the build if certification Level 2 is not achieved.
+  reference-conformance:
+    name: Reference operator conformance (Level 2)
+    runs-on: ubuntu-latest
+    needs: [validate-vectors, schema-compat, trace-contract]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build reference sandbox operator
+        working-directory: reference/sandbox-operator
+        run: cargo build --release
+
+      - name: Start sandbox operator
+        run: |
+          ./reference/sandbox-operator/target/release/sandbox-operator &
+          echo "OPERATOR_PID=$!" >> "$GITHUB_ENV"
+          # Wait for health endpoint
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
+              echo "Operator ready"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Run conformance suite (Level 2)
+        run: |
+          python3 tools/banzami-conformance/run.py \
+            --url http://localhost:3000 \
+            --level 2 \
+            --output conformance-report.json \
+            --quiet
+
+      - name: Upload conformance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-report
+          path: conformance-report.json
+
+      - name: Stop sandbox operator
+        if: always()
+        run: kill "$OPERATOR_PID" 2>/dev/null || true
+
+      - name: Check certification level achieved
+        run: |
+          python3 - <<'EOF'
+          import json, sys
+          report = json.load(open("conformance-report.json"))
+          level = report["certification_level_achieved"]
+          required = 2
+          if level < required:
+              print(f"FAIL: Certification level {level} < required {required}")
+              sys.exit(1)
+          print(f"OK: Reference operator achieved Level {level}")
+          EOF
