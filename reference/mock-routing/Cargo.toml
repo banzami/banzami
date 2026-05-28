@@ -1,0 +1,14 @@
+[package]
+name        = "mock-routing"
+description = "Configurable mock routing engine for local development — no Angola-specific assumptions"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+banzami-types   = { workspace = true }
+banzami-routing = { workspace = true }
+tracing         = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }

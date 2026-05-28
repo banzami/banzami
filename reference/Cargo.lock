@@ -1224,6 +1224,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92daf443525c4cce67b150400bc2316076100ce0b3686209eb8cf3c31612e6f0"
 
 [[package]]
+name = "local-ledger"
+version = "0.1.0"
+dependencies = [
+ "banzami-types",
+ "chrono",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "local-notifications"
 version = "0.1.0"
 dependencies = [
@@ -1299,6 +1314,16 @@ dependencies = [
  "libc",
  "wasi",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "mock-routing"
+version = "0.1.0"
+dependencies = [
+ "banzami-routing",
+ "banzami-types",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

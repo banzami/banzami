@@ -2,7 +2,9 @@
 members = [
     "sandbox-operator",
     "fake-acquirer",
+    "local-ledger",
     "local-notifications",
+    "mock-routing",
     "simulated-settlement",
 ]
 resolver = "2"
@@ -30,7 +32,9 @@ banzami-transfers       = { path = "../core/crates/banzami-transfers" }
 
 # Reference implementations (within this workspace)
 fake-acquirer         = { path = "fake-acquirer" }
+local-ledger          = { path = "local-ledger" }
 local-notifications   = { path = "local-notifications" }
+mock-routing          = { path = "mock-routing" }
 simulated-settlement  = { path = "simulated-settlement" }
 
 # Serialization
