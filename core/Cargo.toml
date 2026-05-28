@@ -1,0 +1,95 @@
+[workspace]
+members = [
+    "crates/banzami-types",
+    "crates/banzami-ledger",
+    "crates/banzami-wallets",
+    "crates/banzami-transactions",
+    "crates/banzami-merchants",
+    "crates/banzami-settlement",
+    "crates/banzami-routing",
+    "crates/banzami-reconciliation",
+    "crates/banzami-risk",
+    "crates/banzami-compliance",
+    "crates/banzami-payouts",
+    "crates/banzami-identity",
+    "crates/banzami-consumer-wallets",
+    "crates/banzami-transfers",
+    "crates/banzami-qr",
+    "crates/banzami-payment-links",
+    "crates/banzami-acquiring",
+]
+resolver = "2"
+
+[workspace.package]
+version     = "0.1.0"
+edition     = "2021"
+license     = "Apache-2.0"
+repository  = "https://github.com/banzami/banzami"
+authors     = ["Banzami Engineering <engineering@banzami.org>"]
+description = "Open-source financial infrastructure for programmable instant payments"
+keywords    = ["payments", "fintech", "ledger", "wallet", "africa"]
+categories  = ["finance"]
+
+# ---------------------------------------------------------------------------
+# Shared dependency versions — crates opt-in with { workspace = true }
+# ---------------------------------------------------------------------------
+[workspace.dependencies]
+# Internal crates
+banzami-types           = { path = "crates/banzami-types" }
+banzami-ledger          = { path = "crates/banzami-ledger" }
+banzami-wallets         = { path = "crates/banzami-wallets" }
+banzami-transactions    = { path = "crates/banzami-transactions" }
+banzami-merchants       = { path = "crates/banzami-merchants" }
+banzami-settlement      = { path = "crates/banzami-settlement" }
+banzami-routing         = { path = "crates/banzami-routing" }
+banzami-risk            = { path = "crates/banzami-risk" }
+banzami-reconciliation  = { path = "crates/banzami-reconciliation" }
+banzami-payouts         = { path = "crates/banzami-payouts" }
+banzami-compliance      = { path = "crates/banzami-compliance" }
+banzami-identity        = { path = "crates/banzami-identity" }
+banzami-consumer-wallets = { path = "crates/banzami-consumer-wallets" }
+banzami-transfers       = { path = "crates/banzami-transfers" }
+banzami-qr              = { path = "crates/banzami-qr" }
+banzami-payment-links   = { path = "crates/banzami-payment-links" }
+banzami-acquiring       = { path = "crates/banzami-acquiring" }
+
+# Serialization
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# IDs
+uuid = { version = "1", features = ["v4", "serde"] }
+
+# Timestamps
+chrono = { version = "0.4", features = ["serde"] }
+
+# Error handling
+thiserror = "1"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Database — opt-in per crate
+sqlx = { version = "0.7", features = [
+    "runtime-tokio-rustls",
+    "postgres",
+    "uuid",
+    "chrono",
+    "rust_decimal",
+] }
+
+# Observability
+tracing            = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Cryptography
+sha2   = "0.10"
+hmac   = "0.12"
+base64 = { version = "0.22", features = ["alloc"] }
+argon2 = { version = "0.5", features = ["alloc"] }
+rand   = "0.8"
+
+# HTTP server — for reference sandbox implementation
+axum       = "0.7"
+tower      = "0.4"
+tower-http = { version = "0.5", features = ["trace", "cors"] }

@@ -1,37 +1,46 @@
 # Acquiring Domain
 
-Acquiring handles the integration with external payment networks (EMIS Multicaixa Express) for merchant payment collection. It bridges Banzami payment links to the acquirer and processes confirmation callbacks.
+Acquiring handles integration with external payment networks for merchant payment collection. It bridges Banzami payment links to a payment provider and processes confirmation callbacks.
+
+The acquiring crate (`banzami-acquiring`) provides the engine trait and generic types. Operators bring their own provider implementations by implementing `AcquirerProvider`.
 
 ## Architecture
 
 ```
 Customer scans QR / opens payment link
         ↓
-POST /internal/v1/acquiring/payments   ← initiate_payment()
+Acquiring engine: initiate_payment()
         ↓
 Provider returns external_ref + instructions
         ↓
-Customer pays via Multicaixa Express app
+Customer completes payment via provider's app/channel
         ↓
-EMIS sends HMAC-signed callback
+Provider sends HMAC-signed callback
         ↓
-POST /internal/v1/acquiring/callbacks/emis
-        ↓
-process_callback() → confirm acquiring_payment
+Acquiring engine: process_callback()
         ↓
 Wallet credit: system:transit DR / wallet:available CR
 ```
 
 ## Provider Strategy
 
-Provider is selected at boot via `ACQUIRING_PROVIDER` env var:
+Operators implement `AcquirerProvider` for their payment rails. The engine is provider-agnostic:
 
-| Value      | Provider           | Use case                        |
-|------------|--------------------|---------------------------------|
-| (default)  | `SimulatedProvider`| Development, sandbox, TestFlight |
-| `EMIS`     | `EMISProvider`     | Production (requires EMIS credentials) |
+```rust
+impl AcquirerProvider for MyProvider {
+    async fn initiate_payment(&self, req: InitiatePaymentRequest)
+        -> Result<ExternalPaymentRef, AcquirerError> { ... }
 
-**Safety guard**: The server refuses to boot if `APP_ENV=production` and `ACQUIRING_PROVIDER` is not `EMIS`. This prevents accidental production deployment with simulated payments.
+    async fn validate_callback(&self, raw: &[u8], sig: &str)
+        -> Result<PaymentConfirmation, AcquirerError> { ... }
+
+    fn provider_name(&self) -> &str { "MY_PROVIDER" }
+}
+```
+
+The provider is injected at startup via `PostgresAcquiringEngine::new(provider, repo)`.
+
+**Safety principle**: Operators should implement a startup guard that refuses to boot in production mode with a simulated/test provider active. This prevents accidental production deployment with fake payments.
 
 ## Tables
 
@@ -48,39 +57,18 @@ Stores the raw callback payload for every inbound event. Provides:
 
 ## Wallet Settlement on Callback
 
-When a callback confirms a payment (`CONFIRMED`), the acquiring route immediately:
+When a callback confirms a payment (`CONFIRMED`), the acquiring engine immediately:
 1. Checks idempotency (`ledger_postings.idempotency_key = "acquiring-settle-{payment_id}"`)
 2. Looks up `payment_links.wallet_id` from the acquiring payment
 3. Posts double-entry:
-   - **DR** `system:transit` (ASSET) — acquirer paid Banzami
+   - **DR** `system:transit` (ASSET) — provider paid the platform
    - **CR** `wallet:available` (LIABILITY) — merchant can now withdraw
 
 This is idempotent: duplicate callbacks are ignored via `ON CONFLICT (idempotency_key) DO NOTHING`.
 
-## Simulation (Development)
+## Sandbox / Development
 
-```bash
-# 1. Initiate a payment (returns external_ref)
-POST /internal/v1/acquiring/payments
-{ "payment_link_id": "...", "amount_minor": 500000, "currency": "AOA" }
-
-# 2. Simulate EMIS confirming the payment
-POST /internal/v1/acquiring/test/confirm?external_ref=<ref>
-```
-
-## Production EMIS Integration
-
-Set these env vars:
-```
-ACQUIRING_PROVIDER=EMIS
-EMIS_API_URL=https://api.emis.ao/...
-EMIS_API_KEY=...
-EMIS_ENTITY=11333
-ACQUIRING_WEBHOOK_SECRET=<shared-hmac-secret-from-EMIS>
-APP_ENV=production
-```
-
-`EMISProvider.initiate_payment()` currently stubs with a TODO — full HTTP integration pending EMIS API access grant.
+Operators should implement a `SimulatedProvider` (or equivalent) for development and sandbox environments. The `generate_test_callback` method on `AcquirerProvider` allows test providers to generate valid signed callback payloads for integration testing.
 
 ## Invariants
 

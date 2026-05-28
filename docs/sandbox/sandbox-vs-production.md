@@ -1,52 +1,67 @@
 # Sandbox vs Production
 
-Banzami maintains strict environment isolation. Mixing sandbox and production is a hard error.
+Banzami-based systems must maintain strict environment isolation. Mixing sandbox and production data is a hard error.
 
 ## Environment Variables
 
-| Variable              | Sandbox/Dev              | Production              |
-|-----------------------|--------------------------|-------------------------|
-| `APP_ENV`             | `development` (default)  | `production`            |
-| `ACQUIRING_PROVIDER`  | (unset = SIMULATED)      | `EMIS`                  |
-| `ACQUIRING_WEBHOOK_SECRET` | dev secret          | EMIS-issued HMAC secret |
-| `EMIS_API_URL`        | not needed               | EMIS production URL     |
-| `EMIS_API_KEY`        | not needed               | EMIS API key            |
-| `EMIS_ENTITY`         | not needed               | EMIS entity number      |
+Operators configure the acquiring provider at startup:
+
+| Variable                    | Sandbox / Dev              | Production                  |
+|-----------------------------|----------------------------|-----------------------------|
+| `APP_ENV`                   | `development` (default)    | `production`                |
+| `ACQUIRING_PROVIDER`        | (unset = SIMULATED)        | `<your-provider-name>`      |
+| `ACQUIRING_WEBHOOK_SECRET`  | dev / test secret          | Provider-issued HMAC secret |
 
 ## Boot Safety Guard
 
-The Rust core API refuses to start if:
+Operators should implement a startup guard that refuses to boot in production mode with a simulated provider active:
+
+```rust
+if app_env == Environment::Production && provider.is_simulated() {
+    panic!("Refusing to start: production environment requires a real acquiring provider");
+}
 ```
-APP_ENV=production AND ACQUIRING_PROVIDER != EMIS
-```
+
 This prevents accidentally deploying simulated payments to production.
 
 ## Provider Behaviour
 
-### SimulatedProvider (sandbox/development)
-- Generates realistic 9-digit Multicaixa reference numbers
-- Signs callbacks with HMAC using `ACQUIRING_WEBHOOK_SECRET`
-- No external HTTP calls — fully deterministic
-- Supports `test-confirm` endpoints for instant settlement simulation
-- Can be triggered from admin tools / Postman
+### Simulated provider (sandbox / development)
 
-### EMISProvider (production)
-- Calls the live EMIS Multicaixa Express API
-- Validates inbound HMAC signatures from EMIS
-- `initiate_payment()` currently stubbed — pending EMIS API access grant
-- Production webhook URL registered with EMIS
+A simulated `AcquirerProvider` implementation for sandbox environments typically:
+- Generates realistic payment reference numbers locally
+- Signs callbacks with HMAC using a test `ACQUIRING_WEBHOOK_SECRET`
+- Makes no external HTTP calls — fully deterministic
+- Supports test-confirm endpoints for instant settlement simulation
+
+### Production provider
+
+A production `AcquirerProvider` implementation:
+- Calls the live external payment rail API
+- Validates inbound HMAC signatures from the provider
+- Registers a production webhook URL with the provider
 
 ## API Keys and Environment
 
 Banzami API keys are prefixed to indicate environment:
-- `bz_test_...` → Sandbox keys → routed to SimulatedProvider
-- `bz_live_...` → Production keys → routed to EMISProvider
+- `bz_test_...` → Sandbox keys → routed to simulated provider
+- `bz_live_...` → Production keys → routed to production provider
 
-**Rule**: Secret API keys NEVER appear in frontend, mobile, or browser code.
+**Rule**: Secret API keys (`bz_live_...`) NEVER appear in frontend, mobile, or browser code.
 
-## Admin Manual Credit (Beta Funding)
+## Sandbox Credit (Sandboxed Merchants)
 
-For TestFlight beta and pilot merchants, use the admin credit endpoint to seed wallets:
+For sandbox merchant accounts (QA, testing), operators can implement a sandbox credit endpoint:
+
+```
+POST /internal/v1/wallets/{wallet_id}/sandbox-credit
+```
+
+Recommended: cap sandbox credits (e.g. 100,000,000 AOA per request). The sandbox credit route should only be reachable when `APP_ENV != production`.
+
+## Admin Manual Credit
+
+For beta testing or pilot merchant onboarding, an admin credit endpoint seeds wallets directly via the ledger. Example:
 
 ```
 POST /admin/v1/wallets/{wallet_id}/credit
@@ -54,26 +69,10 @@ Authorization: Bearer <admin-key>
 {
   "amount_minor": 5000000,
   "currency": "AOA",
-  "reason": "TestFlight beta funding — pilot merchant onboarding"
+  "reason": "Pilot merchant onboarding credit"
 }
 ```
 
 - Reason field is required and embedded in the ledger posting description
-- No cap — admin-only, protected by admin API key auth
 - Creates auditable double-entry in the ledger
-
-## Sandbox Credit (Sandboxed Merchants)
-
-For sandboxed merchant accounts (QA, testing), use:
-```
-POST /internal/v1/wallets/{wallet_id}/sandbox-credit
-```
-Capped at 100,000,000 AOA per request. Intended for API gateway sandbox handler only.
-
-## TestFlight Notes
-
-TestFlight builds connect to **production** core API with **SimulatedProvider** active. This means:
-- Real authentication, real accounts, real data
-- Simulated payments only (no real money moves via EMIS)
-- Admin credits can seed merchant wallets for beta testing
-- Consumer deposits work end-to-end in simulation mode
+- Admin-only — protected by admin API key authentication

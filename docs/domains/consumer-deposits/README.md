@@ -72,7 +72,7 @@ POST /internal/v1/consumer-deposits/test-confirm?external_ref=<ref>
 |---------------------|------------------------------|----------------------------|
 | Initiator           | Customer (scans QR)          | Consumer (requests top-up) |
 | Table               | `acquiring_payments`         | `consumer_deposits`         |
-| Callback endpoint   | `/acquiring/callbacks/emis`  | `/consumer-deposits/callback` |
+| Callback endpoint   | `/acquiring/callbacks/provider`  | `/consumer-deposits/callback` |
 | Wallet credited     | Merchant's `wallets`         | Consumer's `consumer_wallets` |
 | Linked to           | `payment_links`              | Consumer identity          |
 
