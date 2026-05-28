@@ -2,6 +2,10 @@
 //!
 //! All state resets on restart — intentional for a development sandbox.
 //! The broadcast channel fans out events to SSE subscribers in real time.
+//!
+//! Every operation that mutates state generates a TraceContext that threads
+//! trace_id/correlation_id/causation_id through all resulting ledger entries,
+//! events, and derived operations, so the full causal chain is always queryable.
 
 use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
@@ -11,6 +15,42 @@ use tokio::sync::broadcast;
 use uuid::Uuid;
 
 use crate::events::{types as ev, SandboxEvent};
+
+// ---------------------------------------------------------------------------
+// Trace context
+// ---------------------------------------------------------------------------
+
+/// Carries the causal chain through a payment flow.
+///
+/// `trace_id`      — one UUID per top-level operation (shared across all
+///                   derived operations in the same flow).
+/// `correlation_id`— identifies the current aggregate within the trace (changes
+///                   as the operation moves through layers).
+/// `causation_id`  — the ID of the operation that directly caused this one.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct TraceContext {
+    pub trace_id:       String,
+    pub correlation_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub causation_id:   Option<String>,
+}
+
+impl TraceContext {
+    /// New root trace — used for top-level operations (direct transfer, PR creation, QR generation).
+    pub fn root() -> Self {
+        let id = format!("tr-{}", Uuid::new_v4());
+        Self { trace_id: id.clone(), correlation_id: id, causation_id: None }
+    }
+
+    /// Derived trace — inherits trace_id from a parent, new correlation_id.
+    pub fn child(trace_id: &str, correlation_id: &str, causation_id: &str) -> Self {
+        Self {
+            trace_id:       trace_id.to_string(),
+            correlation_id: correlation_id.to_string(),
+            causation_id:   Some(causation_id.to_string()),
+        }
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Wallet
@@ -43,7 +83,14 @@ pub struct SandboxTransfer {
     pub currency:        Currency,
     pub note:            String,
     pub idempotency_key: Option<String>,
-    pub created_at:      chrono::DateTime<chrono::Utc>,
+    /// Top-level trace identifier. Shared across all operations in the same flow.
+    pub trace_id:       String,
+    /// Correlation identifier for this specific aggregate step.
+    pub correlation_id: String,
+    /// The ID of the operation that directly caused this transfer (e.g. a payment request ID).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub causation_id:   Option<String>,
+    pub created_at:     chrono::DateTime<chrono::Utc>,
 }
 
 // ---------------------------------------------------------------------------
@@ -56,16 +103,18 @@ pub enum PaymentRequestStatus { Pending, Paid, Expired, Cancelled }
 
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct SandboxPaymentRequest {
-    pub id:              String,
-    pub to_wallet_id:    String,
-    pub from_wallet_id:  Option<String>,
-    pub amount_minor:    i64,
-    pub currency:        Currency,
-    pub description:     String,
-    pub status:          PaymentRequestStatus,
-    pub transfer_id:     Option<String>,
-    pub created_at:      chrono::DateTime<chrono::Utc>,
-    pub paid_at:         Option<chrono::DateTime<chrono::Utc>>,
+    pub id:             String,
+    pub to_wallet_id:   String,
+    pub from_wallet_id: Option<String>,
+    pub amount_minor:   i64,
+    pub currency:       Currency,
+    pub description:    String,
+    pub status:         PaymentRequestStatus,
+    pub transfer_id:    Option<String>,
+    /// Trace ID linking this request and all resulting operations.
+    pub trace_id:      String,
+    pub created_at:    chrono::DateTime<chrono::Utc>,
+    pub paid_at:       Option<chrono::DateTime<chrono::Utc>>,
 }
 
 // ---------------------------------------------------------------------------
@@ -87,6 +136,8 @@ pub struct SandboxQrCode {
     pub status:             QrStatus,
     pub paid_by_wallet:     Option<String>,
     pub transfer_id:        Option<String>,
+    /// Trace ID linking this QR code and all resulting operations.
+    pub trace_id:           String,
     pub created_at:         chrono::DateTime<chrono::Utc>,
     pub paid_at:            Option<chrono::DateTime<chrono::Utc>>,
 }
@@ -101,14 +152,18 @@ pub enum LedgerEntryKind { Debit, Credit }
 
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct SandboxLedgerEntry {
-    pub id:           String,
-    pub wallet_id:    String,
-    pub kind:         LedgerEntryKind,
-    pub amount_minor: i64,
-    pub currency:     Currency,
-    pub reference:    String,
-    pub description:  String,
-    pub created_at:   chrono::DateTime<chrono::Utc>,
+    pub id:             String,
+    pub wallet_id:      String,
+    pub kind:           LedgerEntryKind,
+    pub amount_minor:   i64,
+    pub currency:       Currency,
+    pub reference:      String,
+    pub description:    String,
+    /// Trace ID linking this entry to the payment flow that caused it.
+    pub trace_id:       String,
+    /// Correlation ID (usually the transfer ID that generated this entry).
+    pub correlation_id: String,
+    pub created_at:     chrono::DateTime<chrono::Utc>,
 }
 
 // ---------------------------------------------------------------------------
@@ -130,8 +185,34 @@ pub struct SandboxSettlementBatch {
     pub tx_count:     usize,
     pub status:       SettlementBatchStatus,
     pub provider_ref: Option<String>,
+    /// Trace ID for this settlement operation.
+    pub trace_id:     String,
     pub created_at:   chrono::DateTime<chrono::Utc>,
     pub completed_at: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+// ---------------------------------------------------------------------------
+// Trace view — returned by GET /traces/{trace_id}
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, serde::Serialize)]
+pub struct TraceTimelineEntry {
+    pub timestamp:      chrono::DateTime<chrono::Utc>,
+    pub operation_type: String,
+    pub id:             String,
+    pub summary:        String,
+}
+
+#[derive(Debug, serde::Serialize)]
+pub struct TraceView {
+    pub trace_id:           String,
+    pub timeline:           Vec<TraceTimelineEntry>,
+    pub transfers:          Vec<SandboxTransfer>,
+    pub ledger_entries:     Vec<SandboxLedgerEntry>,
+    pub events:             Vec<SandboxEvent>,
+    pub settlement_batches: Vec<SandboxSettlementBatch>,
+    pub payment_requests:   Vec<SandboxPaymentRequest>,
+    pub qr_codes:           Vec<SandboxQrCode>,
 }
 
 // ---------------------------------------------------------------------------
@@ -158,11 +239,11 @@ impl AppState {
         let now = chrono::Utc::now();
 
         let seed = vec![
-            ("sandbox-consumer-1",  "Sandbox Consumer",  Currency::AOA, WalletType::Consumer,   2_000_000i64),
-            ("sandbox-merchant-1",  "Sandbox Merchant A",Currency::AOA, WalletType::Merchant,  10_000_000i64),
-            ("sandbox-government-1","Sandbox Government", Currency::AOA, WalletType::Government, 50_000_000i64),
-            ("sandbox-merchant-2",  "Sandbox Merchant B",Currency::AOA, WalletType::Merchant,   5_000_000i64),
-            ("sandbox-float",       "Float (Transit)",   Currency::AOA, WalletType::Internal,   0i64),
+            ("sandbox-consumer-1",   "Sandbox Consumer",   Currency::AOA, WalletType::Consumer,    2_000_000i64),
+            ("sandbox-merchant-1",   "Sandbox Merchant A", Currency::AOA, WalletType::Merchant,   10_000_000i64),
+            ("sandbox-government-1", "Sandbox Government", Currency::AOA, WalletType::Government, 50_000_000i64),
+            ("sandbox-merchant-2",   "Sandbox Merchant B", Currency::AOA, WalletType::Merchant,    5_000_000i64),
+            ("sandbox-float",        "Float (Transit)",    Currency::AOA, WalletType::Internal,    0i64),
         ];
 
         for (id, label, currency, wallet_type, balance) in seed {
@@ -195,8 +276,19 @@ impl AppState {
     // Events
     // -----------------------------------------------------------------------
 
-    pub fn emit(&self, event_type: &str, payload: serde_json::Value) {
-        let event = SandboxEvent::new(event_type, payload);
+    fn emit(
+        &self,
+        event_type:     &str,
+        aggregate_type: &str,
+        aggregate_id:   &str,
+        ctx:            &TraceContext,
+        payload:        serde_json::Value,
+    ) {
+        let event = SandboxEvent::with_trace(
+            event_type, aggregate_type, aggregate_id,
+            &ctx.trace_id, &ctx.correlation_id, ctx.causation_id.clone(),
+            payload,
+        );
         let mut history = self.event_history.lock().unwrap();
         if history.len() >= 200 { history.remove(0); }
         history.push(event.clone());
@@ -222,7 +314,8 @@ impl AppState {
             created_at:    chrono::Utc::now(),
         };
         self.wallets.lock().unwrap().insert(wallet.id.clone(), wallet.clone());
-        self.emit(ev::WALLET_CREATED, serde_json::json!({
+        let ctx = TraceContext::root();
+        self.emit(ev::WALLET_CREATED, "wallet", &wallet.id, &ctx, serde_json::json!({
             "wallet_id": wallet.id,
             "label":     label,
             "currency":  currency.code(),
@@ -252,8 +345,9 @@ impl AppState {
         currency:        Currency,
         note:            String,
         idempotency_key: Option<String>,
+        trace_ctx:       Option<TraceContext>,
     ) -> Result<SandboxTransfer, String> {
-        // Idempotency: return existing transfer if key matches.
+        // Idempotency: return existing transfer if key already used.
         if let Some(ref key) = idempotency_key {
             let existing = self.transfers.lock().unwrap()
                 .iter()
@@ -285,31 +379,50 @@ impl AppState {
         drop(wallets);
 
         let now = chrono::Utc::now();
+        let ctx = trace_ctx.unwrap_or_else(TraceContext::root);
+        let transfer_id = format!("txfr-{}", Uuid::new_v4());
+
+        // Use the transfer's own ID as the correlation_id for ledger entries.
+        let ledger_ctx = TraceContext::child(&ctx.trace_id, &transfer_id, &transfer_id);
+
         let transfer = SandboxTransfer {
-            id:              format!("txfr-{}", Uuid::new_v4()),
+            id:              transfer_id.clone(),
             from_wallet_id:  from_wallet_id.clone(),
             to_wallet_id:    to_wallet_id.clone(),
             amount_minor,
             currency,
             note:            note.clone(),
             idempotency_key,
+            trace_id:        ctx.trace_id.clone(),
+            correlation_id:  ctx.correlation_id.clone(),
+            causation_id:    ctx.causation_id.clone(),
             created_at:      now,
         };
 
         // Double-entry ledger entries.
-        self.append_ledger_entry(&from_wallet_id, LedgerEntryKind::Debit,  amount_minor, currency, &transfer.id, &note, now);
-        self.append_ledger_entry(&to_wallet_id,   LedgerEntryKind::Credit, amount_minor, currency, &transfer.id, &note, now);
+        self.append_ledger_entry(
+            &from_wallet_id, LedgerEntryKind::Debit,
+            amount_minor, currency, &transfer_id, &note,
+            &ctx.trace_id, &ledger_ctx.correlation_id, now,
+        );
+        self.append_ledger_entry(
+            &to_wallet_id, LedgerEntryKind::Credit,
+            amount_minor, currency, &transfer_id, &note,
+            &ctx.trace_id, &ledger_ctx.correlation_id, now,
+        );
 
         self.transfers.lock().unwrap().push(transfer.clone());
 
-        self.emit(ev::PAYMENT_SENT, serde_json::json!({
-            "transfer_id":    transfer.id,
+        // Events share the transfer's trace and use the transfer ID as correlation.
+        let event_ctx = TraceContext { trace_id: ctx.trace_id.clone(), correlation_id: transfer_id.clone(), causation_id: ctx.causation_id.clone() };
+        self.emit(ev::PAYMENT_SENT, "transfer", &transfer_id, &event_ctx, serde_json::json!({
+            "transfer_id":    transfer_id,
             "from_wallet_id": from_wallet_id,
             "amount_minor":   amount_minor,
             "currency":       currency.code(),
         }));
-        self.emit(ev::PAYMENT_RECEIVED, serde_json::json!({
-            "transfer_id":  transfer.id,
+        self.emit(ev::PAYMENT_RECEIVED, "transfer", &transfer_id, &event_ctx, serde_json::json!({
+            "transfer_id":  transfer_id,
             "to_wallet_id": to_wallet_id,
             "amount_minor": amount_minor,
             "currency":     currency.code(),
@@ -336,6 +449,7 @@ impl AppState {
         if !self.wallets.lock().unwrap().contains_key(&to_wallet_id) {
             return Err(format!("wallet not found: {to_wallet_id}"));
         }
+        let ctx = TraceContext::root();
         let pr = SandboxPaymentRequest {
             id:             format!("pr-{}", Uuid::new_v4()),
             to_wallet_id:   to_wallet_id.clone(),
@@ -345,11 +459,12 @@ impl AppState {
             description:    description.clone(),
             status:         PaymentRequestStatus::Pending,
             transfer_id:    None,
+            trace_id:       ctx.trace_id.clone(),
             created_at:     chrono::Utc::now(),
             paid_at:        None,
         };
         self.payment_requests.lock().unwrap().insert(pr.id.clone(), pr.clone());
-        self.emit(ev::PAYMENT_REQUEST_CREATED, serde_json::json!({
+        self.emit(ev::PAYMENT_REQUEST_CREATED, "payment_request", &pr.id, &ctx, serde_json::json!({
             "pr_id":        pr.id,
             "to_wallet_id": to_wallet_id,
             "amount_minor": amount_minor,
@@ -382,6 +497,8 @@ impl AppState {
             return Err(format!("payment request is {status:?}, not pending", status = pr.status));
         }
 
+        // The transfer inherits the PR's trace. The PR's ID is the causation.
+        let transfer_ctx = TraceContext::child(&pr.trace_id, &pr.trace_id, pr_id);
         let transfer = self.create_transfer(
             from_wallet_id.clone(),
             pr.to_wallet_id.clone(),
@@ -389,6 +506,7 @@ impl AppState {
             pr.currency,
             format!("PR payment: {}", pr.description),
             None,
+            Some(transfer_ctx),
         )?;
 
         let now = chrono::Utc::now();
@@ -397,13 +515,14 @@ impl AppState {
             from_wallet_id: Some(from_wallet_id),
             transfer_id:    Some(transfer.id.clone()),
             paid_at:        Some(now),
-            ..pr
+            ..pr.clone()
         };
         self.payment_requests.lock().unwrap().insert(updated.id.clone(), updated.clone());
 
-        self.emit(ev::PAYMENT_REQUEST_PAID, serde_json::json!({
-            "pr_id":       updated.id,
-            "transfer_id": transfer.id,
+        let pr_ctx = TraceContext { trace_id: pr.trace_id.clone(), correlation_id: pr.id.clone(), causation_id: None };
+        self.emit(ev::PAYMENT_REQUEST_PAID, "payment_request", &pr.id, &pr_ctx, serde_json::json!({
+            "pr_id":        updated.id,
+            "transfer_id":  transfer.id,
             "amount_minor": updated.amount_minor,
         }));
         Ok(updated)
@@ -423,6 +542,7 @@ impl AppState {
         if !self.wallets.lock().unwrap().contains_key(&merchant_wallet_id) {
             return Err(format!("wallet not found: {merchant_wallet_id}"));
         }
+        let ctx = TraceContext::root();
         let qr_id = format!("qr-{}", Uuid::new_v4());
         let payload_data = {
             let raw = serde_json::json!({
@@ -443,15 +563,16 @@ impl AppState {
             amount_minor,
             currency,
             description:        description.clone(),
-            payload_data:       payload_data.clone(),
+            payload_data,
             status:             QrStatus::Active,
             paid_by_wallet:     None,
             transfer_id:        None,
+            trace_id:           ctx.trace_id.clone(),
             created_at:         chrono::Utc::now(),
             paid_at:            None,
         };
         self.qr_codes.lock().unwrap().insert(qr_id.clone(), qr.clone());
-        self.emit(ev::QR_GENERATED, serde_json::json!({
+        self.emit(ev::QR_GENERATED, "qr", &qr_id, &ctx, serde_json::json!({
             "qr_id":              qr_id,
             "merchant_wallet_id": merchant_wallet_id,
             "amount_minor":       amount_minor,
@@ -466,8 +587,8 @@ impl AppState {
 
     pub fn pay_qr(
         &self,
-        qr_id:            &str,
-        consumer_wallet_id: String,
+        qr_id:                 &str,
+        consumer_wallet_id:    String,
         consumer_amount_minor: Option<i64>,
     ) -> Result<SandboxQrCode, String> {
         let qr = {
@@ -484,6 +605,8 @@ impl AppState {
             return Err("amount_minor must be positive".into());
         }
 
+        // Transfer inherits the QR's trace. The QR's ID is the causation.
+        let transfer_ctx = TraceContext::child(&qr.trace_id, &qr.trace_id, qr_id);
         let transfer = self.create_transfer(
             consumer_wallet_id.clone(),
             qr.merchant_wallet_id.clone(),
@@ -491,6 +614,7 @@ impl AppState {
             qr.currency,
             format!("QR payment: {}", qr.description),
             None,
+            Some(transfer_ctx),
         )?;
 
         let now = chrono::Utc::now();
@@ -499,11 +623,12 @@ impl AppState {
             paid_by_wallet: Some(consumer_wallet_id),
             transfer_id:    Some(transfer.id.clone()),
             paid_at:        Some(now),
-            ..qr
+            ..qr.clone()
         };
         self.qr_codes.lock().unwrap().insert(updated.id.clone(), updated.clone());
 
-        self.emit(ev::QR_PAID, serde_json::json!({
+        let qr_ctx = TraceContext { trace_id: qr.trace_id.clone(), correlation_id: qr.id.clone(), causation_id: None };
+        self.emit(ev::QR_PAID, "qr", &qr.id, &qr_ctx, serde_json::json!({
             "qr_id":       updated.id,
             "transfer_id": transfer.id,
             "amount_minor": amount,
@@ -515,25 +640,30 @@ impl AppState {
     // Ledger entries
     // -----------------------------------------------------------------------
 
+    #[allow(clippy::too_many_arguments)]
     fn append_ledger_entry(
         &self,
-        wallet_id:    &str,
-        kind:         LedgerEntryKind,
-        amount_minor: i64,
-        currency:     Currency,
-        reference:    &str,
-        description:  &str,
-        ts:           chrono::DateTime<chrono::Utc>,
+        wallet_id:      &str,
+        kind:           LedgerEntryKind,
+        amount_minor:   i64,
+        currency:       Currency,
+        reference:      &str,
+        description:    &str,
+        trace_id:       &str,
+        correlation_id: &str,
+        ts:             chrono::DateTime<chrono::Utc>,
     ) {
         let entry = SandboxLedgerEntry {
-            id:           format!("le-{}", Uuid::new_v4()),
-            wallet_id:    wallet_id.to_string(),
+            id:             format!("le-{}", Uuid::new_v4()),
+            wallet_id:      wallet_id.to_string(),
             kind,
             amount_minor,
             currency,
-            reference:    reference.to_string(),
-            description:  description.to_string(),
-            created_at:   ts,
+            reference:      reference.to_string(),
+            description:    description.to_string(),
+            trace_id:       trace_id.to_string(),
+            correlation_id: correlation_id.to_string(),
+            created_at:     ts,
         };
         self.ledger_entries.lock().unwrap().push(entry);
     }
@@ -569,9 +699,9 @@ impl AppState {
             return Err("no unsettled receipts for this wallet".into());
         }
 
-        let currency = credits[0].currency;
-        let gross_minor: i64  = credits.iter().map(|t| t.amount_minor).sum();
-        let tx_count          = credits.len();
+        let currency        = credits[0].currency;
+        let gross_minor: i64 = credits.iter().map(|t| t.amount_minor).sum();
+        let tx_count         = credits.len();
         let settled_ids: Vec<String> = credits.iter().map(|t| t.id.clone()).collect();
         drop(transfers);
 
@@ -579,6 +709,7 @@ impl AppState {
         let fee_minor = (gross_minor / 100).max(100);
         let net_minor = gross_minor - fee_minor;
 
+        let ctx = TraceContext::root();
         let now = chrono::Utc::now();
         let batch = SandboxSettlementBatch {
             id:           format!("settle-{}", Uuid::new_v4()),
@@ -590,6 +721,7 @@ impl AppState {
             tx_count,
             status:       SettlementBatchStatus::Completed,
             provider_ref: Some(format!("SBX-SETTLE-{}", Uuid::new_v4())),
+            trace_id:     ctx.trace_id.clone(),
             created_at:   now,
             completed_at: Some(now),
         };
@@ -597,14 +729,14 @@ impl AppState {
         self.settled_transfer_ids.lock().unwrap().extend(settled_ids);
         self.settlement_batches.lock().unwrap().push(batch.clone());
 
-        self.emit(ev::SETTLEMENT_CREATED, serde_json::json!({
+        self.emit(ev::SETTLEMENT_CREATED, "settlement", &batch.id, &ctx, serde_json::json!({
             "batch_id":    batch.id,
             "wallet_id":   wallet_id,
             "gross_minor": gross_minor,
             "net_minor":   net_minor,
             "tx_count":    tx_count,
         }));
-        self.emit(ev::SETTLEMENT_COMPLETED, serde_json::json!({
+        self.emit(ev::SETTLEMENT_COMPLETED, "settlement", &batch.id, &ctx, serde_json::json!({
             "batch_id":     batch.id,
             "provider_ref": batch.provider_ref,
         }));
@@ -621,10 +753,139 @@ impl AppState {
             .find(|b| b.id == id)
             .cloned()
     }
+
+    // -----------------------------------------------------------------------
+    // Traces
+    // -----------------------------------------------------------------------
+
+    /// Reconstruct the full causal chain for a given trace ID.
+    pub fn get_trace(&self, trace_id: &str) -> Option<TraceView> {
+        let transfers: Vec<SandboxTransfer> = self.transfers.lock().unwrap()
+            .iter().filter(|t| t.trace_id == trace_id).cloned().collect();
+        let ledger_entries: Vec<SandboxLedgerEntry> = self.ledger_entries.lock().unwrap()
+            .iter().filter(|e| e.trace_id == trace_id).cloned().collect();
+        let events: Vec<SandboxEvent> = self.event_history.lock().unwrap()
+            .iter().filter(|e| e.trace_id == trace_id).cloned().collect();
+        let settlement_batches: Vec<SandboxSettlementBatch> = self.settlement_batches.lock().unwrap()
+            .iter().filter(|b| b.trace_id == trace_id).cloned().collect();
+        let payment_requests: Vec<SandboxPaymentRequest> = self.payment_requests.lock().unwrap()
+            .values().filter(|pr| pr.trace_id == trace_id).cloned().collect();
+        let qr_codes: Vec<SandboxQrCode> = self.qr_codes.lock().unwrap()
+            .values().filter(|qr| qr.trace_id == trace_id).cloned().collect();
+
+        if transfers.is_empty() && payment_requests.is_empty()
+            && qr_codes.is_empty() && settlement_batches.is_empty()
+            && events.is_empty()
+        {
+            return None;
+        }
+
+        let mut timeline: Vec<TraceTimelineEntry> = Vec::new();
+
+        for pr in &payment_requests {
+            timeline.push(TraceTimelineEntry {
+                timestamp:      pr.created_at,
+                operation_type: "payment_request.created".into(),
+                id:             pr.id.clone(),
+                summary:        format!("Payment request created — {} → {}", pr.amount_minor, pr.to_wallet_id),
+            });
+            if pr.status == PaymentRequestStatus::Paid {
+                if let Some(ts) = pr.paid_at {
+                    timeline.push(TraceTimelineEntry {
+                        timestamp:      ts,
+                        operation_type: "payment_request.paid".into(),
+                        id:             pr.id.clone(),
+                        summary:        format!("Payment request fulfilled via transfer {:?}", pr.transfer_id),
+                    });
+                }
+            }
+        }
+
+        for qr in &qr_codes {
+            timeline.push(TraceTimelineEntry {
+                timestamp:      qr.created_at,
+                operation_type: "qr.generated".into(),
+                id:             qr.id.clone(),
+                summary:        format!("QR generated for {} ({})", qr.merchant_wallet_id, qr.amount_minor.map(|a| a.to_string()).unwrap_or_else(|| "open".into())),
+            });
+            if qr.status == QrStatus::Paid {
+                if let Some(ts) = qr.paid_at {
+                    timeline.push(TraceTimelineEntry {
+                        timestamp:      ts,
+                        operation_type: "qr.paid".into(),
+                        id:             qr.id.clone(),
+                        summary:        format!("QR paid via transfer {:?}", qr.transfer_id),
+                    });
+                }
+            }
+        }
+
+        for t in &transfers {
+            timeline.push(TraceTimelineEntry {
+                timestamp:      t.created_at,
+                operation_type: "transfer.executed".into(),
+                id:             t.id.clone(),
+                summary:        format!("{} → {} : {} minor units {}", t.from_wallet_id, t.to_wallet_id, t.amount_minor, t.currency.code()),
+            });
+        }
+
+        for e in &ledger_entries {
+            let kind_str = match e.kind { LedgerEntryKind::Debit => "DEBIT", LedgerEntryKind::Credit => "CREDIT" };
+            timeline.push(TraceTimelineEntry {
+                timestamp:      e.created_at,
+                operation_type: format!("ledger.{}", kind_str.to_lowercase()),
+                id:             e.id.clone(),
+                summary:        format!("{} {} {} on {}", kind_str, e.amount_minor, e.currency.code(), e.wallet_id),
+            });
+        }
+
+        for ev in &events {
+            timeline.push(TraceTimelineEntry {
+                timestamp:      ev.created_at,
+                operation_type: format!("event.{}", ev.event_type),
+                id:             ev.id.clone(),
+                summary:        format!("Event emitted: {}", ev.event_type),
+            });
+        }
+
+        for b in &settlement_batches {
+            timeline.push(TraceTimelineEntry {
+                timestamp:      b.created_at,
+                operation_type: "settlement.batch_created".into(),
+                id:             b.id.clone(),
+                summary:        format!("Settlement batch: gross {} → fee {} → net {} {}", b.gross_minor, b.fee_minor, b.net_minor, b.currency.code()),
+            });
+        }
+
+        timeline.sort_by_key(|e| e.timestamp);
+
+        Some(TraceView {
+            trace_id: trace_id.to_string(),
+            timeline,
+            transfers,
+            ledger_entries,
+            events,
+            settlement_batches,
+            payment_requests,
+            qr_codes,
+        })
+    }
+
+    /// List all distinct trace IDs currently in memory.
+    pub fn list_trace_ids(&self) -> Vec<String> {
+        let mut ids: HashSet<String> = HashSet::new();
+        for t in self.transfers.lock().unwrap().iter() { ids.insert(t.trace_id.clone()); }
+        for pr in self.payment_requests.lock().unwrap().values() { ids.insert(pr.trace_id.clone()); }
+        for qr in self.qr_codes.lock().unwrap().values() { ids.insert(qr.trace_id.clone()); }
+        for b in self.settlement_batches.lock().unwrap().iter() { ids.insert(b.trace_id.clone()); }
+        for e in self.event_history.lock().unwrap().iter() { ids.insert(e.trace_id.clone()); }
+        let mut v: Vec<_> = ids.into_iter().collect();
+        v.sort();
+        v
+    }
 }
 
 fn base64_encode(data: &[u8]) -> String {
-    // Simple base64 encoding without an extra dep.
     const TABLE: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut out = String::new();
     for chunk in data.chunks(3) {
