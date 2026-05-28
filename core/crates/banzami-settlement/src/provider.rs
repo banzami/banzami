@@ -2,7 +2,7 @@ use thiserror::Error;
 
 use banzami_types::{MerchantId, Money, WalletId};
 
-use crate::{Settlement, SettlementId};
+use crate::SettlementId;
 
 // ---------------------------------------------------------------------------
 // Request / response types
