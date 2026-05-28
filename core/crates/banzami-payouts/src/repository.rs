@@ -45,6 +45,7 @@ struct PayoutRow {
     wallet_id:           Uuid,
     idempotency_key:     String,
     status:              String,
+    #[allow(dead_code)]
     environment:         String,
     amount_minor:        i64,
     currency:            String,
@@ -103,29 +104,27 @@ impl PostgresPayoutRepository {
 
 impl PayoutRepository for PostgresPayoutRepository {
     async fn create(&self, p: &Payout) -> Result<(), PayoutError> {
-        sqlx::query!(
-            r#"
+        sqlx::query(r#"
             INSERT INTO payouts (
                 id, merchant_id, wallet_id, idempotency_key, status,
                 amount_minor, currency,
                 bank_account_number, bank_code, account_holder_name,
                 ledger_posting_id, failure_reason, created_at
             ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-            "#,
-            p.id.as_uuid(),
-            p.merchant_id.as_uuid(),
-            p.wallet_id.as_uuid(),
-            p.idempotency_key,
-            p.status.as_str(),
-            p.amount.amount_minor(),
-            p.amount.currency.code(),
-            p.destination.account_number,
-            p.destination.bank_code,
-            p.destination.account_holder_name,
-            p.ledger_posting_id.map(|id| id.as_uuid()),
-            p.failure_reason.as_deref(),
-            p.created_at,
-        )
+        "#)
+        .bind(p.id.as_uuid())
+        .bind(p.merchant_id.as_uuid())
+        .bind(p.wallet_id.as_uuid())
+        .bind(&p.idempotency_key)
+        .bind(p.status.as_str())
+        .bind(p.amount.amount_minor())
+        .bind(p.amount.currency.code())
+        .bind(&p.destination.account_number)
+        .bind(&p.destination.bank_code)
+        .bind(&p.destination.account_holder_name)
+        .bind(p.ledger_posting_id.map(|id| id.as_uuid()))
+        .bind(p.failure_reason.as_deref())
+        .bind(p.created_at)
         .execute(&self.pool)
         .await
         .map_err(|e| {
@@ -140,11 +139,14 @@ impl PayoutRepository for PostgresPayoutRepository {
     }
 
     async fn get(&self, id: PayoutId) -> Result<Payout, PayoutError> {
-        let row = sqlx::query_as!(
-            PayoutRow,
-            "SELECT * FROM payouts WHERE id = $1",
-            id.as_uuid()
+        let row = sqlx::query_as::<_, PayoutRow>(
+            "SELECT id, merchant_id, wallet_id, idempotency_key, status, environment,
+                    amount_minor, currency, bank_account_number, bank_code, account_holder_name,
+                    ledger_posting_id, failure_reason, created_at, sent_at, confirmed_at,
+                    returned_at, failed_at
+             FROM payouts WHERE id = $1"
         )
+        .bind(id.as_uuid())
         .fetch_optional(&self.pool)
         .await?
         .ok_or(PayoutError::NotFound(id))?;
@@ -152,11 +154,14 @@ impl PayoutRepository for PostgresPayoutRepository {
     }
 
     async fn get_by_idempotency_key(&self, key: &str) -> Result<Option<Payout>, PayoutError> {
-        let row = sqlx::query_as!(
-            PayoutRow,
-            "SELECT * FROM payouts WHERE idempotency_key = $1",
-            key
+        let row = sqlx::query_as::<_, PayoutRow>(
+            "SELECT id, merchant_id, wallet_id, idempotency_key, status, environment,
+                    amount_minor, currency, bank_account_number, bank_code, account_holder_name,
+                    ledger_posting_id, failure_reason, created_at, sent_at, confirmed_at,
+                    returned_at, failed_at
+             FROM payouts WHERE idempotency_key = $1"
         )
+        .bind(key)
         .fetch_optional(&self.pool)
         .await?;
         row.map(row_to_payout).transpose()
@@ -167,12 +172,15 @@ impl PayoutRepository for PostgresPayoutRepository {
         merchant_id: MerchantId,
         limit: i64,
     ) -> Result<Vec<Payout>, PayoutError> {
-        let rows = sqlx::query_as!(
-            PayoutRow,
-            "SELECT * FROM payouts WHERE merchant_id = $1 ORDER BY created_at DESC LIMIT $2",
-            merchant_id.as_uuid(),
-            limit
+        let rows = sqlx::query_as::<_, PayoutRow>(
+            "SELECT id, merchant_id, wallet_id, idempotency_key, status, environment,
+                    amount_minor, currency, bank_account_number, bank_code, account_holder_name,
+                    ledger_posting_id, failure_reason, created_at, sent_at, confirmed_at,
+                    returned_at, failed_at
+             FROM payouts WHERE merchant_id = $1 ORDER BY created_at DESC LIMIT $2"
         )
+        .bind(merchant_id.as_uuid())
+        .bind(limit)
         .fetch_all(&self.pool)
         .await?;
         rows.into_iter().map(row_to_payout).collect()
@@ -183,23 +191,23 @@ impl PayoutRepository for PostgresPayoutRepository {
         limit: i64,
         status: Option<&str>,
     ) -> Result<Vec<Payout>, PayoutError> {
+        let select = "SELECT id, merchant_id, wallet_id, idempotency_key, status, environment,
+                             amount_minor, currency, bank_account_number, bank_code, account_holder_name,
+                             ledger_posting_id, failure_reason, created_at, sent_at, confirmed_at,
+                             returned_at, failed_at
+                      FROM payouts";
+
         let rows = if let Some(s) = status {
-            sqlx::query_as!(
-                PayoutRow,
-                "SELECT * FROM payouts WHERE status = $1 ORDER BY created_at DESC LIMIT $2",
-                s,
-                limit
-            )
-            .fetch_all(&self.pool)
-            .await?
+            sqlx::query_as::<_, PayoutRow>(&format!("{select} WHERE status = $1 ORDER BY created_at DESC LIMIT $2"))
+                .bind(s)
+                .bind(limit)
+                .fetch_all(&self.pool)
+                .await?
         } else {
-            sqlx::query_as!(
-                PayoutRow,
-                "SELECT * FROM payouts ORDER BY created_at DESC LIMIT $1",
-                limit
-            )
-            .fetch_all(&self.pool)
-            .await?
+            sqlx::query_as::<_, PayoutRow>(&format!("{select} ORDER BY created_at DESC LIMIT $1"))
+                .bind(limit)
+                .fetch_all(&self.pool)
+                .await?
         };
         rows.into_iter().map(row_to_payout).collect()
     }
@@ -212,9 +220,7 @@ impl PayoutRepository for PostgresPayoutRepository {
         failure_reason: Option<String>,
     ) -> Result<Payout, PayoutError> {
         let now = Utc::now();
-        let row = sqlx::query_as!(
-            PayoutRow,
-            r#"
+        let row = sqlx::query_as::<_, PayoutRow>(r#"
             UPDATE payouts SET
                 status              = $2,
                 ledger_posting_id   = COALESCE($3, ledger_posting_id),
@@ -224,14 +230,16 @@ impl PayoutRepository for PostgresPayoutRepository {
                 returned_at         = CASE WHEN $2 = 'RETURNED'  THEN $5 ELSE returned_at   END,
                 failed_at           = CASE WHEN $2 = 'FAILED'    THEN $5 ELSE failed_at     END
             WHERE id = $1
-            RETURNING *
-            "#,
-            id.as_uuid(),
-            status.as_str(),
-            ledger_posting_id.map(|id| id.as_uuid()),
-            failure_reason,
-            now,
-        )
+            RETURNING id, merchant_id, wallet_id, idempotency_key, status, environment,
+                      amount_minor, currency, bank_account_number, bank_code, account_holder_name,
+                      ledger_posting_id, failure_reason, created_at, sent_at, confirmed_at,
+                      returned_at, failed_at
+        "#)
+        .bind(id.as_uuid())
+        .bind(status.as_str())
+        .bind(ledger_posting_id.map(|id| id.as_uuid()))
+        .bind(failure_reason)
+        .bind(now)
         .fetch_optional(&self.pool)
         .await?
         .ok_or(PayoutError::NotFound(id))?;

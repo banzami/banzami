@@ -105,11 +105,11 @@ impl ComplianceRepository for PostgresComplianceRepository {
         &self,
         merchant_id: MerchantId,
     ) -> Result<Option<MerchantCompliance>, ComplianceError> {
-        let row = sqlx::query_as!(
-            MerchantComplianceRow,
-            "SELECT * FROM merchant_compliance WHERE merchant_id = $1",
-            merchant_id.as_uuid()
+        let row = sqlx::query_as::<_, MerchantComplianceRow>(
+            "SELECT merchant_id, kyb_status, aml_status, reviewed_at, notes, created_at, updated_at
+             FROM merchant_compliance WHERE merchant_id = $1"
         )
+        .bind(merchant_id.as_uuid())
         .fetch_optional(&self.pool)
         .await?;
         row.map(row_to_merchant).transpose()
@@ -119,8 +119,7 @@ impl ComplianceRepository for PostgresComplianceRepository {
         &self,
         record: &MerchantCompliance,
     ) -> Result<(), ComplianceError> {
-        sqlx::query!(
-            r#"
+        sqlx::query(r#"
             INSERT INTO merchant_compliance (
                 merchant_id, kyb_status, aml_status, reviewed_at, notes, created_at, updated_at
             ) VALUES ($1,$2,$3,$4,$5,$6,$7)
@@ -130,15 +129,14 @@ impl ComplianceRepository for PostgresComplianceRepository {
                 reviewed_at = EXCLUDED.reviewed_at,
                 notes       = EXCLUDED.notes,
                 updated_at  = EXCLUDED.updated_at
-            "#,
-            record.merchant_id.as_uuid(),
-            record.kyb_status.as_str(),
-            record.aml_status.as_str(),
-            record.reviewed_at,
-            record.notes.as_deref(),
-            record.created_at,
-            record.updated_at,
-        )
+        "#)
+        .bind(record.merchant_id.as_uuid())
+        .bind(record.kyb_status.as_str())
+        .bind(record.aml_status.as_str())
+        .bind(record.reviewed_at)
+        .bind(record.notes.as_deref())
+        .bind(record.created_at)
+        .bind(record.updated_at)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -148,11 +146,11 @@ impl ComplianceRepository for PostgresComplianceRepository {
         &self,
         customer_id: CustomerId,
     ) -> Result<Option<CustomerCompliance>, ComplianceError> {
-        let row = sqlx::query_as!(
-            CustomerComplianceRow,
-            "SELECT * FROM customer_compliance WHERE customer_id = $1",
-            customer_id.as_uuid()
+        let row = sqlx::query_as::<_, CustomerComplianceRow>(
+            "SELECT customer_id, kyc_level, status, reviewed_at, created_at, updated_at
+             FROM customer_compliance WHERE customer_id = $1"
         )
+        .bind(customer_id.as_uuid())
         .fetch_optional(&self.pool)
         .await?;
         row.map(row_to_customer).transpose()
@@ -162,8 +160,7 @@ impl ComplianceRepository for PostgresComplianceRepository {
         &self,
         record: &CustomerCompliance,
     ) -> Result<(), ComplianceError> {
-        sqlx::query!(
-            r#"
+        sqlx::query(r#"
             INSERT INTO customer_compliance (
                 customer_id, kyc_level, status, reviewed_at, created_at, updated_at
             ) VALUES ($1,$2,$3,$4,$5,$6)
@@ -172,14 +169,13 @@ impl ComplianceRepository for PostgresComplianceRepository {
                 status      = EXCLUDED.status,
                 reviewed_at = EXCLUDED.reviewed_at,
                 updated_at  = EXCLUDED.updated_at
-            "#,
-            record.customer_id.as_uuid(),
-            record.kyc_level.as_str(),
-            record.status.as_str(),
-            record.reviewed_at,
-            record.created_at,
-            record.updated_at,
-        )
+        "#)
+        .bind(record.customer_id.as_uuid())
+        .bind(record.kyc_level.as_str())
+        .bind(record.status.as_str())
+        .bind(record.reviewed_at)
+        .bind(record.created_at)
+        .bind(record.updated_at)
         .execute(&self.pool)
         .await?;
         Ok(())

@@ -88,45 +88,41 @@ impl ReconciliationRepository for PostgresReconciliationRepository {
     async fn save_report(&self, report: &ReconciliationReport) -> Result<(), ReconciliationError> {
         let mut tx = self.pool.begin().await?;
 
-        sqlx::query!(
-            r#"
+        sqlx::query(r#"
             INSERT INTO reconciliation_runs (
                 id, total_checked, matched, missing_external, missing_internal,
                 amount_mismatches, total_discrepancy_minor, generated_at
             ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-            "#,
-            report.run_id.as_uuid(),
-            report.total_checked as i64,
-            report.matched as i64,
-            report.missing_external as i64,
-            report.missing_internal as i64,
-            report.amount_mismatches as i64,
-            report.total_discrepancy_minor,
-            report.generated_at,
-        )
+        "#)
+        .bind(report.run_id.as_uuid())
+        .bind(report.total_checked as i64)
+        .bind(report.matched as i64)
+        .bind(report.missing_external as i64)
+        .bind(report.missing_internal as i64)
+        .bind(report.amount_mismatches as i64)
+        .bind(report.total_discrepancy_minor)
+        .bind(report.generated_at)
         .execute(&mut *tx)
         .await?;
 
         for record in &report.records {
-            sqlx::query!(
-                r#"
+            sqlx::query(r#"
                 INSERT INTO reconciliation_records (
                     run_id, settlement_id, transaction_id, external_ref,
                     internal_minor, external_minor, currency, status,
                     discrepancy_minor, reconciled_at
                 ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-                "#,
-                record.run_id.as_uuid(),
-                record.settlement_id.map(|id| id.as_uuid()),
-                record.transaction_id.map(|id| id.as_uuid()),
-                record.external_ref.as_deref(),
-                record.internal_minor,
-                record.external_minor,
-                record.currency,
-                record.status.as_str(),
-                record.discrepancy_minor,
-                record.reconciled_at,
-            )
+            "#)
+            .bind(record.run_id.as_uuid())
+            .bind(record.settlement_id.map(|id| id.as_uuid()))
+            .bind(record.transaction_id.map(|id| id.as_uuid()))
+            .bind(record.external_ref.as_deref())
+            .bind(record.internal_minor)
+            .bind(record.external_minor)
+            .bind(&record.currency)
+            .bind(record.status.as_str())
+            .bind(record.discrepancy_minor)
+            .bind(record.reconciled_at)
             .execute(&mut *tx)
             .await?;
         }
@@ -139,20 +135,23 @@ impl ReconciliationRepository for PostgresReconciliationRepository {
         &self,
         run_id: ReconciliationRunId,
     ) -> Result<ReconciliationReport, ReconciliationError> {
-        let run = sqlx::query_as!(
-            RunRow,
-            "SELECT * FROM reconciliation_runs WHERE id = $1",
-            run_id.as_uuid()
+        let run = sqlx::query_as::<_, RunRow>(
+            "SELECT id, total_checked, matched, missing_external, missing_internal,
+                    amount_mismatches, total_discrepancy_minor, generated_at
+             FROM reconciliation_runs WHERE id = $1"
         )
+        .bind(run_id.as_uuid())
         .fetch_optional(&self.pool)
         .await?
         .ok_or(ReconciliationError::NotFound(run_id))?;
 
-        let record_rows = sqlx::query_as!(
-            RecordRow,
-            "SELECT * FROM reconciliation_records WHERE run_id = $1 ORDER BY reconciled_at",
-            run_id.as_uuid()
+        let record_rows = sqlx::query_as::<_, RecordRow>(
+            "SELECT id, run_id, settlement_id, transaction_id, external_ref,
+                    internal_minor, external_minor, currency, status,
+                    discrepancy_minor, reconciled_at
+             FROM reconciliation_records WHERE run_id = $1 ORDER BY reconciled_at"
         )
+        .bind(run_id.as_uuid())
         .fetch_all(&self.pool)
         .await?;
 

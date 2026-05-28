@@ -2,7 +2,7 @@ pub mod engine;
 pub mod provider;
 pub mod repository;
 
-pub use engine::{AcquirerKind, AcquiringEngine, PostgresAcquiringEngine};
+pub use engine::{AcquiringEngine, PostgresAcquiringEngine};
 pub use provider::AcquirerProvider;
 pub use repository::{AcquiringRepository, PostgresAcquiringRepository};
 

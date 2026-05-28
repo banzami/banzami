@@ -114,24 +114,22 @@ impl AcquiringRepository for PostgresAcquiringRepository {
         let instructions = serde_json::to_value(&p.instructions)
             .map_err(|e| AcquiringError::Internal(e.to_string()))?;
 
-        sqlx::query!(
-            r#"
+        sqlx::query(r#"
             INSERT INTO acquiring_payments
                 (id, payment_link_id, provider, external_ref, status,
                  amount_minor, currency, instructions, expires_at, created_at)
             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-            "#,
-            p.id.as_uuid(),
-            p.payment_link_id.as_uuid(),
-            p.provider,
-            p.external_ref,
-            p.status.as_str(),
-            p.amount.amount_minor(),
-            p.amount.currency.code(),
-            instructions,
-            p.expires_at,
-            p.created_at,
-        )
+        "#)
+        .bind(p.id.as_uuid())
+        .bind(p.payment_link_id.as_uuid())
+        .bind(&p.provider)
+        .bind(&p.external_ref)
+        .bind(p.status.as_str())
+        .bind(p.amount.amount_minor())
+        .bind(p.amount.currency.code())
+        .bind(instructions)
+        .bind(p.expires_at)
+        .bind(p.created_at)
         .execute(&self.pool)
         .await
         .map_err(AcquiringError::Database)?;
@@ -142,14 +140,13 @@ impl AcquiringRepository for PostgresAcquiringRepository {
         &self,
         id: AcquiringPaymentId,
     ) -> Result<AcquiringPayment, AcquiringError> {
-        sqlx::query_as!(
-            AcquiringPaymentRow,
-            r#"SELECT id, payment_link_id, provider, external_ref, status,
-                      amount_minor, currency, instructions,
-                      confirmed_at, failed_at, failure_reason, expires_at, created_at
-               FROM acquiring_payments WHERE id = $1"#,
-            id.as_uuid()
-        )
+        sqlx::query_as::<_, AcquiringPaymentRow>(r#"
+            SELECT id, payment_link_id, provider, external_ref, status,
+                   amount_minor, currency, instructions,
+                   confirmed_at, failed_at, failure_reason, expires_at, created_at
+            FROM acquiring_payments WHERE id = $1
+        "#)
+        .bind(id.as_uuid())
         .fetch_optional(&self.pool)
         .await
         .map_err(AcquiringError::Database)?
@@ -161,14 +158,13 @@ impl AcquiringRepository for PostgresAcquiringRepository {
         &self,
         external_ref: &str,
     ) -> Result<AcquiringPayment, AcquiringError> {
-        sqlx::query_as!(
-            AcquiringPaymentRow,
-            r#"SELECT id, payment_link_id, provider, external_ref, status,
-                      amount_minor, currency, instructions,
-                      confirmed_at, failed_at, failure_reason, expires_at, created_at
-               FROM acquiring_payments WHERE external_ref = $1"#,
-            external_ref
-        )
+        sqlx::query_as::<_, AcquiringPaymentRow>(r#"
+            SELECT id, payment_link_id, provider, external_ref, status,
+                   amount_minor, currency, instructions,
+                   confirmed_at, failed_at, failure_reason, expires_at, created_at
+            FROM acquiring_payments WHERE external_ref = $1
+        "#)
+        .bind(external_ref)
         .fetch_optional(&self.pool)
         .await
         .map_err(AcquiringError::Database)?
@@ -181,17 +177,16 @@ impl AcquiringRepository for PostgresAcquiringRepository {
         id:           AcquiringPaymentId,
         confirmed_at: DateTime<Utc>,
     ) -> Result<AcquiringPayment, AcquiringError> {
-        sqlx::query_as!(
-            AcquiringPaymentRow,
-            r#"UPDATE acquiring_payments
-               SET status = 'CONFIRMED', confirmed_at = $2
-               WHERE id = $1
-               RETURNING id, payment_link_id, provider, external_ref, status,
-                         amount_minor, currency, instructions,
-                         confirmed_at, failed_at, failure_reason, expires_at, created_at"#,
-            id.as_uuid(),
-            confirmed_at,
-        )
+        sqlx::query_as::<_, AcquiringPaymentRow>(r#"
+            UPDATE acquiring_payments
+            SET status = 'CONFIRMED', confirmed_at = $2
+            WHERE id = $1
+            RETURNING id, payment_link_id, provider, external_ref, status,
+                      amount_minor, currency, instructions,
+                      confirmed_at, failed_at, failure_reason, expires_at, created_at
+        "#)
+        .bind(id.as_uuid())
+        .bind(confirmed_at)
         .fetch_optional(&self.pool)
         .await
         .map_err(AcquiringError::Database)?
@@ -205,18 +200,17 @@ impl AcquiringRepository for PostgresAcquiringRepository {
         reason: String,
     ) -> Result<AcquiringPayment, AcquiringError> {
         let now = Utc::now();
-        sqlx::query_as!(
-            AcquiringPaymentRow,
-            r#"UPDATE acquiring_payments
-               SET status = 'FAILED', failed_at = $2, failure_reason = $3
-               WHERE id = $1
-               RETURNING id, payment_link_id, provider, external_ref, status,
-                         amount_minor, currency, instructions,
-                         confirmed_at, failed_at, failure_reason, expires_at, created_at"#,
-            id.as_uuid(),
-            now,
-            reason,
-        )
+        sqlx::query_as::<_, AcquiringPaymentRow>(r#"
+            UPDATE acquiring_payments
+            SET status = 'FAILED', failed_at = $2, failure_reason = $3
+            WHERE id = $1
+            RETURNING id, payment_link_id, provider, external_ref, status,
+                      amount_minor, currency, instructions,
+                      confirmed_at, failed_at, failure_reason, expires_at, created_at
+        "#)
+        .bind(id.as_uuid())
+        .bind(now)
+        .bind(reason)
         .fetch_optional(&self.pool)
         .await
         .map_err(AcquiringError::Database)?
@@ -225,20 +219,20 @@ impl AcquiringRepository for PostgresAcquiringRepository {
     }
 
     async fn record_callback(&self, cb: &AcquiringCallback) -> Result<(), AcquiringError> {
-        sqlx::query!(
-            r#"INSERT INTO acquiring_callbacks
+        sqlx::query(r#"
+            INSERT INTO acquiring_callbacks
                (id, provider, raw_payload, signature, external_ref, idempotency_key,
                 processed, received_at)
-               VALUES ($1,$2,$3,$4,$5,$6,false,$7)
-               ON CONFLICT (idempotency_key) DO NOTHING"#,
-            cb.id,
-            cb.provider,
-            cb.raw_payload,
-            cb.signature,
-            cb.external_ref,
-            cb.idempotency_key,
-            cb.received_at,
-        )
+            VALUES ($1,$2,$3,$4,$5,$6,false,$7)
+            ON CONFLICT (idempotency_key) DO NOTHING
+        "#)
+        .bind(cb.id)
+        .bind(&cb.provider)
+        .bind(&cb.raw_payload)
+        .bind(&cb.signature)
+        .bind(&cb.external_ref)
+        .bind(&cb.idempotency_key)
+        .bind(cb.received_at)
         .execute(&self.pool)
         .await
         .map_err(AcquiringError::Database)?;
@@ -249,13 +243,13 @@ impl AcquiringRepository for PostgresAcquiringRepository {
         &self,
         idempotency_key: &str,
     ) -> Result<bool, AcquiringError> {
-        let row = sqlx::query!(
-            "SELECT processed FROM acquiring_callbacks WHERE idempotency_key = $1",
-            idempotency_key
+        let processed: Option<bool> = sqlx::query_scalar(
+            "SELECT processed FROM acquiring_callbacks WHERE idempotency_key = $1"
         )
+        .bind(idempotency_key)
         .fetch_optional(&self.pool)
         .await
         .map_err(AcquiringError::Database)?;
-        Ok(row.map(|r| r.processed).unwrap_or(false))
+        Ok(processed.unwrap_or(false))
     }
 }

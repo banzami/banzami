@@ -163,6 +163,7 @@ pub fn is_reserved_handle(handle: &str) -> bool {
 ///
 /// Operators should call this variant, passing their own reserved handle list:
 /// ```rust
+/// use banzami_identity::identity::validate_handle_extended;
 /// let operator_reserved = &["mybrand", "mybrandpay", "partner_bank"];
 /// validate_handle_extended("mybrand", operator_reserved).unwrap_err();
 /// ```

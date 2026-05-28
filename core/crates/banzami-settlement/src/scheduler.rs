@@ -34,30 +34,39 @@ pub async fn run_settlement_scheduler(pool: PgPool, tick_interval: Duration) {
     }
 }
 
+// Row type for the aggregate query — columns must match the SELECT aliases exactly.
+#[derive(sqlx::FromRow)]
+struct AggregateRow {
+    merchant_id: uuid::Uuid,
+    wallet_id:   uuid::Uuid,
+    currency:    String,
+    gross_minor: i64,
+    fee_minor:   i64,
+    tx_count:    i32,
+}
+
 async fn create_daily_batches(pool: &PgPool) -> Result<u64, sqlx::Error> {
     let now         = Utc::now();
     let today_start = now.date_naive().and_hms_opt(0, 0, 0).unwrap().and_utc();
     let yesterday_start = today_start - ChronoDuration::days(1);
 
     // Aggregate CAPTURED transactions from yesterday per merchant+wallet+currency.
-    let rows = sqlx::query!(
-        r#"
+    let rows = sqlx::query_as::<_, AggregateRow>(r#"
         SELECT
             merchant_id,
             wallet_id,
             currency,
-            SUM(amount_minor) AS "gross_minor!: i64",
-            SUM(fee_minor)    AS "fee_minor!: i64",
-            COUNT(*)::INTEGER AS "tx_count!: i32"
+            SUM(amount_minor)::BIGINT    AS gross_minor,
+            SUM(fee_minor)::BIGINT       AS fee_minor,
+            COUNT(*)::INTEGER            AS tx_count
         FROM   transactions
         WHERE  status     = 'CAPTURED'
           AND  created_at >= $1
           AND  created_at <  $2
         GROUP  BY merchant_id, wallet_id, currency
-        "#,
-        yesterday_start,
-        today_start,
-    )
+    "#)
+    .bind(yesterday_start)
+    .bind(today_start)
     .fetch_all(pool)
     .await?;
 
@@ -69,19 +78,12 @@ async fn create_daily_batches(pool: &PgPool) -> Result<u64, sqlx::Error> {
 
     for row in rows {
         // Skip if a settlement batch already covers this merchant+wallet+period.
-        let already_exists: bool = sqlx::query_scalar!(
-            r#"
-            SELECT EXISTS (
-                SELECT 1 FROM settlements
-                WHERE  merchant_id  = $1
-                  AND  wallet_id    = $2
-                  AND  period_start = $3
-            ) AS "exists!"
-            "#,
-            row.merchant_id,
-            row.wallet_id,
-            yesterday_start,
+        let already_exists: bool = sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM settlements WHERE merchant_id = $1 AND wallet_id = $2 AND period_start = $3)"
         )
+        .bind(row.merchant_id)
+        .bind(row.wallet_id)
+        .bind(yesterday_start)
         .fetch_one(pool)
         .await?;
 
@@ -119,8 +121,7 @@ async fn create_daily_batches(pool: &PgPool) -> Result<u64, sqlx::Error> {
         let batch_id   = SettlementId::new();
         let insert_now = Utc::now();
 
-        sqlx::query!(
-            r#"
+        sqlx::query(r#"
             INSERT INTO settlements (
                 id, merchant_id, wallet_id, currency, status,
                 gross_amount_minor, fee_amount_minor, net_amount_minor,
@@ -128,21 +129,20 @@ async fn create_daily_batches(pool: &PgPool) -> Result<u64, sqlx::Error> {
                 created_at, updated_at
             )
             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-            "#,
-            batch_id.as_uuid(),
-            row.merchant_id,
-            row.wallet_id,
-            currency.code(),
-            SettlementStatus::Pending.as_str(),
-            gross.amount_minor(),
-            fee.amount_minor(),
-            net.amount_minor(),
-            row.tx_count,
-            yesterday_start,
-            today_start,
-            insert_now,
-            insert_now,
-        )
+        "#)
+        .bind(batch_id.as_uuid())
+        .bind(row.merchant_id)
+        .bind(row.wallet_id)
+        .bind(currency.code())
+        .bind(SettlementStatus::Pending.as_str())
+        .bind(gross.amount_minor())
+        .bind(fee.amount_minor())
+        .bind(net.amount_minor())
+        .bind(row.tx_count)
+        .bind(yesterday_start)
+        .bind(today_start)
+        .bind(insert_now)
+        .bind(insert_now)
         .execute(pool)
         .await?;
 

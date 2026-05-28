@@ -171,4 +171,76 @@ mod tests {
             .unwrap();
         assert!(posting.assert_balanced().is_ok());
     }
+
+    // -----------------------------------------------------------------------
+    // INV-L01: Zero-sum property tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn zero_sum_holds_across_representative_amounts() {
+        // Verify that any balanced debit/credit pair passes, regardless of amount.
+        let amounts: &[i64] = &[1, 100, 999, 5_000, 100_000, 10_000_000, i64::MAX / 2];
+        for &minor in amounts {
+            let result = PostingBuilder::new("invariant test", format!("idem-prop-{minor}"))
+                .debit(account(), kz(minor))
+                .credit(account(), kz(minor))
+                .build();
+            assert!(result.is_ok(), "balanced posting failed for amount {minor}");
+        }
+    }
+
+    #[test]
+    fn any_imbalance_is_rejected() {
+        // Off-by-one is always rejected regardless of which side is larger.
+        for base in [100i64, 5000, 100_000] {
+            let too_little = PostingBuilder::new("under", format!("under-{base}"))
+                .debit(account(), kz(base))
+                .credit(account(), kz(base - 1))
+                .build();
+            assert!(too_little.is_err(), "under-credit {base} should be rejected");
+
+            let too_much = PostingBuilder::new("over", format!("over-{base}"))
+                .debit(account(), kz(base))
+                .credit(account(), kz(base + 1))
+                .build();
+            assert!(too_much.is_err(), "over-credit {base} should be rejected");
+        }
+    }
+
+    #[test]
+    fn multi_currency_balanced_per_currency() {
+        use banzami_types::Currency;
+        let aoa_src  = account();
+        let aoa_dst  = account();
+        let usd_src  = account();
+        let usd_dst  = account();
+
+        // Separate balanced legs per currency — should pass.
+        let posting = PostingBuilder::new("fx settlement", "idem-multiccy")
+            .debit(aoa_src,  Money::new(100_000, Currency::AOA))
+            .credit(aoa_dst, Money::new(100_000, Currency::AOA))
+            .debit(usd_src,  Money::new(500, Currency::USD))
+            .credit(usd_dst, Money::new(500, Currency::USD))
+            .build()
+            .unwrap();
+        assert!(posting.assert_balanced().is_ok());
+    }
+
+    #[test]
+    fn multi_currency_imbalance_in_one_currency_rejected() {
+        use banzami_types::Currency;
+        let aoa_src = account();
+        let aoa_dst = account();
+        let usd_src = account();
+        let usd_dst = account();
+
+        // AOA is balanced but USD is not — must be rejected.
+        let result = PostingBuilder::new("bad fx", "idem-bad-multiccy")
+            .debit(aoa_src,  Money::new(100_000, Currency::AOA))
+            .credit(aoa_dst, Money::new(100_000, Currency::AOA))
+            .debit(usd_src,  Money::new(500, Currency::USD))
+            .credit(usd_dst, Money::new(499, Currency::USD)) // 1 minor unit off
+            .build();
+        assert!(result.is_err(), "multi-currency imbalance must be rejected");
+    }
 }

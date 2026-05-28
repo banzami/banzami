@@ -103,7 +103,7 @@ impl<P: AcquirerProvider + Send + Sync> AcquiringEngine for PostgresAcquiringEng
 
         let req = InitiatePaymentRequest {
             internal_ref: payment_id.as_uuid().to_string(),
-            amount:       amount.clone(),
+            amount,
             description:  None,
         };
 

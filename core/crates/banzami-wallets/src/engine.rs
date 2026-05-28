@@ -538,4 +538,149 @@ mod tests {
         assert_eq!(b.reserved.amount_minor(),   80_000);
         assert_eq!(b.total.amount_minor(),      200_000);
     }
+
+    // -----------------------------------------------------------------------
+    // INV-W02: Reserve/release/settle never creates or destroys money
+    // -----------------------------------------------------------------------
+
+    #[tokio::test]
+    async fn invariant_reserve_release_conserves_total() {
+        // After reserve + release, total = 0 and wallet is back to empty.
+        // Money was moved to reserved and returned; the ledger net is zero.
+        for amount_minor in [1i64, 100, 10_000, 500_000] {
+            let engine     = make_engine();
+            let transit_id = setup_transit(&engine).await;
+
+            let wallet = engine
+                .create(CreateWalletRequest {
+                    merchant_id: MerchantId::new(),
+                    currency:    Currency::AOA,
+                })
+                .await
+                .unwrap();
+
+            engine
+                .reserve(ReserveRequest {
+                    idempotency_key: format!("rsv-inv-{amount_minor}"),
+                    wallet_id:       wallet.id,
+                    amount:          kz(amount_minor),
+                    from_account_id: transit_id,
+                })
+                .await
+                .unwrap();
+
+            engine
+                .release(ReleaseRequest {
+                    idempotency_key: format!("rel-inv-{amount_minor}"),
+                    wallet_id:       wallet.id,
+                    amount:          kz(amount_minor),
+                    to_account_id:   transit_id,
+                })
+                .await
+                .unwrap();
+
+            let b = engine.balance(wallet.id).await.unwrap();
+            assert_eq!(
+                b.available.amount_minor(), 0,
+                "available should be zero after reserve+release for {amount_minor}"
+            );
+            assert_eq!(
+                b.reserved.amount_minor(), 0,
+                "reserved should be zero after release for {amount_minor}"
+            );
+            assert_eq!(
+                b.total.amount_minor(), 0,
+                "total must return to zero after reserve+release for {amount_minor}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn invariant_reserve_settle_moves_to_available() {
+        // reserve + settle: all funds should be in available, none in reserved.
+        let engine     = make_engine();
+        let transit_id = setup_transit(&engine).await;
+
+        let wallet = engine
+            .create(CreateWalletRequest {
+                merchant_id: MerchantId::new(),
+                currency:    Currency::AOA,
+            })
+            .await
+            .unwrap();
+
+        engine
+            .reserve(ReserveRequest {
+                idempotency_key: "rsv-prop".into(),
+                wallet_id:       wallet.id,
+                amount:          kz(300_000),
+                from_account_id: transit_id,
+            })
+            .await
+            .unwrap();
+
+        engine
+            .settle(SettleRequest {
+                idempotency_key: "stl-prop".into(),
+                wallet_id:       wallet.id,
+                amount:          kz(300_000),
+            })
+            .await
+            .unwrap();
+
+        let b = engine.balance(wallet.id).await.unwrap();
+        // After full settle: available = amount, reserved = 0, total = amount.
+        assert_eq!(b.available.amount_minor(), 300_000);
+        assert_eq!(b.reserved.amount_minor(),  0);
+        assert_eq!(b.total.amount_minor(),     300_000);
+    }
+
+    #[tokio::test]
+    async fn invariant_total_is_sum_of_available_and_reserved() {
+        // At every step of the lifecycle, total == available + reserved.
+        let engine     = make_engine();
+        let transit_id = setup_transit(&engine).await;
+
+        let wallet = engine
+            .create(CreateWalletRequest {
+                merchant_id: MerchantId::new(),
+                currency:    Currency::AOA,
+            })
+            .await
+            .unwrap();
+
+        let amounts = [100_000i64, 50_000, 150_000];
+        for (i, &amt) in amounts.iter().enumerate() {
+            engine
+                .reserve(ReserveRequest {
+                    idempotency_key: format!("rsv-total-{i}"),
+                    wallet_id:       wallet.id,
+                    amount:          kz(amt),
+                    from_account_id: transit_id,
+                })
+                .await
+                .unwrap();
+
+            let b = engine.balance(wallet.id).await.unwrap();
+            assert_eq!(
+                b.total.amount_minor(),
+                b.available.amount_minor() + b.reserved.amount_minor(),
+                "total must equal available + reserved at step {i}"
+            );
+        }
+    }
+
+    // Helper: create and register a transit (ASSET) account for tests.
+    async fn setup_transit(engine: &PostgresWalletEngine<MockLedger, MockWalletRepo>) -> AccountId {
+        let transit_id = AccountId::new();
+        let transit = Account {
+            id:           transit_id,
+            account_type: AccountType::Asset,
+            name:         "Transit".into(),
+            currency:     Currency::AOA,
+            created_at:   chrono::Utc::now(),
+        };
+        engine.ledger.create_account(transit).await.unwrap();
+        transit_id
+    }
 }
