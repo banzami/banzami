@@ -154,12 +154,37 @@ abstraction model.
 
 ```
 reference/
-├── Cargo.toml              — workspace (fake-acquirer, local-notifications,
-│                             simulated-settlement, sandbox-operator)
+├── Cargo.toml              — workspace root
 ├── Dockerfile              — builds sandbox-operator from monorepo root
 ├── docker-compose.yml      — one-command startup
+├── demo-wallet/            — browser UI (index.html, no build step)
 ├── fake-acquirer/          — AcquirerProvider: HMAC-signed fake payment rail
+├── local-ledger/           — SQLite double-entry ledger with seed data + reset
 ├── local-notifications/    — NotificationProvider: stdout + null implementations
+├── mock-routing/           — RoutingEngine: verbose mock, failing, degraded modes
 ├── simulated-settlement/   — SettlementExecutionProvider: always succeeds
-└── sandbox-operator/       — HTTP server wiring all providers together
+└── sandbox-operator/       — HTTP server wiring all providers together (:3100)
 ```
+
+### local-ledger
+
+A SQLite-backed double-entry ledger that mirrors the kernel's invariants without
+requiring PostgreSQL. Seed data populates five accounts (two merchants, two
+consumers, one fee account) with deterministic opening balances and a sample
+payment posting. State can be reset via `LocalLedger::reset()`.
+
+### mock-routing
+
+Three `RoutingEngine` implementations for local development:
+
+| Type | Behaviour |
+|------|-----------|
+| `MockRoutingEngine` | Routes normally, logs every decision via `tracing` |
+| `FailingRoutingEngine` | Always returns `NoEligibleRail` |
+| `DegradedRoutingEngine` | Always returns `AllRailsDegraded` |
+
+### demo-wallet
+
+A standalone HTML file that talks to the sandbox operator via `fetch()`. Open it
+directly in a browser — no build step, no framework. Displays seed wallet balances,
+lets you create wallets and send transfers, shows transfer history.
