@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://banzami.com/conformance/capabilities/schema.json",
+  "title": "Banzami Operator Capability Descriptor",
+  "description": "Describes the declared capabilities of a Banzami operator and the certification level each implies.",
+  "type": "object",
+
+  "required": ["supports_wallets", "supports_qr", "supports_settlement"],
+
+  "properties": {
+    "supports_wallets": {
+      "type": "boolean",
+      "description": "Wallet creation, balance query, and ledger. Required for Level 0.",
+      "certification_level": 0
+    },
+    "supports_qr": {
+      "type": "boolean",
+      "description": "QR code generation (POST /qr), scanning (decode BANZAMI-SBX: or BANZAMI: payload), and pay (POST /qr/:id/pay). Required for Level 1.",
+      "certification_level": 1
+    },
+    "supports_settlement": {
+      "type": "boolean",
+      "description": "Settlement batch creation (POST /settlements/run), status query, and fee model. Required for Level 1.",
+      "certification_level": 1
+    },
+    "supports_payment_requests": {
+      "type": "boolean",
+      "description": "Payment request creation, retrieval, and payment. Required for Level 1.",
+      "certification_level": 1
+    },
+    "supports_events": {
+      "type": "boolean",
+      "description": "Event emission via GET /events/history (SSE or polling). Required for Level 1.",
+      "certification_level": 1
+    },
+    "supports_traces": {
+      "type": "boolean",
+      "description": "Financial traceability via GET /traces and GET /traces/:id. Required for Level 2.",
+      "certification_level": 2
+    },
+    "supports_webhooks": {
+      "type": "boolean",
+      "description": "Webhook delivery with signed event envelopes. Optional; recommended for production operators.",
+      "certification_level": null
+    },
+    "supports_federation": {
+      "type": "boolean",
+      "description": "Cross-operator federation. Requires valid manifest, capability negotiation, and Level 2 trace support. Required for Level 3.",
+      "certification_level": 3
+    }
+  },
+
+  "additionalProperties": true,
+
+  "$defs": {
+    "CertificationLevelImplications": {
+      "description": "The minimum capabilities required at each certification level.",
+      "level_0": ["supports_wallets"],
+      "level_1": ["supports_wallets", "supports_qr", "supports_settlement", "supports_payment_requests", "supports_events"],
+      "level_2": ["supports_wallets", "supports_qr", "supports_settlement", "supports_payment_requests", "supports_events", "supports_traces"],
+      "level_3": ["supports_wallets", "supports_qr", "supports_settlement", "supports_payment_requests", "supports_events", "supports_traces", "supports_federation"],
+      "level_4": ["supports_wallets", "supports_qr", "supports_settlement", "supports_payment_requests", "supports_events", "supports_traces"]
+    }
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "_spec": "Banzami Ledger Conformance Suite v1.0",
+  "_description": "Validates double-entry ledger correctness, immutability, and balance invariants.",
+
+  "suite_id": "ledger",
+  "suite_name": "Ledger Invariant Conformance",
+  "protocol_version": "1.0",
+
+  "invariants": {
+    "zero_sum": {
+      "id": "INV-LEDGER-001",
+      "title": "Zero-sum: every transfer creates exactly one DEBIT and one CREDIT of equal amount",
+      "description": "For each transfer_id, the sum of DEBIT entries plus the sum of CREDIT entries must equal zero when signs are applied (DEBIT negative, CREDIT positive).",
+      "enforcement": "hard — violation must be rejected at the point of transfer creation"
+    },
+    "no_negative_balance": {
+      "id": "INV-LEDGER-002",
+      "title": "No wallet may reach a negative balance",
+      "description": "Before committing a transfer, the operator must verify that the sender's balance is >= amount_minor. Insufficient funds must return HTTP 422.",
+      "enforcement": "hard — violation must be rejected at the point of transfer creation"
+    },
+    "immutability": {
+      "id": "INV-LEDGER-003",
+      "title": "No ledger entry is modified after creation",
+      "description": "Ledger entries are append-only. GET /ledger must always return the same entries for a given wallet, with no retroactive edits.",
+      "enforcement": "hard — any mutating operation on ledger entries is a protocol violation"
+    },
+    "trace_propagation": {
+      "id": "INV-LEDGER-004",
+      "title": "All ledger entries for a transfer share the transfer's trace_id",
+      "description": "The DEBIT and CREDIT entries for a transfer must carry the same trace_id as the transfer response.",
+      "enforcement": "required for Level 2 (Trace-compatible) certification"
+    },
+    "settlement_idempotency": {
+      "id": "INV-LEDGER-005",
+      "title": "Each transfer appears in exactly one settlement batch",
+      "description": "A transfer must not appear in multiple settlement batches. Operators must track settled transfers and reject re-settlement.",
+      "enforcement": "required for Level 4 (Settlement-compatible) certification"
+    }
+  },
+
+  "entry_schema": {
+    "required_fields": ["entry_id", "wallet_id", "transfer_id", "direction", "amount_minor", "currency", "created_at"],
+    "optional_fields": ["trace_id", "correlation_id", "balance_after"],
+    "field_rules": {
+      "entry_id": { "type": "string", "min_length": 1 },
+      "wallet_id": { "type": "string", "min_length": 1 },
+      "transfer_id": { "type": "string", "min_length": 1 },
+      "direction": { "type": "string", "enum": ["DEBIT", "CREDIT"] },
+      "amount_minor": { "type": "integer", "minimum": 1 },
+      "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+      "created_at": { "type": "string", "format": "iso8601" },
+      "trace_id": { "type": "string", "pattern": "^tr-", "nullable": true },
+      "correlation_id": { "type": "string", "min_length": 1, "nullable": true }
+    }
+  },
+
+  "sub_suites": [
+    {
+      "id": "double-entry",
+      "name": "Double-entry enforcement",
+      "certification_level": 0,
+      "vectors": ["LED-001", "LED-002"]
+    },
+    {
+      "id": "balance-invariants",
+      "name": "Balance invariants",
+      "certification_level": 0,
+      "vectors": ["LED-003"]
+    },
+    {
+      "id": "ledger-trace",
+      "name": "Trace fields on ledger entries",
+      "certification_level": 2,
+      "vectors": ["LED-004"]
+    },
+    {
+      "id": "immutability",
+      "name": "Ledger immutability",
+      "certification_level": 1,
+      "vectors": ["LED-005"]
+    },
+    {
+      "id": "balance-query",
+      "name": "Balance query correctness",
+      "certification_level": 0,
+      "vectors": ["LED-006"]
+    },
+    {
+      "id": "entry-structure",
+      "name": "Entry schema validation",
+      "certification_level": 0,
+      "cases": [
+        {
+          "id": "LED-SCHEMA-001",
+          "title": "Ledger entry must contain all required fields",
+          "description": "After a transfer, GET /wallets/:id/ledger must return entries with all required fields present.",
+          "required_entry_fields": ["entry_id", "wallet_id", "transfer_id", "direction", "amount_minor", "currency", "created_at"]
+        },
+        {
+          "id": "LED-SCHEMA-002",
+          "title": "direction must be DEBIT or CREDIT only",
+          "description": "The direction field must be exactly one of the two canonical values. Any other string is a protocol violation.",
+          "allowed_direction_values": ["DEBIT", "CREDIT"]
+        },
+        {
+          "id": "LED-SCHEMA-003",
+          "title": "amount_minor must be a positive integer",
+          "description": "Ledger amounts are stored in minor units. Zero and negative values are protocol violations.",
+          "amount_minor_constraint": "strictly positive integer"
+        }
+      ]
+    },
+    {
+      "id": "ordering",
+      "name": "Entry ordering",
+      "certification_level": 1,
+      "cases": [
+        {
+          "id": "LED-ORD-001",
+          "title": "Ledger entries are returned in chronological order",
+          "description": "GET /wallets/:id/ledger entries must be sorted by created_at ascending (oldest first). This mirrors the event history guarantee.",
+          "order": "ascending",
+          "order_field": "created_at"
+        }
+      ]
+    }
+  ]
+}
