@@ -8,239 +8,595 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --bg:      #0f0f0f;
-      --surface: #1a1a1a;
+      --surface: #181818;
       --border:  #2a2a2a;
       --accent:  #e8d5b7;
       --muted:   #666;
       --text:    #e8e8e8;
       --green:   #4caf50;
       --red:     #f44336;
+      --yellow:  #ffc107;
       --radius:  8px;
+      --gap:     16px;
     }
-    body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.5; }
-    header { border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
-    header h1 { font-size: 16px; color: var(--accent); letter-spacing: 0.05em; }
-    .sandbox-tag { font-size: 10px; background: var(--border); color: var(--muted); padding: 2px 8px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.1em; }
-    main { max-width: 960px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    @media (max-width: 720px) { main { grid-template-columns: 1fr; } }
-    section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
-    section h2 { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px; }
-    .wallet-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
-    .wallet-label { font-size: 12px; color: var(--muted); }
-    .wallet-id    { font-size: 11px; color: var(--muted); font-family: monospace; margin-top: 2px; }
-    .wallet-balance { font-size: 22px; color: var(--accent); margin-top: 6px; }
-    .wallet-currency { font-size: 12px; color: var(--muted); }
-    input, select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 8px 10px; font-family: monospace; font-size: 13px; margin-bottom: 10px; outline: none; }
+    body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.5; }
+    header { border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; gap: 10px; }
+    header h1 { font-size: 15px; color: var(--accent); letter-spacing: 0.05em; }
+    .tag { font-size: 10px; background: var(--border); color: var(--muted); padding: 2px 7px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.1em; }
+    .status { margin-left: auto; font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+    .dot.ok { background: var(--green); } .dot.err { background: var(--red); }
+    nav { display: flex; gap: 2px; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+    nav button { background: none; border: 1px solid transparent; border-radius: 4px; color: var(--muted); padding: 5px 12px; cursor: pointer; font-family: monospace; font-size: 12px; }
+    nav button.active { color: var(--accent); border-color: var(--border); background: var(--surface); }
+    nav button:hover:not(.active) { color: var(--text); }
+    .page { display: none; max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .page.active { display: block; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+    @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+    .card h2 { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px; }
+    .wallet-row { border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
+    .wallet-row:hover { border-color: var(--accent); }
+    .wallet-row.selected { border-color: var(--accent); background: rgba(232,213,183,0.04); }
+    .w-label { font-size: 11px; color: var(--muted); }
+    .w-id { font-size: 10px; color: #444; }
+    .w-balance { font-size: 20px; color: var(--accent); margin: 4px 0 2px; }
+    .w-type { font-size: 10px; color: var(--muted); text-transform: uppercase; }
+    label { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; margin-top: 10px; }
+    label:first-child { margin-top: 0; }
+    input, select, textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 7px 9px; font-family: monospace; font-size: 12px; outline: none; }
     input:focus, select:focus { border-color: var(--accent); }
-    button { width: 100%; background: var(--accent); color: var(--bg); border: none; border-radius: 4px; padding: 10px; font-family: monospace; font-size: 13px; font-weight: bold; cursor: pointer; letter-spacing: 0.04em; }
-    button:hover { opacity: 0.88; }
-    button:disabled { opacity: 0.4; cursor: not-allowed; }
-    .transfer-row { border-top: 1px solid var(--border); padding: 10px 0; font-size: 12px; }
-    .transfer-row:first-child { border-top: none; }
-    .transfer-amount { color: var(--green); }
-    .transfer-meta { color: var(--muted); font-size: 11px; }
-    .msg { margin-top: 10px; padding: 8px 10px; border-radius: 4px; font-size: 12px; }
-    .msg.ok  { background: rgba(76,175,80,0.1); border: 1px solid rgba(76,175,80,0.3); color: var(--green); }
-    .msg.err { background: rgba(244,67,54,0.1);  border: 1px solid rgba(244,67,54,0.3);  color: var(--red); }
-    .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); margin-right: 6px; }
-    .status-dot.ok  { background: var(--green); }
-    .status-dot.err { background: var(--red); }
-    .full-width { grid-column: 1 / -1; }
-    .empty { color: var(--muted); font-size: 12px; padding: 10px 0; }
-    label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .btn { display: block; width: 100%; background: var(--accent); color: var(--bg); border: none; border-radius: 4px; padding: 9px; font-family: monospace; font-size: 12px; font-weight: bold; cursor: pointer; margin-top: 12px; letter-spacing: 0.04em; }
+    .btn:hover { opacity: 0.88; } .btn.secondary { background: var(--surface); color: var(--accent); border: 1px solid var(--border); }
+    .msg { margin-top: 10px; padding: 8px 10px; border-radius: 4px; font-size: 11px; word-break: break-all; }
+    .msg.ok  { background: rgba(76,175,80,0.08);  border: 1px solid rgba(76,175,80,0.25);  color: var(--green); }
+    .msg.err { background: rgba(244,67,54,0.08);  border: 1px solid rgba(244,67,54,0.25);  color: var(--red); }
+    .msg.info{ background: rgba(232,213,183,0.06); border: 1px solid rgba(232,213,183,0.2); color: var(--accent); }
+    .list-row { border-top: 1px solid var(--border); padding: 9px 0; font-size: 11px; }
+    .list-row:first-child { border-top: none; }
+    .amount { color: var(--green); } .amount.debit { color: var(--red); }
+    .meta { color: var(--muted); font-size: 10px; }
+    .badge { display: inline-block; font-size: 9px; padding: 1px 5px; border-radius: 3px; text-transform: uppercase; margin-left: 6px; }
+    .badge.pending  { background: rgba(255,193,7,0.15);  color: var(--yellow); }
+    .badge.paid     { background: rgba(76,175,80,0.15);  color: var(--green);  }
+    .badge.active   { background: rgba(76,175,80,0.15);  color: var(--green);  }
+    .badge.completed{ background: rgba(76,175,80,0.15);  color: var(--green);  }
+    .badge.expired  { background: rgba(102,102,102,0.2); color: var(--muted);  }
+    .empty { color: var(--muted); font-size: 11px; padding: 8px 0; }
+    .qr-payload { font-size: 9px; color: var(--muted); word-break: break-all; margin-top: 6px; padding: 6px; background: var(--bg); border-radius: 3px; border: 1px solid var(--border); }
+    .event-row { border-top: 1px solid var(--border); padding: 7px 0; font-size: 11px; }
+    .event-row:first-child { border-top: none; }
+    .ev-type { color: var(--accent); font-size: 10px; }
+    .ev-payload { color: var(--muted); font-size: 10px; margin-top: 2px; word-break: break-all; }
+    #event-stream-status { font-size: 10px; }
+    .full { grid-column: 1 / -1; }
+    .scroll { max-height: 320px; overflow-y: auto; }
   </style>
 </head>
 <body>
+
 <header>
   <h1>Banzami Demo Wallet</h1>
-  <span class="sandbox-tag">sandbox</span>
-  <span style="margin-left: auto; font-size: 12px; color: var(--muted);">
-    <span class="status-dot" id="status-dot"></span>
+  <span class="tag">sandbox</span>
+  <div class="status">
+    <span class="dot" id="dot"></span>
     <span id="status-label">connecting…</span>
-  </span>
+  </div>
 </header>
 
-<main>
-  <!-- Wallets column -->
-  <section>
-    <h2>Wallets</h2>
-    <div id="wallets-list"><div class="empty">Loading…</div></div>
-    <button onclick="refreshWallets()" style="margin-top: 12px;">Refresh</button>
-  </section>
+<nav>
+  <button class="active" onclick="showPage('wallets')">Wallets</button>
+  <button onclick="showPage('transfer')">Transfer</button>
+  <button onclick="showPage('payment-request')">Payment Request</button>
+  <button onclick="showPage('qr')">QR</button>
+  <button onclick="showPage('ledger')">Ledger</button>
+  <button onclick="showPage('settlement')">Settlement</button>
+  <button onclick="showPage('events')">Events</button>
+</nav>
 
-  <!-- New wallet -->
-  <section>
-    <h2>Create Wallet</h2>
-    <label>Label</label>
-    <input id="new-label" type="text" placeholder="My test wallet">
-    <label>Currency</label>
-    <select id="new-currency">
-      <option value="AOA">AOA — Kwanza</option>
-      <option value="USD">USD — US Dollar</option>
-      <option value="EUR">EUR — Euro</option>
-    </select>
-    <button onclick="createWallet()">Create Wallet</button>
-    <div id="create-msg"></div>
-  </section>
+<!-- ═══════════════════ WALLETS ═══════════════════ -->
+<div class="page active" id="page-wallets">
+  <div class="grid2">
+    <div class="card">
+      <h2>Wallets <button class="btn secondary" style="width:auto;padding:3px 10px;margin:0 0 0 8px;font-size:10px" onclick="refreshWallets()">Refresh</button></h2>
+      <div id="wallets-list"><div class="empty">Loading…</div></div>
+    </div>
+    <div class="card">
+      <h2>Create Wallet</h2>
+      <label>Label</label>
+      <input id="new-label" placeholder="My test wallet">
+      <label>Currency</label>
+      <select id="new-currency">
+        <option value="AOA">AOA — Kwanza</option>
+        <option value="USD">USD</option>
+        <option value="EUR">EUR</option>
+      </select>
+      <label>Type</label>
+      <select id="new-type">
+        <option value="consumer">Consumer</option>
+        <option value="merchant">Merchant</option>
+        <option value="government">Government</option>
+      </select>
+      <button class="btn" onclick="createWallet()">Create Wallet</button>
+      <div id="create-msg"></div>
+    </div>
+  </div>
+</div>
 
-  <!-- Transfer -->
-  <section>
-    <h2>Transfer</h2>
-    <label>From Wallet ID</label>
-    <input id="from-id" type="text" placeholder="sandbox-consumer-1">
-    <label>To Wallet ID</label>
-    <input id="to-id" type="text" placeholder="sandbox-merchant-1">
-    <label>Amount (minor units)</label>
-    <input id="amount" type="number" placeholder="50000">
-    <label>Currency</label>
-    <select id="transfer-currency">
-      <option value="AOA">AOA</option>
-      <option value="USD">USD</option>
-      <option value="EUR">EUR</option>
-    </select>
-    <label>Note (optional)</label>
-    <input id="note" type="text" placeholder="Test payment">
-    <button onclick="doTransfer()">Send Transfer</button>
-    <div id="transfer-msg"></div>
-  </section>
+<!-- ═══════════════════ TRANSFER ═══════════════════ -->
+<div class="page" id="page-transfer">
+  <div class="grid2">
+    <div class="card">
+      <h2>Send Transfer</h2>
+      <label>From Wallet ID</label>
+      <input id="tf-from" placeholder="sandbox-consumer-1">
+      <label>To Wallet ID</label>
+      <input id="tf-to" placeholder="sandbox-merchant-1">
+      <label>Amount (minor units)</label>
+      <input id="tf-amount" type="number" placeholder="50000">
+      <label>Currency</label>
+      <select id="tf-currency">
+        <option value="AOA">AOA</option><option value="USD">USD</option><option value="EUR">EUR</option>
+      </select>
+      <label>Note (optional)</label>
+      <input id="tf-note" placeholder="Test payment">
+      <label>Idempotency Key (optional)</label>
+      <input id="tf-idem" placeholder="unique-key-for-retry-safety">
+      <button class="btn" onclick="doTransfer()">Send Transfer</button>
+      <div id="tf-msg"></div>
+    </div>
+    <div class="card">
+      <h2>Transfer History <button class="btn secondary" style="width:auto;padding:3px 10px;margin:0 0 0 8px;font-size:10px" onclick="refreshTransfers()">Refresh</button></h2>
+      <div id="transfers-list" class="scroll"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+</div>
 
-  <!-- Transfer history -->
-  <section class="full-width">
-    <h2>Transfer History</h2>
-    <div id="transfers-list"><div class="empty">Loading…</div></div>
-    <button onclick="refreshTransfers()" style="margin-top: 12px;">Refresh</button>
-  </section>
-</main>
+<!-- ═══════════════════ PAYMENT REQUEST ═══════════════════ -->
+<div class="page" id="page-payment-request">
+  <div class="grid2">
+    <div class="card">
+      <h2>Create Payment Request</h2>
+      <label>To Wallet ID (merchant)</label>
+      <input id="pr-to" placeholder="sandbox-merchant-1">
+      <label>Amount (minor units)</label>
+      <input id="pr-amount" type="number" placeholder="25000">
+      <label>Currency</label>
+      <select id="pr-currency">
+        <option value="AOA">AOA</option><option value="USD">USD</option><option value="EUR">EUR</option>
+      </select>
+      <label>Description</label>
+      <input id="pr-desc" placeholder="Invoice #001">
+      <button class="btn" onclick="createPaymentRequest()">Create Request</button>
+      <div id="pr-create-msg"></div>
+    </div>
+    <div class="card">
+      <h2>Pay Payment Request</h2>
+      <label>Payment Request ID</label>
+      <input id="pr-pay-id" placeholder="pr-xxxxxxxx">
+      <label>From Wallet ID (consumer)</label>
+      <input id="pr-pay-from" placeholder="sandbox-consumer-1">
+      <button class="btn" onclick="payPaymentRequest()">Pay Request</button>
+      <div id="pr-pay-msg"></div>
+    </div>
+    <div class="card full">
+      <h2>Payment Requests <button class="btn secondary" style="width:auto;padding:3px 10px;margin:0 0 0 8px;font-size:10px" onclick="refreshPaymentRequests()">Refresh</button></h2>
+      <div id="pr-list" class="scroll"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ QR ═══════════════════ -->
+<div class="page" id="page-qr">
+  <div class="grid2">
+    <div class="card">
+      <h2>Generate QR</h2>
+      <label>Merchant Wallet ID</label>
+      <input id="qr-merchant" placeholder="sandbox-merchant-1">
+      <label>Amount (minor units, leave blank for open)</label>
+      <input id="qr-amount" type="number" placeholder="optional">
+      <label>Currency</label>
+      <select id="qr-currency">
+        <option value="AOA">AOA</option><option value="USD">USD</option><option value="EUR">EUR</option>
+      </select>
+      <label>Description</label>
+      <input id="qr-desc" placeholder="Table 4 order">
+      <button class="btn" onclick="generateQr()">Generate QR</button>
+      <div id="qr-gen-msg"></div>
+    </div>
+    <div class="card">
+      <h2>Pay QR</h2>
+      <label>QR Code ID</label>
+      <input id="qr-pay-id" placeholder="qr-xxxxxxxx">
+      <label>Consumer Wallet ID</label>
+      <input id="qr-pay-from" placeholder="sandbox-consumer-1">
+      <label>Amount (minor units — only if open QR)</label>
+      <input id="qr-pay-amount" type="number" placeholder="optional">
+      <button class="btn" onclick="payQr()">Pay QR</button>
+      <div id="qr-pay-msg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ LEDGER ═══════════════════ -->
+<div class="page" id="page-ledger">
+  <div class="card" style="margin-bottom:var(--gap)">
+    <h2>Wallet Ledger</h2>
+    <div style="display:flex;gap:8px;align-items:flex-end">
+      <div style="flex:1"><label>Wallet ID</label><input id="ledger-wallet" placeholder="sandbox-consumer-1"></div>
+      <button class="btn" style="width:auto;margin:0" onclick="loadLedger()">Load</button>
+    </div>
+    <div id="ledger-summary" style="margin-top:12px;font-size:12px;color:var(--muted)"></div>
+    <div id="ledger-entries" class="scroll" style="margin-top:10px"><div class="empty">Enter a wallet ID above.</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ SETTLEMENT ═══════════════════ -->
+<div class="page" id="page-settlement">
+  <div class="grid2">
+    <div class="card">
+      <h2>Simulate Settlement</h2>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:12px">Creates a settlement batch for all unsettled receipts in the wallet. Simulated 1% fee applied.</p>
+      <label>Wallet ID (merchant)</label>
+      <input id="settle-wallet" placeholder="sandbox-merchant-1">
+      <button class="btn" onclick="createSettlement()">Create Batch</button>
+      <div id="settle-msg"></div>
+    </div>
+    <div class="card">
+      <h2>Settlement Batches <button class="btn secondary" style="width:auto;padding:3px 10px;margin:0 0 0 8px;font-size:10px" onclick="refreshBatches()">Refresh</button></h2>
+      <div id="batches-list" class="scroll"><div class="empty">No batches yet.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ EVENTS ═══════════════════ -->
+<div class="page" id="page-events">
+  <div class="grid2">
+    <div class="card">
+      <h2>Live Event Stream (SSE)</h2>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+        <span class="dot" id="sse-dot"></span>
+        <span id="event-stream-status">disconnected</span>
+        <button class="btn secondary" style="width:auto;margin:0;padding:3px 10px;font-size:10px" onclick="toggleSse()">Connect</button>
+      </div>
+      <div id="live-events" class="scroll"><div class="empty">Connect to see live events.</div></div>
+    </div>
+    <div class="card">
+      <h2>Event History <button class="btn secondary" style="width:auto;padding:3px 10px;margin:0 0 0 8px;font-size:10px" onclick="refreshHistory()">Refresh</button></h2>
+      <div id="event-history" class="scroll"><div class="empty">Loading…</div></div>
+    </div>
+  </div>
+</div>
 
 <script>
-  const API = 'http://localhost:3100';
+const API = 'http://localhost:3100';
+let sseSource = null;
 
-  async function checkHealth() {
-    try {
-      const r = await fetch(`${API}/health`);
-      const dot = document.getElementById('status-dot');
-      const lbl = document.getElementById('status-label');
-      if (r.ok) {
-        dot.className = 'status-dot ok';
-        lbl.textContent = 'sandbox online';
-      } else {
-        dot.className = 'status-dot err';
-        lbl.textContent = 'sandbox error';
-      }
-    } catch {
-      document.getElementById('status-dot').className = 'status-dot err';
-      document.getElementById('status-label').textContent = 'offline — start sandbox-operator on :3100';
-    }
+// ── Navigation ──────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'wallets')    refreshWallets();
+  if (name === 'transfer')   refreshTransfers();
+  if (name === 'payment-request') refreshPaymentRequests();
+  if (name === 'settlement') refreshBatches();
+  if (name === 'events')     refreshHistory();
+}
+
+// ── Formatting ───────────────────────────────────────────────────────────────
+function fmt(minor, currency) {
+  const div = { AOA:100, USD:100, EUR:100 }[currency] ?? 100;
+  return `${(minor/div).toFixed(2)} ${currency}`;
+}
+function badgeHtml(status) {
+  return `<span class="badge ${status}">${status}</span>`;
+}
+function tsHtml(ts) {
+  return `<span class="meta">${new Date(ts).toLocaleTimeString()}</span>`;
+}
+
+// ── Health ───────────────────────────────────────────────────────────────────
+async function checkHealth() {
+  try {
+    const r = await fetch(`${API}/health`);
+    const ok = r.ok;
+    document.getElementById('dot').className = 'dot ' + (ok ? 'ok' : 'err');
+    document.getElementById('status-label').textContent = ok ? 'sandbox online' : 'sandbox error';
+  } catch {
+    document.getElementById('dot').className = 'dot err';
+    document.getElementById('status-label').textContent = 'offline — start sandbox-operator on :3100';
   }
+}
 
-  function fmtMinor(v, currency) {
-    const units = { AOA: 100, USD: 100, EUR: 100 };
-    const div = units[currency] ?? 100;
-    return (v / div).toFixed(2);
+// ── Wallets ──────────────────────────────────────────────────────────────────
+async function refreshWallets() {
+  const el = document.getElementById('wallets-list');
+  try {
+    const r = await fetch(`${API}/wallets`);
+    const data = await r.json();
+    if (!data.wallets?.length) { el.innerHTML = '<div class="empty">No wallets.</div>'; return; }
+    el.innerHTML = data.wallets.map(w => `
+      <div class="wallet-row" onclick="selectWallet('${w.id}')">
+        <div class="w-label">${w.label} <span class="w-type">[${w.wallet_type}]</span></div>
+        <div class="w-id">${w.id}</div>
+        <div class="w-balance">${fmt(w.balance_minor, w.currency)}</div>
+      </div>`).join('');
+  } catch { el.innerHTML = '<div class="empty">Cannot reach sandbox.</div>'; }
+}
+
+function selectWallet(id) {
+  document.getElementById('tf-from').value    = id;
+  document.getElementById('pr-pay-from').value = id;
+  document.getElementById('qr-pay-from').value = id;
+  document.getElementById('ledger-wallet').value = id;
+}
+
+async function createWallet() {
+  const label    = document.getElementById('new-label').value.trim();
+  const currency = document.getElementById('new-currency').value;
+  const wallet_type = document.getElementById('new-type').value;
+  const msgEl    = document.getElementById('create-msg');
+  if (!label) { showMsg(msgEl, 'Label required', false); return; }
+  try {
+    const r = await fetch(`${API}/wallets`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ label, currency, wallet_type }),
+    });
+    const data = await r.json();
+    if (r.ok) { showMsg(msgEl, `Created: ${data.id}`, true); refreshWallets(); }
+    else showMsg(msgEl, data.error ?? 'Error', false);
+  } catch { showMsg(msgEl, 'Sandbox offline', false); }
+}
+
+// ── Transfers ─────────────────────────────────────────────────────────────────
+async function doTransfer() {
+  const from_wallet_id  = document.getElementById('tf-from').value.trim();
+  const to_wallet_id    = document.getElementById('tf-to').value.trim();
+  const amount_minor    = parseInt(document.getElementById('tf-amount').value, 10);
+  const currency        = document.getElementById('tf-currency').value;
+  const note            = document.getElementById('tf-note').value.trim() || undefined;
+  const idempotency_key = document.getElementById('tf-idem').value.trim() || undefined;
+  const msgEl           = document.getElementById('tf-msg');
+  if (!from_wallet_id || !to_wallet_id || !amount_minor) { showMsg(msgEl, 'All required fields needed', false); return; }
+  try {
+    const r = await fetch(`${API}/transfers`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ from_wallet_id, to_wallet_id, amount_minor, currency, note, idempotency_key }),
+    });
+    const data = await r.json();
+    if (r.ok) { showMsg(msgEl, `Transfer ${data.id} — ${fmt(data.amount_minor, data.currency)}`, true); refreshTransfers(); refreshWallets(); }
+    else showMsg(msgEl, data.error ?? 'Error', false);
+  } catch { showMsg(msgEl, 'Sandbox offline', false); }
+}
+
+async function refreshTransfers() {
+  const el = document.getElementById('transfers-list');
+  try {
+    const r    = await fetch(`${API}/transfers`);
+    const data = await r.json();
+    const txs  = (data.transfers ?? []).slice().reverse();
+    el.innerHTML = txs.length ? txs.map(t => `
+      <div class="list-row">
+        <span class="amount">${fmt(t.amount_minor, t.currency)}</span>
+        <span class="meta"> · ${t.from_wallet_id} → ${t.to_wallet_id}</span>
+        ${t.note ? `<span class="meta"> · ${t.note}</span>` : ''}
+        <div class="meta">${t.id} · ${tsHtml(t.created_at)}</div>
+      </div>`).join('') : '<div class="empty">No transfers yet.</div>';
+  } catch { el.innerHTML = '<div class="empty">Cannot reach sandbox.</div>'; }
+}
+
+// ── Payment requests ──────────────────────────────────────────────────────────
+async function createPaymentRequest() {
+  const to_wallet_id = document.getElementById('pr-to').value.trim();
+  const amount_minor = parseInt(document.getElementById('pr-amount').value, 10);
+  const currency     = document.getElementById('pr-currency').value;
+  const description  = document.getElementById('pr-desc').value.trim() || undefined;
+  const msgEl        = document.getElementById('pr-create-msg');
+  if (!to_wallet_id || !amount_minor) { showMsg(msgEl, 'Wallet and amount required', false); return; }
+  try {
+    const r = await fetch(`${API}/payment-requests`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ to_wallet_id, amount_minor, currency, description }),
+    });
+    const data = await r.json();
+    if (r.ok) {
+      document.getElementById('pr-pay-id').value = data.id;
+      showMsg(msgEl, `Created: ${data.id} — ${fmt(data.amount_minor, data.currency)}`, true);
+      refreshPaymentRequests();
+    } else showMsg(msgEl, data.error ?? 'Error', false);
+  } catch { showMsg(msgEl, 'Sandbox offline', false); }
+}
+
+async function payPaymentRequest() {
+  const pr_id          = document.getElementById('pr-pay-id').value.trim();
+  const from_wallet_id = document.getElementById('pr-pay-from').value.trim();
+  const msgEl          = document.getElementById('pr-pay-msg');
+  if (!pr_id || !from_wallet_id) { showMsg(msgEl, 'Both fields required', false); return; }
+  try {
+    const r = await fetch(`${API}/payment-requests/${pr_id}/pay`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ from_wallet_id }),
+    });
+    const data = await r.json();
+    if (r.ok) { showMsg(msgEl, `Paid · transfer ${data.transfer_id}`, true); refreshPaymentRequests(); refreshWallets(); }
+    else showMsg(msgEl, data.error ?? 'Error', false);
+  } catch { showMsg(msgEl, 'Sandbox offline', false); }
+}
+
+async function refreshPaymentRequests() {
+  const el = document.getElementById('pr-list');
+  try {
+    const r    = await fetch(`${API}/payment-requests`);
+    const data = await r.json();
+    const prs  = (data.payment_requests ?? []).slice().reverse();
+    el.innerHTML = prs.length ? prs.map(p => `
+      <div class="list-row">
+        ${fmt(p.amount_minor, p.currency)} ${badgeHtml(p.status)}
+        <span class="meta"> · ${p.description || '—'}</span>
+        <div class="meta">${p.id} → ${p.to_wallet_id} · ${tsHtml(p.created_at)}</div>
+      </div>`).join('') : '<div class="empty">No payment requests yet.</div>';
+  } catch { el.innerHTML = '<div class="empty">Cannot reach sandbox.</div>'; }
+}
+
+// ── QR ────────────────────────────────────────────────────────────────────────
+async function generateQr() {
+  const merchant_wallet_id = document.getElementById('qr-merchant').value.trim();
+  const amtStr             = document.getElementById('qr-amount').value.trim();
+  const amount_minor       = amtStr ? parseInt(amtStr, 10) : undefined;
+  const currency           = document.getElementById('qr-currency').value;
+  const description        = document.getElementById('qr-desc').value.trim() || undefined;
+  const msgEl              = document.getElementById('qr-gen-msg');
+  if (!merchant_wallet_id) { showMsg(msgEl, 'Merchant wallet required', false); return; }
+  try {
+    const r = await fetch(`${API}/qr`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ merchant_wallet_id, amount_minor, currency, description }),
+    });
+    const data = await r.json();
+    if (r.ok) {
+      document.getElementById('qr-pay-id').value = data.id;
+      msgEl.className = 'msg ok';
+      msgEl.innerHTML = `Generated: ${data.id} ${badgeHtml(data.status)}<div class="qr-payload">${data.payload_data}</div>`;
+    } else showMsg(msgEl, data.error ?? 'Error', false);
+  } catch { showMsg(msgEl, 'Sandbox offline', false); }
+}
+
+async function payQr() {
+  const qr_id              = document.getElementById('qr-pay-id').value.trim();
+  const consumer_wallet_id = document.getElementById('qr-pay-from').value.trim();
+  const amtStr             = document.getElementById('qr-pay-amount').value.trim();
+  const amount_minor       = amtStr ? parseInt(amtStr, 10) : undefined;
+  const msgEl              = document.getElementById('qr-pay-msg');
+  if (!qr_id || !consumer_wallet_id) { showMsg(msgEl, 'QR ID and wallet required', false); return; }
+  try {
+    const r = await fetch(`${API}/qr/${qr_id}/pay`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ consumer_wallet_id, amount_minor }),
+    });
+    const data = await r.json();
+    if (r.ok) { showMsg(msgEl, `Paid · transfer ${data.transfer_id}`, true); refreshWallets(); }
+    else showMsg(msgEl, data.error ?? 'Error', false);
+  } catch { showMsg(msgEl, 'Sandbox offline', false); }
+}
+
+// ── Ledger ────────────────────────────────────────────────────────────────────
+async function loadLedger() {
+  const walletId = document.getElementById('ledger-wallet').value.trim();
+  const summEl   = document.getElementById('ledger-summary');
+  const entriesEl = document.getElementById('ledger-entries');
+  if (!walletId) return;
+  try {
+    const r    = await fetch(`${API}/ledger/${walletId}`);
+    const data = await r.json();
+    summEl.innerHTML = `Derived balance: <span style="color:var(--accent)">${data.derived_balance_minor} minor units</span> · ${data.entry_count} entries`;
+    const entries = data.entries ?? [];
+    entriesEl.innerHTML = entries.length ? entries.slice().reverse().map(e => `
+      <div class="list-row">
+        <span class="amount ${e.kind === 'DEBIT' ? 'debit' : ''}">${e.kind === 'DEBIT' ? '−' : '+'}${fmt(e.amount_minor, e.currency)}</span>
+        <span class="meta"> · ${e.description || e.reference}</span>
+        <div class="meta">${e.id} · ${tsHtml(e.created_at)}</div>
+      </div>`).join('') : '<div class="empty">No ledger entries.</div>';
+  } catch { entriesEl.innerHTML = '<div class="empty">Cannot reach sandbox.</div>'; }
+}
+
+// ── Settlement ────────────────────────────────────────────────────────────────
+async function createSettlement() {
+  const wallet_id = document.getElementById('settle-wallet').value.trim();
+  const msgEl     = document.getElementById('settle-msg');
+  if (!wallet_id) { showMsg(msgEl, 'Wallet ID required', false); return; }
+  try {
+    const r = await fetch(`${API}/settlement/batches`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ wallet_id }),
+    });
+    const data = await r.json();
+    if (r.ok) {
+      showMsg(msgEl, `Batch ${data.id} · gross ${fmt(data.gross_minor, data.currency)} · fee ${data.fee_minor} · net ${fmt(data.net_minor, data.currency)}`, true);
+      refreshBatches();
+    } else showMsg(msgEl, data.error ?? 'Error', false);
+  } catch { showMsg(msgEl, 'Sandbox offline', false); }
+}
+
+async function refreshBatches() {
+  const el = document.getElementById('batches-list');
+  try {
+    const r    = await fetch(`${API}/settlement/batches`);
+    const data = await r.json();
+    const bs   = (data.batches ?? []).slice().reverse();
+    el.innerHTML = bs.length ? bs.map(b => `
+      <div class="list-row">
+        ${badgeHtml(b.status)} ${b.wallet_id}
+        <span class="meta"> · gross ${fmt(b.gross_minor, b.currency)} · net ${fmt(b.net_minor, b.currency)} · ${b.tx_count} txs</span>
+        <div class="meta">${b.id} · ${tsHtml(b.created_at)}</div>
+      </div>`).join('') : '<div class="empty">No settlement batches yet.</div>';
+  } catch { el.innerHTML = '<div class="empty">Cannot reach sandbox.</div>'; }
+}
+
+// ── Events ────────────────────────────────────────────────────────────────────
+function toggleSse() {
+  if (sseSource) {
+    sseSource.close(); sseSource = null;
+    document.getElementById('sse-dot').className = 'dot';
+    document.getElementById('event-stream-status').textContent = 'disconnected';
+    document.querySelector('[onclick="toggleSse()"]').textContent = 'Connect';
+    return;
   }
+  sseSource = new EventSource(`${API}/events`);
+  sseSource.onopen = () => {
+    document.getElementById('sse-dot').className = 'dot ok';
+    document.getElementById('event-stream-status').textContent = 'connected';
+    document.querySelector('[onclick="toggleSse()"]').textContent = 'Disconnect';
+  };
+  sseSource.onerror = () => {
+    document.getElementById('sse-dot').className = 'dot err';
+    document.getElementById('event-stream-status').textContent = 'error';
+  };
+  sseSource.onmessage = (e) => appendLiveEvent(JSON.parse(e.data));
+  // Named event types
+  ['wallet.created','payment.sent','payment.received','payment_request.created',
+   'payment_request.paid','qr.generated','qr.paid','settlement.created','settlement.completed'
+  ].forEach(type => {
+    sseSource.addEventListener(type, (e) => appendLiveEvent(JSON.parse(e.data)));
+  });
+}
 
-  async function refreshWallets() {
-    const el = document.getElementById('wallets-list');
-    const seeds = ['sandbox-merchant-1', 'sandbox-merchant-2', 'sandbox-consumer-1'];
-    let html = '';
-    for (const id of seeds) {
-      try {
-        const r = await fetch(`${API}/wallets/${id}`);
-        if (!r.ok) continue;
-        const w = await r.json();
-        html += `
-          <div class="wallet-card">
-            <div class="wallet-label">${w.label}</div>
-            <div class="wallet-id">${w.id}</div>
-            <div class="wallet-balance">${fmtMinor(w.balance_minor, w.currency)}</div>
-            <div class="wallet-currency">${w.currency}</div>
-          </div>`;
-      } catch { /* offline */ }
-    }
-    el.innerHTML = html || '<div class="empty">No wallets found. Is the sandbox running?</div>';
-  }
+function appendLiveEvent(event) {
+  const el = document.getElementById('live-events');
+  if (el.querySelector('.empty')) el.innerHTML = '';
+  el.insertAdjacentHTML('afterbegin', `
+    <div class="event-row">
+      <span class="ev-type">${event.event_type}</span> ${tsHtml(event.created_at)}
+      <div class="ev-payload">${JSON.stringify(event.payload)}</div>
+    </div>`);
+}
 
-  async function createWallet() {
-    const label    = document.getElementById('new-label').value.trim();
-    const currency = document.getElementById('new-currency').value;
-    const msgEl    = document.getElementById('create-msg');
-    if (!label) { showMsg(msgEl, 'Label is required', false); return; }
-    try {
-      const r = await fetch(`${API}/wallets`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ label, currency }),
-      });
-      const data = await r.json();
-      if (r.ok) {
-        showMsg(msgEl, `Created: ${data.id}`, true);
-        document.getElementById('new-label').value = '';
-        await refreshWallets();
-      } else {
-        showMsg(msgEl, data.error ?? 'Error', false);
-      }
-    } catch (e) {
-      showMsg(msgEl, 'Sandbox offline', false);
-    }
-  }
+async function refreshHistory() {
+  const el = document.getElementById('event-history');
+  try {
+    const r    = await fetch(`${API}/events/history`);
+    const data = await r.json();
+    const evts = (data.events ?? []).slice().reverse();
+    el.innerHTML = evts.length ? evts.map(e => `
+      <div class="event-row">
+        <span class="ev-type">${e.event_type}</span> ${tsHtml(e.created_at)}
+        <div class="ev-payload">${JSON.stringify(e.payload)}</div>
+      </div>`).join('') : '<div class="empty">No events yet.</div>';
+  } catch { el.innerHTML = '<div class="empty">Cannot reach sandbox.</div>'; }
+}
 
-  async function doTransfer() {
-    const from_wallet_id = document.getElementById('from-id').value.trim();
-    const to_wallet_id   = document.getElementById('to-id').value.trim();
-    const amount_minor   = parseInt(document.getElementById('amount').value, 10);
-    const currency       = document.getElementById('transfer-currency').value;
-    const note           = document.getElementById('note').value.trim();
-    const msgEl          = document.getElementById('transfer-msg');
+// ── Utilities ─────────────────────────────────────────────────────────────────
+function showMsg(el, text, ok) {
+  el.className = `msg ${ok ? 'ok' : 'err'}`;
+  el.textContent = text;
+}
 
-    if (!from_wallet_id || !to_wallet_id || !amount_minor) {
-      showMsg(msgEl, 'All fields are required', false); return;
-    }
-    try {
-      const r = await fetch(`${API}/transfers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from_wallet_id, to_wallet_id, amount_minor, currency, note: note || undefined }),
-      });
-      const data = await r.json();
-      if (r.ok) {
-        showMsg(msgEl, `Transfer ${data.id} — ${fmtMinor(data.amount_minor, data.currency)} ${data.currency}`, true);
-        await Promise.all([refreshWallets(), refreshTransfers()]);
-      } else {
-        showMsg(msgEl, data.error ?? 'Error', false);
-      }
-    } catch {
-      showMsg(msgEl, 'Sandbox offline', false);
-    }
-  }
-
-  async function refreshTransfers() {
-    const el = document.getElementById('transfers-list');
-    try {
-      const r = await fetch(`${API}/transfers`);
-      const data = await r.json();
-      const txs = (data.transfers ?? []).slice().reverse();
-      if (!txs.length) { el.innerHTML = '<div class="empty">No transfers yet.</div>'; return; }
-      el.innerHTML = txs.map(t => `
-        <div class="transfer-row">
-          <span class="transfer-amount">${fmtMinor(t.amount_minor, t.currency)} ${t.currency}</span>
-          <span class="transfer-meta"> · ${t.from_wallet_id} → ${t.to_wallet_id}</span>
-          ${t.note ? `<span class="transfer-meta"> · ${t.note}</span>` : ''}
-          <div class="transfer-meta">${t.id} · ${new Date(t.created_at).toLocaleTimeString()}</div>
-        </div>`).join('');
-    } catch {
-      el.innerHTML = '<div class="empty">Cannot reach sandbox.</div>';
-    }
-  }
-
-  function showMsg(el, text, ok) {
-    el.className = `msg ${ok ? 'ok' : 'err'}`;
-    el.textContent = text;
-  }
-
-  // Boot
-  checkHealth();
-  refreshWallets();
-  refreshTransfers();
+// Boot
+checkHealth();
+refreshWallets();
+setInterval(checkHealth, 30_000);
 </script>
 </body>
 </html>
