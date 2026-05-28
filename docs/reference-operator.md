@@ -20,10 +20,45 @@ without standing up any external infrastructure.
 
 ## What it is not
 
-- Not a production payment processor
-- Not connected to any real bank or payment rail
-- Not suitable for any live transaction processing
-- Not a reference for production security configuration
+The reference operator is emphatically **not** any of the following:
+
+| Claim | Reality |
+|-------|---------|
+| A production payment processor | State is in-memory and resets on restart |
+| A licensed financial institution | No regulatory compliance, no real accounts |
+| A commercial operator | No revenue, no customers, no SLA |
+| A fintech product | No UI beyond the educational demo wallet |
+| A second Banza | No EMIS, no Multicaixa, no real bank rails |
+| A production security reference | Fake HMAC secrets, no TLS enforcement, no auth |
+| A deployment template | Not hardened, not monitored, not recoverable |
+
+### Boundary enforcement
+
+The following are permanently **forbidden** in `reference/`:
+
+- Real bank or payment rail integrations
+- Firebase, APNs, or any cloud push notification service
+- Real operator credentials or API keys
+- KYC or AML workflows
+- Production analytics or observability pipelines
+- Merchant onboarding or operations tooling
+- Fraud scoring engines
+- Any code that could process real payments
+
+When in doubt: if it involves real money or real people, it does not belong in
+`reference/`. Open a PR to the appropriate operator's private repository instead.
+
+### Keeping the reference operator minimal
+
+The reference operator must remain a thin, educational shell around the kernel.
+New features in `reference/` should answer **yes** to all three:
+
+1. Does it help a developer understand the Banzami kernel?
+2. Can it run entirely without external infrastructure?
+3. Would it be useful in any operator's context (not just Banza)?
+
+Features that answer **no** to any of these belong in an operator deployment,
+not in the public kernel repository.
 
 ## Quick start
 

@@ -110,8 +110,61 @@ The project is maintained by [Banzami](https://banzami.org). External maintainer
 
 ---
 
+## Ecosystem boundaries
+
+### Banzami (this repository) — infrastructure layer
+
+| Scope | Examples |
+|-------|---------|
+| Kernel crates | ledger, wallets, routing, acquiring, settlement, QR |
+| Protocol specifications | OpenAPI contracts, webhook schemas, QR payload format |
+| Provider trait definitions | `AcquirerProvider`, `SettlementExecutionProvider`, `NotificationProvider` |
+| Capability model | `WalletCapabilitySet`, `OperatorManifest`, `ProviderCapabilityDescriptor` |
+| Official SDKs | TypeScript, Python, PHP, Go, Flutter |
+| Reference implementations | Fake providers, mock routing, local ledger, sandbox operator |
+| Certification suite | SDK compliance vectors |
+| Governance docs | ADRs, RFCs, this document |
+
+### Operators (external repositories) — implementation layer
+
+| Scope | Examples |
+|-------|---------|
+| Provider implementations | EMIS acquirer, Multicaixa adapter, real bank settlement |
+| Compliance and KYC/AML | Identity verification, risk scoring, fraud detection |
+| Consumer and merchant apps | Mobile apps, web dashboards, POS terminals |
+| Production deployment | Infrastructure, CI/CD, monitoring, disaster recovery |
+| Business logic | Fee structures, credit products, merchant agreements |
+| Regulatory obligations | Licensing, reporting, audit trails |
+
+**The kernel never contains operator business logic. Operators never modify kernel
+invariants.** This boundary is permanent and enforced by code review.
+
+### Banza — one operator among many
+
+Banza is the first commercial operator built on Banzami. It is not:
+
+- A privileged operator with special kernel access
+- The hidden center of the ecosystem
+- The reference for how all operators must work
+
+Banza implements the same public provider traits as any future operator.
+Its private repository contains no code that belongs in the kernel, and the
+kernel contains no code specific to Banza.
+
+---
+
+## RFC process
+
+Significant changes to the Banzami protocol go through the RFC process before
+implementation. See [`docs/rfc/README.md`](docs/rfc/README.md).
+
+ADRs record decisions after they are made. RFCs propose changes before they are made.
+
+---
+
 ## Contact
 
 - Protocol questions: open a GitHub Discussion
+- RFC proposals: open a PR to `docs/rfc/`
 - Security issues: security@banzami.org (see [SECURITY.md](SECURITY.md))
 - Code of conduct: conduct@banzami.org
