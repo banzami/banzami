@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Banzami Demo Wallet</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #0f0f0f;
+      --surface: #1a1a1a;
+      --border:  #2a2a2a;
+      --accent:  #e8d5b7;
+      --muted:   #666;
+      --text:    #e8e8e8;
+      --green:   #4caf50;
+      --red:     #f44336;
+      --radius:  8px;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.5; }
+    header { border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+    header h1 { font-size: 16px; color: var(--accent); letter-spacing: 0.05em; }
+    .sandbox-tag { font-size: 10px; background: var(--border); color: var(--muted); padding: 2px 8px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.1em; }
+    main { max-width: 960px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 720px) { main { grid-template-columns: 1fr; } }
+    section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+    section h2 { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px; }
+    .wallet-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+    .wallet-label { font-size: 12px; color: var(--muted); }
+    .wallet-id    { font-size: 11px; color: var(--muted); font-family: monospace; margin-top: 2px; }
+    .wallet-balance { font-size: 22px; color: var(--accent); margin-top: 6px; }
+    .wallet-currency { font-size: 12px; color: var(--muted); }
+    input, select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 8px 10px; font-family: monospace; font-size: 13px; margin-bottom: 10px; outline: none; }
+    input:focus, select:focus { border-color: var(--accent); }
+    button { width: 100%; background: var(--accent); color: var(--bg); border: none; border-radius: 4px; padding: 10px; font-family: monospace; font-size: 13px; font-weight: bold; cursor: pointer; letter-spacing: 0.04em; }
+    button:hover { opacity: 0.88; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .transfer-row { border-top: 1px solid var(--border); padding: 10px 0; font-size: 12px; }
+    .transfer-row:first-child { border-top: none; }
+    .transfer-amount { color: var(--green); }
+    .transfer-meta { color: var(--muted); font-size: 11px; }
+    .msg { margin-top: 10px; padding: 8px 10px; border-radius: 4px; font-size: 12px; }
+    .msg.ok  { background: rgba(76,175,80,0.1); border: 1px solid rgba(76,175,80,0.3); color: var(--green); }
+    .msg.err { background: rgba(244,67,54,0.1);  border: 1px solid rgba(244,67,54,0.3);  color: var(--red); }
+    .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); margin-right: 6px; }
+    .status-dot.ok  { background: var(--green); }
+    .status-dot.err { background: var(--red); }
+    .full-width { grid-column: 1 / -1; }
+    .empty { color: var(--muted); font-size: 12px; padding: 10px 0; }
+    label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Banzami Demo Wallet</h1>
+  <span class="sandbox-tag">sandbox</span>
+  <span style="margin-left: auto; font-size: 12px; color: var(--muted);">
+    <span class="status-dot" id="status-dot"></span>
+    <span id="status-label">connecting…</span>
+  </span>
+</header>
+
+<main>
+  <!-- Wallets column -->
+  <section>
+    <h2>Wallets</h2>
+    <div id="wallets-list"><div class="empty">Loading…</div></div>
+    <button onclick="refreshWallets()" style="margin-top: 12px;">Refresh</button>
+  </section>
+
+  <!-- New wallet -->
+  <section>
+    <h2>Create Wallet</h2>
+    <label>Label</label>
+    <input id="new-label" type="text" placeholder="My test wallet">
+    <label>Currency</label>
+    <select id="new-currency">
+      <option value="AOA">AOA — Kwanza</option>
+      <option value="USD">USD — US Dollar</option>
+      <option value="EUR">EUR — Euro</option>
+    </select>
+    <button onclick="createWallet()">Create Wallet</button>
+    <div id="create-msg"></div>
+  </section>
+
+  <!-- Transfer -->
+  <section>
+    <h2>Transfer</h2>
+    <label>From Wallet ID</label>
+    <input id="from-id" type="text" placeholder="sandbox-consumer-1">
+    <label>To Wallet ID</label>
+    <input id="to-id" type="text" placeholder="sandbox-merchant-1">
+    <label>Amount (minor units)</label>
+    <input id="amount" type="number" placeholder="50000">
+    <label>Currency</label>
+    <select id="transfer-currency">
+      <option value="AOA">AOA</option>
+      <option value="USD">USD</option>
+      <option value="EUR">EUR</option>
+    </select>
+    <label>Note (optional)</label>
+    <input id="note" type="text" placeholder="Test payment">
+    <button onclick="doTransfer()">Send Transfer</button>
+    <div id="transfer-msg"></div>
+  </section>
+
+  <!-- Transfer history -->
+  <section class="full-width">
+    <h2>Transfer History</h2>
+    <div id="transfers-list"><div class="empty">Loading…</div></div>
+    <button onclick="refreshTransfers()" style="margin-top: 12px;">Refresh</button>
+  </section>
+</main>
+
+<script>
+  const API = 'http://localhost:3100';
+
+  async function checkHealth() {
+    try {
+      const r = await fetch(`${API}/health`);
+      const dot = document.getElementById('status-dot');
+      const lbl = document.getElementById('status-label');
+      if (r.ok) {
+        dot.className = 'status-dot ok';
+        lbl.textContent = 'sandbox online';
+      } else {
+        dot.className = 'status-dot err';
+        lbl.textContent = 'sandbox error';
+      }
+    } catch {
+      document.getElementById('status-dot').className = 'status-dot err';
+      document.getElementById('status-label').textContent = 'offline — start sandbox-operator on :3100';
+    }
+  }
+
+  function fmtMinor(v, currency) {
+    const units = { AOA: 100, USD: 100, EUR: 100 };
+    const div = units[currency] ?? 100;
+    return (v / div).toFixed(2);
+  }
+
+  async function refreshWallets() {
+    const el = document.getElementById('wallets-list');
+    const seeds = ['sandbox-merchant-1', 'sandbox-merchant-2', 'sandbox-consumer-1'];
+    let html = '';
+    for (const id of seeds) {
+      try {
+        const r = await fetch(`${API}/wallets/${id}`);
+        if (!r.ok) continue;
+        const w = await r.json();
+        html += `
+          <div class="wallet-card">
+            <div class="wallet-label">${w.label}</div>
+            <div class="wallet-id">${w.id}</div>
+            <div class="wallet-balance">${fmtMinor(w.balance_minor, w.currency)}</div>
+            <div class="wallet-currency">${w.currency}</div>
+          </div>`;
+      } catch { /* offline */ }
+    }
+    el.innerHTML = html || '<div class="empty">No wallets found. Is the sandbox running?</div>';
+  }
+
+  async function createWallet() {
+    const label    = document.getElementById('new-label').value.trim();
+    const currency = document.getElementById('new-currency').value;
+    const msgEl    = document.getElementById('create-msg');
+    if (!label) { showMsg(msgEl, 'Label is required', false); return; }
+    try {
+      const r = await fetch(`${API}/wallets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label, currency }),
+      });
+      const data = await r.json();
+      if (r.ok) {
+        showMsg(msgEl, `Created: ${data.id}`, true);
+        document.getElementById('new-label').value = '';
+        await refreshWallets();
+      } else {
+        showMsg(msgEl, data.error ?? 'Error', false);
+      }
+    } catch (e) {
+      showMsg(msgEl, 'Sandbox offline', false);
+    }
+  }
+
+  async function doTransfer() {
+    const from_wallet_id = document.getElementById('from-id').value.trim();
+    const to_wallet_id   = document.getElementById('to-id').value.trim();
+    const amount_minor   = parseInt(document.getElementById('amount').value, 10);
+    const currency       = document.getElementById('transfer-currency').value;
+    const note           = document.getElementById('note').value.trim();
+    const msgEl          = document.getElementById('transfer-msg');
+
+    if (!from_wallet_id || !to_wallet_id || !amount_minor) {
+      showMsg(msgEl, 'All fields are required', false); return;
+    }
+    try {
+      const r = await fetch(`${API}/transfers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from_wallet_id, to_wallet_id, amount_minor, currency, note: note || undefined }),
+      });
+      const data = await r.json();
+      if (r.ok) {
+        showMsg(msgEl, `Transfer ${data.id} — ${fmtMinor(data.amount_minor, data.currency)} ${data.currency}`, true);
+        await Promise.all([refreshWallets(), refreshTransfers()]);
+      } else {
+        showMsg(msgEl, data.error ?? 'Error', false);
+      }
+    } catch {
+      showMsg(msgEl, 'Sandbox offline', false);
+    }
+  }
+
+  async function refreshTransfers() {
+    const el = document.getElementById('transfers-list');
+    try {
+      const r = await fetch(`${API}/transfers`);
+      const data = await r.json();
+      const txs = (data.transfers ?? []).slice().reverse();
+      if (!txs.length) { el.innerHTML = '<div class="empty">No transfers yet.</div>'; return; }
+      el.innerHTML = txs.map(t => `
+        <div class="transfer-row">
+          <span class="transfer-amount">${fmtMinor(t.amount_minor, t.currency)} ${t.currency}</span>
+          <span class="transfer-meta"> · ${t.from_wallet_id} → ${t.to_wallet_id}</span>
+          ${t.note ? `<span class="transfer-meta"> · ${t.note}</span>` : ''}
+          <div class="transfer-meta">${t.id} · ${new Date(t.created_at).toLocaleTimeString()}</div>
+        </div>`).join('');
+    } catch {
+      el.innerHTML = '<div class="empty">Cannot reach sandbox.</div>';
+    }
+  }
+
+  function showMsg(el, text, ok) {
+    el.className = `msg ${ok ? 'ok' : 'err'}`;
+    el.textContent = text;
+  }
+
+  // Boot
+  checkHealth();
+  refreshWallets();
+  refreshTransfers();
+</script>
+</body>
+</html>
