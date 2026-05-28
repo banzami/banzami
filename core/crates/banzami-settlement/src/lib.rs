@@ -1,8 +1,13 @@
 mod engine;
+pub mod provider;
 mod repository;
 pub mod scheduler;
 
 pub use engine::{CreateSettlementBatchRequest, PostgresSettlementEngine, SettlementEngine};
+pub use provider::{
+    SettlementExecutionProvider, SettlementProviderError,
+    SettlementSubmissionResult, SubmitSettlementRequest,
+};
 pub use repository::{PostgresSettlementRepository, SettlementRepository};
 pub use scheduler::run_settlement_scheduler;
 

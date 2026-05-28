@@ -178,6 +178,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "banzami-notifications"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "banzami-payment-links"
 version = "0.1.0"
 dependencies = [
