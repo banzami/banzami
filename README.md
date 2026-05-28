@@ -125,10 +125,16 @@ banzami/
 ├── integrations/           Commerce and framework integrations
 │   └── plugins/
 ├── sdk-certification/      Certification test suite and vectors
+├── reference/              Local development sandbox (no external infra)
+│   ├── sandbox-operator/   In-memory HTTP server on :3100
+│   ├── fake-acquirer/      Simulated AcquirerProvider (HMAC-signed, no bank)
+│   ├── local-notifications/ StdoutNotificationProvider + NullNotificationProvider
+│   ├── simulated-settlement/ SettlementExecutionProvider (always succeeds)
+│   └── docker-compose.yml  One-command startup
 ├── docs/                   Public documentation
 │   ├── adr/                Architecture Decision Records
 │   ├── architecture/       System design principles
-│   ├── domains/            Domain model documentation
+│   ├── core/               Domain documentation (ledger, wallets, QR, ...)
 │   └── ...
 └── examples/               Reference integrations
 ```
@@ -163,6 +169,41 @@ ledger_engine.post(posting).await?;
 ```
 
 See [`core/README.md`](core/README.md) for full documentation.
+
+---
+
+## Local sandbox — quick start
+
+The reference operator provides a fully local payment sandbox. No database, no cloud
+services, no API keys required.
+
+```bash
+# Clone the repo
+git clone https://github.com/banzami/banzami
+cd banzami
+
+# Option 1 — Cargo
+cd reference && cargo run --bin sandbox-operator
+
+# Option 2 — Docker
+cd reference && docker compose up
+```
+
+The sandbox exposes a REST API at `http://localhost:3100` with in-memory wallets,
+double-entry transfers, and simulated acquiring and settlement providers.
+
+```bash
+# Check health
+curl http://localhost:3100/health
+
+# Transfer between seed wallets
+curl -X POST http://localhost:3100/transfers \
+  -H 'Content-Type: application/json' \
+  -d '{"from_wallet_id":"sandbox-consumer-1","to_wallet_id":"sandbox-merchant-1","amount_minor":50000,"currency":"AOA","note":"test"}'
+```
+
+See [`docs/reference-operator.md`](docs/reference-operator.md) for full API reference
+and provider documentation.
 
 ---
 
