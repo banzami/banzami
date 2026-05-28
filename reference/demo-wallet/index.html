@@ -147,6 +147,19 @@
     details[open] summary::before { content: '▾ '; }
     details pre { font-size: 10px; color: var(--muted); background: var(--bg); border: 1px solid #1e1e1e; border-radius: 3px; padding: 8px; margin-top: 4px; overflow-x: auto; line-height: 1.6; }
     .sse-info { font-size: 10px; color: #3a3a3a; margin-bottom: 12px; line-height: 1.7; }
+
+    /* ── Trace ── */
+    .trace-id-chip { display: inline-block; font-size: 9px; background: rgba(171,71,188,0.08); border: 1px solid rgba(171,71,188,0.2); padding: 1px 6px; border-radius: 2px; color: var(--purple); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; cursor: pointer; }
+    .trace-id-chip:hover { background: rgba(171,71,188,0.2); }
+    .trace-row { border: 1px solid #1e1e1e; border-radius: 4px; padding: 8px 10px; margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s; }
+    .trace-row:hover { border-color: var(--purple); }
+    .timeline-entry { border-left: 2px solid #1e1e1e; padding: 5px 0 5px 12px; margin-bottom: 2px; position: relative; }
+    .timeline-dot { position: absolute; left: -5px; top: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+    .timeline-op { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .timeline-summary { font-size: 11px; color: #aaa; margin-top: 1px; }
+    .timeline-ts { font-size: 9px; color: #2a2a2a; }
+    .trace-section-label { font-size: 9px; color: #2a2a2a; text-transform: uppercase; letter-spacing: 0.08em; margin: 10px 0 4px; }
+    .ev-trace { font-size: 10px; color: #3a2a4a; margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -172,6 +185,7 @@
   <button onclick="showPage('ledger',this)">Ledger</button>
   <button onclick="showPage('settlement',this)">Settlement</button>
   <button onclick="showPage('events',this)">Events</button>
+  <button onclick="showPage('trace',this)">Trace</button>
 </nav>
 
 <!-- ═══════════════════ WALLETS ═══════════════════ -->
@@ -339,6 +353,25 @@
   </div>
 </div>
 
+<!-- ═══════════════════ TRACE ═══════════════════ -->
+<div class="page" id="page-trace">
+  <div class="grid2">
+    <div class="card">
+      <h2>Traces <button class="btn secondary btn-sm" onclick="refreshTraces()">Refresh</button></h2>
+      <div class="card-note">Every top-level operation creates a <strong>trace_id</strong> that links all resulting transfers, ledger entries, events, and settlement batches. Click any trace to inspect the full causal chain. QR and payment request flows propagate the same <strong>trace_id</strong> through to the resulting transfer.</div>
+      <div id="trace-list" class="scroll"><div class="empty">No traces yet. Perform some operations first.</div></div>
+    </div>
+    <div class="card">
+      <h2>Trace Detail</h2>
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:14px">
+        <div style="flex:1"><label style="margin-top:0">Trace ID</label><input id="trace-id-input" placeholder="tr-xxxxxxxx"></div>
+        <button class="btn" style="width:auto;margin:0" onclick="loadTrace()">Load</button>
+      </div>
+      <div id="trace-detail" class="scroll"><div class="empty">Select a trace from the list or enter a trace ID above.</div></div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════════ EVENTS ═══════════════════ -->
 <div class="page" id="page-events">
   <div class="grid2">
@@ -376,6 +409,7 @@ function showPage(name, btn) {
   if (name === 'payment-request')  refreshPaymentRequests();
   if (name === 'settlement')       refreshBatches();
   if (name === 'events')           refreshHistory();
+  if (name === 'trace')            refreshTraces();
 }
 
 // ── Formatting ───────────────────────────────────────────────────────────────
@@ -487,6 +521,7 @@ async function refreshTransfers() {
         <div><span class="amount">${fmt(t.amount_minor, t.currency)}</span> <span class="meta">${t.from_wallet_id} → ${t.to_wallet_id}</span></div>
         ${t.note ? `<div class="meta">${t.note}</div>` : ''}
         <div class="meta">${t.id} · ${fmtTsShort(t.created_at)}${t.idempotency_key ? ' · key: ' + t.idempotency_key : ''}</div>
+        <div class="meta" style="margin-top:2px">trace <span class="trace-id-chip" title="${t.trace_id}" onclick="openTrace('${t.trace_id}')">${t.trace_id}</span>${t.causation_id ? ' · caused by <span class="ref-chip">' + t.causation_id + '</span>' : ''}</div>
       </div>`).join('') : '<div class="empty">No transfers yet.</div>';
   } catch { el.innerHTML = '<div class="empty">Cannot reach sandbox.</div>'; }
 }
@@ -540,6 +575,7 @@ async function refreshPaymentRequests() {
         <div>${fmt(p.amount_minor, p.currency)} ${badgeHtml(p.status)} <span class="meta">${p.description || ''}</span></div>
         <div class="meta">${p.id} → ${p.to_wallet_id}${p.transfer_id ? ' · txfr: ' + p.transfer_id : ''}</div>
         <div class="meta">${fmtTs(p.created_at)}</div>
+        <div class="meta" style="margin-top:2px">trace <span class="trace-id-chip" title="${p.trace_id}" onclick="openTrace('${p.trace_id}')">${p.trace_id}</span></div>
       </div>`).join('') : '<div class="empty">No payment requests yet.</div>';
   } catch { el.innerHTML = '<div class="empty">Cannot reach sandbox.</div>'; }
 }
@@ -702,6 +738,7 @@ async function refreshBatches() {
         <div class="meta" style="margin-top:3px">gross ${fmt(b.gross_minor, b.currency)} · fee ${fmt(b.fee_minor, b.currency)} · ${b.tx_count} tx</div>
         <div class="batch-ref">${b.provider_ref}</div>
         <div class="meta">${b.id} · ${fmtTs(b.created_at)}</div>
+        <div class="meta" style="margin-top:2px">trace <span class="trace-id-chip" title="${b.trace_id}" onclick="openTrace('${b.trace_id}')">${b.trace_id}</span></div>
       </div>`).join('') : '<div class="empty">No settlement batches yet. Complete some transfers first.</div>';
   } catch { el.innerHTML = '<div class="empty">Cannot reach sandbox.</div>'; }
 }
@@ -730,9 +767,15 @@ function evCorrIds(payload) {
 }
 
 function renderEvent(event) {
-  const cls   = evTypeClass(event.event_type);
-  const corr  = evCorrIds(event.payload ?? {});
+  const cls    = evTypeClass(event.event_type);
+  const corr   = evCorrIds(event.payload ?? {});
   const pretty = JSON.stringify(event.payload, null, 2);
+  const traceChip = event.trace_id
+    ? `<span class="trace-id-chip" title="${event.trace_id}" onclick="openTrace('${event.trace_id}')">${event.trace_id}</span>`
+    : '';
+  const corrChip = event.correlation_id && event.correlation_id !== event.trace_id
+    ? `<span class="ref-chip" title="${event.correlation_id}">${event.correlation_id}</span>`
+    : '';
   return `
     <div class="event-row">
       <div class="ev-header">
@@ -741,6 +784,7 @@ function renderEvent(event) {
         <span class="ev-id">${event.id}</span>
       </div>
       ${corr.length ? `<div class="ev-corr">${corr.join(' · ')}</div>` : ''}
+      ${traceChip ? `<div class="ev-trace">trace ${traceChip}${corrChip ? ' · corr ' + corrChip : ''}</div>` : ''}
       <details>
         <summary>payload</summary>
         <pre>${pretty}</pre>
@@ -795,6 +839,133 @@ async function refreshHistory() {
       ? evts.map(renderEvent).join('')
       : '<div class="empty">No events yet.</div>';
   } catch { el.innerHTML = '<div class="empty">Cannot reach sandbox.</div>'; }
+}
+
+// ── Traces ────────────────────────────────────────────────────────────────────
+async function refreshTraces() {
+  const el = document.getElementById('trace-list');
+  try {
+    const r    = await fetch(`${API}/traces`);
+    const data = await r.json();
+    const ids  = data.trace_ids ?? [];
+    el.innerHTML = ids.length ? ids.map(id => `
+      <div class="trace-row" onclick="openTrace('${id}')">
+        <span class="trace-id-chip" style="max-width:100%">${id}</span>
+      </div>`).join('') : '<div class="empty">No traces yet. Perform some operations first.</div>';
+  } catch { el.innerHTML = '<div class="empty">Cannot reach sandbox.</div>'; }
+}
+
+function openTrace(traceId) {
+  // Switch to trace tab, fill input, load.
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-trace').classList.add('active');
+  const btn = [...document.querySelectorAll('nav button')].find(b => b.textContent === 'Trace');
+  if (btn) btn.classList.add('active');
+  document.getElementById('trace-id-input').value = traceId;
+  loadTrace();
+}
+
+async function loadTrace() {
+  const traceId = document.getElementById('trace-id-input').value.trim();
+  const el      = document.getElementById('trace-detail');
+  if (!traceId) return;
+  try {
+    const r    = await fetch(`${API}/traces/${traceId}`);
+    if (r.status === 404) { el.innerHTML = '<div class="empty">Trace not found.</div>'; return; }
+    const data = await r.json();
+    el.innerHTML = renderTraceView(data);
+  } catch { el.innerHTML = '<div class="empty">Cannot reach sandbox.</div>'; }
+}
+
+function renderTraceView(data) {
+  const parts = [];
+
+  // Timeline
+  parts.push(`<div class="trace-section-label">Timeline (${data.timeline.length} operations)</div>`);
+  if (data.timeline.length) {
+    parts.push(data.timeline.map(e => `
+      <div class="timeline-entry">
+        <span class="timeline-dot"></span>
+        <div class="timeline-op">${e.operation_type}</div>
+        <div class="timeline-summary">${e.summary}</div>
+        <div class="timeline-ts">${fmtTs(e.timestamp)}</div>
+      </div>`).join(''));
+  } else {
+    parts.push('<div class="empty">No timeline entries.</div>');
+  }
+
+  // Transfers
+  if (data.transfers.length) {
+    parts.push(`<div class="trace-section-label">Transfers (${data.transfers.length})</div>`);
+    parts.push(data.transfers.map(t => `
+      <div class="list-row">
+        <div><span class="amount">${fmt(t.amount_minor, t.currency)}</span> <span class="meta">${t.from_wallet_id} → ${t.to_wallet_id}</span></div>
+        ${t.note ? `<div class="meta">${t.note}</div>` : ''}
+        <div class="meta">${t.id}${t.causation_id ? ' · caused by <span class="ref-chip">' + t.causation_id + '</span>' : ''}</div>
+      </div>`).join(''));
+  }
+
+  // Ledger entries
+  if (data.ledger_entries.length) {
+    parts.push(`<div class="trace-section-label">Ledger Entries (${data.ledger_entries.length})</div>`);
+    parts.push(`<table class="ledger-table"><thead><tr><th>Kind</th><th>Amount</th><th>Wallet</th><th>Ref</th></tr></thead><tbody>`);
+    parts.push(data.ledger_entries.map(e => `
+      <tr>
+        <td><span class="badge ${e.kind === 'DEBIT' ? 'debit-k' : 'credit-k'}">${e.kind}</span></td>
+        <td><span class="ledger-amount ${e.kind === 'DEBIT' ? 'amount debit' : 'amount'}">${e.kind === 'DEBIT' ? '−' : '+'}${fmt(e.amount_minor, e.currency)}</span></td>
+        <td class="meta">${e.wallet_id}</td>
+        <td><span class="ref-chip" title="${e.reference}">${e.reference}</span></td>
+      </tr>`).join(''));
+    parts.push('</tbody></table>');
+  }
+
+  // Payment requests
+  if (data.payment_requests.length) {
+    parts.push(`<div class="trace-section-label">Payment Requests (${data.payment_requests.length})</div>`);
+    parts.push(data.payment_requests.map(p => `
+      <div class="list-row">
+        <div>${fmt(p.amount_minor, p.currency)} ${badgeHtml(p.status)} <span class="meta">${p.description || ''}</span></div>
+        <div class="meta">${p.id} → ${p.to_wallet_id}</div>
+      </div>`).join(''));
+  }
+
+  // QR codes
+  if (data.qr_codes.length) {
+    parts.push(`<div class="trace-section-label">QR Codes (${data.qr_codes.length})</div>`);
+    parts.push(data.qr_codes.map(q => `
+      <div class="list-row">
+        <div>${q.amount_minor ? fmt(q.amount_minor, q.currency) : 'open'} ${badgeHtml(q.status)} <span class="meta">${q.merchant_wallet_id}</span></div>
+        <div class="meta">${q.id}</div>
+      </div>`).join(''));
+  }
+
+  // Settlement batches
+  if (data.settlement_batches.length) {
+    parts.push(`<div class="trace-section-label">Settlement Batches (${data.settlement_batches.length})</div>`);
+    parts.push(data.settlement_batches.map(b => `
+      <div class="list-row">
+        <div>${badgeHtml(b.status)} <span class="meta">${b.wallet_id}</span> <span class="amount">${fmt(b.net_minor, b.currency)}</span></div>
+        <div class="meta">gross ${fmt(b.gross_minor, b.currency)} · fee ${fmt(b.fee_minor, b.currency)} · ${b.tx_count} tx</div>
+        <div class="meta">${b.id}</div>
+      </div>`).join(''));
+  }
+
+  // Events
+  if (data.events.length) {
+    parts.push(`<div class="trace-section-label">Events (${data.events.length})</div>`);
+    parts.push(data.events.map(e => `
+      <div class="event-row">
+        <div class="ev-header">
+          <span class="ev-type ${evTypeClass(e.event_type)}">${e.event_type}</span>
+          <span class="ev-ts">${fmtTs(e.created_at)}</span>
+          <span class="ev-id">${e.id}</span>
+        </div>
+        <details><summary>payload</summary><pre>${JSON.stringify(e.payload, null, 2)}</pre></details>
+      </div>`).join(''));
+  }
+
+  return `<div style="font-size:10px;color:#3a2a4a;margin-bottom:10px">trace_id: <strong style="color:var(--purple)">${data.trace_id}</strong></div>` + parts.join('');
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
