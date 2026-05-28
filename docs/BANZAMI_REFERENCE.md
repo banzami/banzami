@@ -7,6 +7,10 @@
 
 ---
 
+> **Nota para contribuidores:** Este documento é a fonte canónica do ecossistema Banzami — cobre tanto a infraestrutura open-source (Banzami) como o primeiro produto comercial construído sobre ela (Banza). O repositório público em `github.com/banzami/banzami` contém os SDKs, contratos e especificações de protocolo. O produto Banza (apps, serviços, infra) é privado em `github.com/banzami/banza`.
+
+---
+
 > **Banza não é apenas uma carteira digital.**  
 > **É uma infraestrutura programável de pagamentos instantâneos em Kwanza — com QR, wallets, APIs, SDKs e identidade financeira @banza.**  
 > Banzami constrói a infraestrutura. Banza move o dinheiro.

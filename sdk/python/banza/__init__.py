@@ -10,7 +10,7 @@ Quick start:
 """
 
 from .client import BanzaClient, BanzaHooks, Banzami
-from .config import BanzamiConfig
+from .config import BanzamiConfig, LIVE_URL, SANDBOX_URL
 from .exceptions import (
     BanzaAPIError,
     BanzaError,

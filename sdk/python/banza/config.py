@@ -4,12 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+LIVE_URL    = "https://api.banzami.org"
+SANDBOX_URL = "https://sandbox-api.banzami.org"
+
 
 @dataclass(frozen=True)
 class BanzamiConfig:
     """Immutable configuration snapshot passed to every component of the client."""
 
-    base_url: str = "https://api.banzami.ao"
+    base_url: str = LIVE_URL
 
     timeout: float = 30.0
     """Total request timeout in seconds (connect + read + write)."""
