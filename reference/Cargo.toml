@@ -29,6 +29,7 @@ banzami-qr              = { path = "../core/crates/banzami-qr" }
 banzami-payment-links   = { path = "../core/crates/banzami-payment-links" }
 banzami-risk            = { path = "../core/crates/banzami-risk" }
 banzami-transfers       = { path = "../core/crates/banzami-transfers" }
+banzami-capabilities    = { path = "../core/crates/banzami-capabilities" }
 
 # Reference implementations (within this workspace)
 fake-acquirer         = { path = "fake-acquirer" }
@@ -56,7 +57,7 @@ tokio = { version = "1", features = ["full"] }
 
 # HTTP server
 axum       = "0.7"
-tower      = "0.4"
+tower      = { version = "0.4", features = ["util"] }
 tower-http = { version = "0.5", features = ["trace", "cors"] }
 
 # Database — SQLite for local development (no Postgres required)
@@ -78,3 +79,7 @@ hex  = "0.4"
 
 # Random
 rand = "0.8"
+
+# Streaming
+tokio-stream = { version = "0.1", features = ["sync"] }
+futures      = "0.3"

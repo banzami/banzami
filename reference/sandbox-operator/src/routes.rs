@@ -1,19 +1,22 @@
 //! HTTP routes for the sandbox operator.
-//!
-//! All routes use in-memory state (no database required).
-//! This is a minimal API surface for exploring the Banzami kernel.
+
+use std::convert::Infallible;
+use std::sync::Arc;
+use std::time::Duration;
 
 use axum::{
     Json, Router,
     extract::{Path, State},
     http::StatusCode,
+    response::sse::{Event, KeepAlive, Sse},
     routing::{get, post},
 };
-use std::sync::Arc;
-
 use banzami_types::Currency;
+use futures::StreamExt as _;
+use tokio_stream::wrappers::BroadcastStream;
 
-use crate::state::AppState;
+use crate::manifest::build_manifest;
+use crate::state::{AppState, WalletType};
 
 // ---------------------------------------------------------------------------
 // Router
@@ -23,11 +26,31 @@ pub fn build_router() -> Router {
     let state = Arc::new(AppState::new());
 
     Router::new()
+        // Health & manifest
         .route("/health",      get(health))
-        .route("/wallets",     post(create_wallet))
+        .route("/.well-known/banzami/operator.json", get(operator_manifest))
+        // Wallets
+        .route("/wallets",     get(list_wallets).post(create_wallet))
         .route("/wallets/:id", get(get_wallet))
-        .route("/transfers",   post(create_transfer))
-        .route("/transfers",   get(list_transfers))
+        // Transfers
+        .route("/transfers",   get(list_transfers).post(create_transfer))
+        // Payment requests
+        .route("/payment-requests",      get(list_payment_requests).post(create_payment_request))
+        .route("/payment-requests/:id",  get(get_payment_request))
+        .route("/payment-requests/:id/pay", post(pay_payment_request))
+        // QR codes
+        .route("/qr",          post(create_qr))
+        .route("/qr/:id",      get(get_qr))
+        .route("/qr/:id/pay",  post(pay_qr))
+        // Ledger inspection
+        .route("/ledger",              get(list_ledger_entries))
+        .route("/ledger/:wallet_id",   get(ledger_for_wallet))
+        // Settlement simulation
+        .route("/settlement/batches",      get(list_settlement_batches).post(create_settlement_batch))
+        .route("/settlement/batches/:id",  get(get_settlement_batch))
+        // Events
+        .route("/events",         get(sse_events))
+        .route("/events/history", get(events_history))
         .with_state(state)
 }
 
@@ -35,13 +58,27 @@ pub fn build_router() -> Router {
 // Health
 // ---------------------------------------------------------------------------
 
-async fn health() -> Json<serde_json::Value> {
+async fn health(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
+    let wallet_count    = state.list_wallets().len();
+    let transfer_count  = state.list_transfers().len();
     Json(serde_json::json!({
-        "status": "ok",
-        "environment": "sandbox",
-        "operator": "banzami-sandbox",
-        "note": "This is a local development sandbox — not a production system."
+        "status":             "ok",
+        "environment":        "sandbox",
+        "operator":           "banzami-sandbox",
+        "simulated":          true,
+        "production_allowed": false,
+        "wallet_count":       wallet_count,
+        "transfer_count":     transfer_count,
+        "note": "Sandbox operator — all providers are simulated. No real payments are processed."
     }))
+}
+
+// ---------------------------------------------------------------------------
+// Operator manifest
+// ---------------------------------------------------------------------------
+
+async fn operator_manifest() -> Json<serde_json::Value> {
+    Json(serde_json::to_value(build_manifest()).unwrap())
 }
 
 // ---------------------------------------------------------------------------
@@ -50,8 +87,18 @@ async fn health() -> Json<serde_json::Value> {
 
 #[derive(serde::Deserialize)]
 struct CreateWalletRequest {
-    label:    String,
-    currency: String,
+    label:       String,
+    currency:    String,
+    #[serde(default = "default_wallet_type")]
+    wallet_type: WalletType,
+}
+
+fn default_wallet_type() -> WalletType { WalletType::Consumer }
+
+async fn list_wallets(
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    Json(serde_json::json!({ "wallets": state.list_wallets() }))
 }
 
 async fn create_wallet(
@@ -59,17 +106,9 @@ async fn create_wallet(
     Json(req):    Json<CreateWalletRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
     let currency = Currency::from_code(&req.currency)
-        .ok_or_else(|| error(StatusCode::BAD_REQUEST, format!("unknown currency: {}", req.currency)))?;
-
-    let wallet = state.create_wallet(req.label, currency);
-
-    Ok(Json(serde_json::json!({
-        "id":       wallet.id,
-        "label":    wallet.label,
-        "currency": wallet.currency.code(),
-        "balance_minor": wallet.balance_minor,
-        "note": "Sandbox wallet — balances are in-memory and reset on restart."
-    })))
+        .ok_or_else(|| err(StatusCode::BAD_REQUEST, format!("unknown currency: {}", req.currency)))?;
+    let wallet = state.create_wallet(req.label, currency, req.wallet_type);
+    Ok(Json(serde_json::to_value(&wallet).unwrap()))
 }
 
 async fn get_wallet(
@@ -77,14 +116,8 @@ async fn get_wallet(
     Path(id):     Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
     let wallet = state.get_wallet(&id)
-        .ok_or_else(|| error(StatusCode::NOT_FOUND, format!("wallet {id} not found")))?;
-
-    Ok(Json(serde_json::json!({
-        "id":            wallet.id,
-        "label":         wallet.label,
-        "currency":      wallet.currency.code(),
-        "balance_minor": wallet.balance_minor,
-    })))
+        .ok_or_else(|| err(StatusCode::NOT_FOUND, format!("wallet {id} not found")))?;
+    Ok(Json(serde_json::to_value(&wallet).unwrap()))
 }
 
 // ---------------------------------------------------------------------------
@@ -93,11 +126,18 @@ async fn get_wallet(
 
 #[derive(serde::Deserialize)]
 struct CreateTransferRequest {
-    from_wallet_id: String,
-    to_wallet_id:   String,
-    amount_minor:   i64,
-    currency:       String,
-    note:           Option<String>,
+    from_wallet_id:  String,
+    to_wallet_id:    String,
+    amount_minor:    i64,
+    currency:        String,
+    note:            Option<String>,
+    idempotency_key: Option<String>,
+}
+
+async fn list_transfers(
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    Json(serde_json::json!({ "transfers": state.list_transfers() }))
 }
 
 async fn create_transfer(
@@ -105,53 +145,253 @@ async fn create_transfer(
     Json(req):    Json<CreateTransferRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
     let currency = Currency::from_code(&req.currency)
-        .ok_or_else(|| error(StatusCode::BAD_REQUEST, format!("unknown currency: {}", req.currency)))?;
-
+        .ok_or_else(|| err(StatusCode::BAD_REQUEST, format!("unknown currency: {}", req.currency)))?;
     if req.amount_minor <= 0 {
-        return Err(error(StatusCode::BAD_REQUEST, "amount_minor must be positive".into()));
+        return Err(err(StatusCode::BAD_REQUEST, "amount_minor must be positive".into()));
     }
-
     let transfer = state
         .create_transfer(
-            req.from_wallet_id.clone(),
-            req.to_wallet_id.clone(),
+            req.from_wallet_id,
+            req.to_wallet_id,
             req.amount_minor,
             currency,
             req.note.unwrap_or_default(),
+            req.idempotency_key,
         )
-        .map_err(|e| error(StatusCode::UNPROCESSABLE_ENTITY, e))?;
+        .map_err(|e| err(StatusCode::UNPROCESSABLE_ENTITY, e))?;
 
     tracing::info!(
         transfer_id = %transfer.id,
         from        = %transfer.from_wallet_id,
         to          = %transfer.to_wallet_id,
         amount      = transfer.amount_minor,
-        currency    = %transfer.currency.code(),
-        "[SANDBOX TRANSFER] created"
+        "[SANDBOX] transfer created"
     );
-
-    Ok(Json(serde_json::json!({
-        "id":             transfer.id,
-        "from_wallet_id": transfer.from_wallet_id,
-        "to_wallet_id":   transfer.to_wallet_id,
-        "amount_minor":   transfer.amount_minor,
-        "currency":       transfer.currency.code(),
-        "note":           transfer.note,
-        "created_at":     transfer.created_at,
-    })))
+    Ok(Json(serde_json::to_value(&transfer).unwrap()))
 }
 
-async fn list_transfers(
+// ---------------------------------------------------------------------------
+// Payment requests
+// ---------------------------------------------------------------------------
+
+#[derive(serde::Deserialize)]
+struct CreatePaymentRequestRequest {
+    to_wallet_id: String,
+    amount_minor: i64,
+    currency:     String,
+    description:  Option<String>,
+}
+
+async fn list_payment_requests(
     State(state): State<Arc<AppState>>,
 ) -> Json<serde_json::Value> {
-    let transfers = state.list_transfers();
-    Json(serde_json::json!({ "transfers": transfers }))
+    Json(serde_json::json!({ "payment_requests": state.list_payment_requests() }))
+}
+
+async fn create_payment_request(
+    State(state): State<Arc<AppState>>,
+    Json(req):    Json<CreatePaymentRequestRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let currency = Currency::from_code(&req.currency)
+        .ok_or_else(|| err(StatusCode::BAD_REQUEST, format!("unknown currency: {}", req.currency)))?;
+    if req.amount_minor <= 0 {
+        return Err(err(StatusCode::BAD_REQUEST, "amount_minor must be positive".into()));
+    }
+    let pr = state.create_payment_request(
+        req.to_wallet_id,
+        req.amount_minor,
+        currency,
+        req.description.unwrap_or_default(),
+    ).map_err(|e| err(StatusCode::UNPROCESSABLE_ENTITY, e))?;
+
+    tracing::info!(pr_id = %pr.id, "[SANDBOX] payment request created");
+    Ok(Json(serde_json::to_value(&pr).unwrap()))
+}
+
+async fn get_payment_request(
+    State(state): State<Arc<AppState>>,
+    Path(id):     Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let pr = state.get_payment_request(&id)
+        .ok_or_else(|| err(StatusCode::NOT_FOUND, format!("payment request {id} not found")))?;
+    Ok(Json(serde_json::to_value(&pr).unwrap()))
+}
+
+#[derive(serde::Deserialize)]
+struct PayPaymentRequestRequest {
+    from_wallet_id: String,
+}
+
+async fn pay_payment_request(
+    State(state): State<Arc<AppState>>,
+    Path(id):     Path<String>,
+    Json(req):    Json<PayPaymentRequestRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let pr = state.pay_payment_request(&id, req.from_wallet_id)
+        .map_err(|e| err(StatusCode::UNPROCESSABLE_ENTITY, e))?;
+    tracing::info!(pr_id = %pr.id, transfer_id = ?pr.transfer_id, "[SANDBOX] payment request paid");
+    Ok(Json(serde_json::to_value(&pr).unwrap()))
+}
+
+// ---------------------------------------------------------------------------
+// QR codes
+// ---------------------------------------------------------------------------
+
+#[derive(serde::Deserialize)]
+struct CreateQrRequest {
+    merchant_wallet_id: String,
+    amount_minor:       Option<i64>,
+    currency:           String,
+    description:        Option<String>,
+}
+
+async fn create_qr(
+    State(state): State<Arc<AppState>>,
+    Json(req):    Json<CreateQrRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let currency = Currency::from_code(&req.currency)
+        .ok_or_else(|| err(StatusCode::BAD_REQUEST, format!("unknown currency: {}", req.currency)))?;
+    let qr = state.create_qr(
+        req.merchant_wallet_id,
+        req.amount_minor,
+        currency,
+        req.description.unwrap_or_default(),
+    ).map_err(|e| err(StatusCode::UNPROCESSABLE_ENTITY, e))?;
+
+    tracing::info!(qr_id = %qr.id, "[SANDBOX] QR generated");
+    Ok(Json(serde_json::to_value(&qr).unwrap()))
+}
+
+async fn get_qr(
+    State(state): State<Arc<AppState>>,
+    Path(id):     Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let qr = state.get_qr(&id)
+        .ok_or_else(|| err(StatusCode::NOT_FOUND, format!("QR {id} not found")))?;
+    Ok(Json(serde_json::to_value(&qr).unwrap()))
+}
+
+#[derive(serde::Deserialize)]
+struct PayQrRequest {
+    consumer_wallet_id: String,
+    amount_minor:       Option<i64>,
+}
+
+async fn pay_qr(
+    State(state): State<Arc<AppState>>,
+    Path(id):     Path<String>,
+    Json(req):    Json<PayQrRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let qr = state.pay_qr(&id, req.consumer_wallet_id, req.amount_minor)
+        .map_err(|e| err(StatusCode::UNPROCESSABLE_ENTITY, e))?;
+    tracing::info!(qr_id = %qr.id, transfer_id = ?qr.transfer_id, "[SANDBOX] QR paid");
+    Ok(Json(serde_json::to_value(&qr).unwrap()))
+}
+
+// ---------------------------------------------------------------------------
+// Ledger inspection
+// ---------------------------------------------------------------------------
+
+async fn list_ledger_entries(
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    Json(serde_json::json!({ "entries": state.list_ledger_entries() }))
+}
+
+async fn ledger_for_wallet(
+    State(state): State<Arc<AppState>>,
+    Path(wallet_id): Path<String>,
+) -> Json<serde_json::Value> {
+    let entries = state.ledger_entries_for_wallet(&wallet_id);
+    let balance: i64 = entries.iter().map(|e| match e.kind {
+        crate::state::LedgerEntryKind::Credit =>  e.amount_minor,
+        crate::state::LedgerEntryKind::Debit  => -e.amount_minor,
+    }).sum();
+    Json(serde_json::json!({
+        "wallet_id": wallet_id,
+        "derived_balance_minor": balance,
+        "entry_count": entries.len(),
+        "entries": entries,
+    }))
+}
+
+// ---------------------------------------------------------------------------
+// Settlement
+// ---------------------------------------------------------------------------
+
+#[derive(serde::Deserialize)]
+struct CreateSettlementBatchRequest {
+    wallet_id: String,
+}
+
+async fn list_settlement_batches(
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    Json(serde_json::json!({ "batches": state.list_settlement_batches() }))
+}
+
+async fn create_settlement_batch(
+    State(state): State<Arc<AppState>>,
+    Json(req):    Json<CreateSettlementBatchRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let batch = state.create_settlement_batch(&req.wallet_id)
+        .map_err(|e| err(StatusCode::UNPROCESSABLE_ENTITY, e))?;
+    tracing::info!(
+        batch_id    = %batch.id,
+        gross_minor = batch.gross_minor,
+        net_minor   = batch.net_minor,
+        "[SANDBOX] settlement batch completed"
+    );
+    Ok(Json(serde_json::to_value(&batch).unwrap()))
+}
+
+async fn get_settlement_batch(
+    State(state): State<Arc<AppState>>,
+    Path(id):     Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let batch = state.get_settlement_batch(&id)
+        .ok_or_else(|| err(StatusCode::NOT_FOUND, format!("settlement batch {id} not found")))?;
+    Ok(Json(serde_json::to_value(&batch).unwrap()))
+}
+
+// ---------------------------------------------------------------------------
+// Events
+// ---------------------------------------------------------------------------
+
+async fn sse_events(
+    State(state): State<Arc<AppState>>,
+) -> Sse<impl futures::Stream<Item = Result<Event, Infallible>>> {
+    let rx = state.event_tx.subscribe();
+    let stream = BroadcastStream::new(rx).filter_map(|result| async move {
+        result.ok().map(|event| {
+            let data = serde_json::to_string(&event).unwrap_or_default();
+            Ok(Event::default()
+                .id(event.id.as_str())
+                .event(event.event_type.as_str())
+                .data(data))
+        })
+    });
+    Sse::new(stream).keep_alive(
+        KeepAlive::new()
+            .interval(Duration::from_secs(15))
+            .text("ping"),
+    )
+}
+
+async fn events_history(
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    let history = state.event_history();
+    Json(serde_json::json!({
+        "count":  history.len(),
+        "events": history,
+    }))
 }
 
 // ---------------------------------------------------------------------------
 // Error helper
 // ---------------------------------------------------------------------------
 
-fn error(status: StatusCode, message: String) -> (StatusCode, Json<serde_json::Value>) {
+fn err(status: StatusCode, message: String) -> (StatusCode, Json<serde_json::Value>) {
     (status, Json(serde_json::json!({ "error": message })))
 }

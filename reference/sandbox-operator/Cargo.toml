@@ -5,37 +5,37 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 
+[lib]
+name = "sandbox_operator"
+path = "src/lib.rs"
+
 [[bin]]
 name = "sandbox-operator"
 path = "src/main.rs"
 
 [dependencies]
 # Banzami kernel
-banzami-types           = { workspace = true }
-banzami-ledger          = { workspace = true }
-banzami-wallets         = { workspace = true }
-banzami-transactions    = { workspace = true }
-banzami-acquiring       = { workspace = true }
-banzami-routing         = { workspace = true }
-banzami-identity        = { workspace = true }
-banzami-qr              = { workspace = true }
-banzami-payment-links   = { workspace = true }
-banzami-notifications   = { workspace = true }
-banzami-transfers       = { workspace = true }
+banzami-types        = { workspace = true }
+banzami-capabilities = { workspace = true }
 
 # Reference implementations
-fake-acquirer         = { workspace = true }
-local-notifications   = { workspace = true }
-simulated-settlement  = { workspace = true }
+fake-acquirer        = { workspace = true }
+local-notifications  = { workspace = true }
+simulated-settlement = { workspace = true }
 
 # Infra
-serde      = { workspace = true }
-serde_json = { workspace = true }
-uuid       = { workspace = true }
-chrono     = { workspace = true }
-tokio      = { workspace = true }
-axum       = { workspace = true }
-tower-http = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+uuid         = { workspace = true }
+chrono       = { workspace = true }
+tokio        = { workspace = true }
+tokio-stream = { workspace = true }
+futures      = { workspace = true }
+axum         = { workspace = true }
+tower-http   = { workspace = true }
 tracing            = { workspace = true }
 tracing-subscriber = { workspace = true }
-anyhow     = { workspace = true }
+anyhow       = { workspace = true }
+
+[dev-dependencies]
+tower = { workspace = true }
