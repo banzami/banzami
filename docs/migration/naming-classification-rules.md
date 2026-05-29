@@ -222,6 +222,26 @@ See `naming-breaking-protocol-migration.md` for the full compatibility and depre
 
 ---
 
+### IDENTITY_NAMESPACE
+
+**Definition:** The occurrence is an ecosystem identity handle or the handle namespace prefix used by people, merchants, operators, and entities within the Banza network.
+
+**Rename rule:** DO NOT RENAME. The `@banza` namespace is a permanent network identity decision. It is not part of the naming inversion. The namespace belongs to the identity layer of the ecosystem — not to the protocol name, the product name, or the AI platform name.
+
+**Why permanent:**
+- Users say "send it to my banza" or "what's your banza?" — the namespace is part of natural language for the network
+- `@banza` is shorter, easier to share verbally, and better for QR and social network effects
+- Identity handles must remain stable even as protocol, product, and AI OS names evolve
+- Changing the namespace after adoption breaks every handle, QR code, and payment link
+
+**Examples:**
+- `@banza` (namespace prefix)
+- `@banza:joao` (user handle)
+- `@banza:maria` (user handle)
+- `@banza:empresa-x` (merchant handle)
+
+---
+
 ## Decision Table
 
 | Occurrence is... | Class | Rename? | To what? |
@@ -241,3 +261,4 @@ See `naming-breaking-protocol-migration.md` for the full compatibility and depre
 | User-visible text | PUBLIC_COPY | Yes, Wave 2+ | Matches semantic class |
 | SVG text | SVG_TEXT | Yes, with PUBLIC_COPY | Matches semantic class |
 | Test file | TEST_FIXTURE | Yes, with code symbols | Matches what is tested |
+| Identity handle / namespace | IDENTITY_NAMESPACE | No | Permanent — `@banza` is the canonical handle namespace |

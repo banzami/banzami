@@ -66,19 +66,29 @@ This name aligns with the legal registration.
 - No longer implies an etymological link to "Banzami" (the product), which would be confusing after inversion
 - Maintains the protocol OS positioning: 16 modules, 8 capabilities, "Tools determine truth. AI explains truth."
 
+### Identity Namespace — `@banza`
+
+The ecosystem identity handle namespace is permanently `@banza`. This is not part of the naming inversion.
+
+Every person, merchant, operator, and entity on the network has a handle in the form `@banza:name`. The namespace belongs to the network identity layer — it is independent of what the protocol, product, or AI OS are called. Users will say "send it to my banza" and "what's your banza?" The namespace must remain stable indefinitely, regardless of future brand changes.
+
+This is a permanent branding and network identity decision. `@banza` is classified as `IDENTITY_NAMESPACE` and is exempt from all migration waves.
+
 ---
 
 ## Protected Names — DO NOT RENAME
 
 The following names must remain unchanged regardless of this inversion:
 
-| Name | Reason |
-|------|--------|
-| `banzami.org` | Domain is registered and has SEO equity. Renaming requires DNS migration and a transition period. Deferred to a separate decision. |
-| `contact@banzami.org` | Public email address on all communications. |
-| GitHub organization `github.com/banzami` | Public repository URLs. Renaming GitHub org breaks all existing clone URLs and links. |
+| Name | Class | Reason |
+|------|-------|--------|
+| `@banza` | IDENTITY_NAMESPACE | Network identity handle namespace. Permanent — see Identity Namespace section above. |
+| `banzami.org` | DOMAIN | Domain is registered and has SEO equity. Renaming requires DNS migration and a transition period. Deferred to a separate decision. |
+| `contact@banzami.org` | EMAIL | Public email address on all communications. |
+| `security@banzami.org` | EMAIL | Security disclosure address. |
+| GitHub organization `github.com/banzami` | REPO | Public repository URLs. Renaming GitHub org breaks all existing clone URLs and links. |
 
-These exceptions are temporary. A separate ADR will govern domain and email migration.
+Domain and email exceptions are temporary. A separate ADR will govern domain and email migration. The `@banza` identity namespace exception is permanent.
 
 ---
 

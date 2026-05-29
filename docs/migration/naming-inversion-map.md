@@ -72,6 +72,21 @@ Previously classified as protected. Overridden by STEP-002B: the naming inversio
 
 See `naming-breaking-protocol-migration.md` for compatibility strategy and test requirements.
 
+## Permanent Exceptions
+
+The following identifiers are permanently exempt from the naming inversion. They must not be renamed in any wave. They are not subject to future migration decisions.
+
+| Name | Class | Reason |
+|------|-------|--------|
+| `@banza` | IDENTITY_NAMESPACE | Network identity handle namespace. Users say "send it to my banza." Permanent. |
+| `@banza:*` | IDENTITY_NAMESPACE | All user, merchant, and operator handles on the network. Permanent. |
+| `banzami.org` | DOMAIN | Registered domain. DNS migration is a separate decision. **PROTECTED** |
+| `*.banzami.org` | DOMAIN | All subdomains (api, sandbox, etc.). **PROTECTED** |
+| `contact@banzami.org` | EMAIL | Public contact address on all communications. **PROTECTED** |
+| `*@banzami.org` | EMAIL | All addresses on this domain. **PROTECTED** |
+
+> **Identity namespace rationale:** `@banza` is the canonical handle prefix for everyone on the network. It belongs to the identity layer — not the protocol name, product name, or AI OS name. It must remain stable even as all other names evolve. See `naming-classification-rules.md` § IDENTITY_NAMESPACE and ADR-025 § Identity Namespace.
+
 ## Protected Names — DO NOT RENAME
 
 | Name | Class | Reason |

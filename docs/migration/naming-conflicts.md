@@ -3,7 +3,7 @@
 **ADR:** ADR-025 — Ecosystem Naming Inversion  
 **Version:** 1.0  
 **Date:** 2026-05-29  
-**Status:** C-001, C-002, C-004, C-009 RESOLVED. C-007, C-008 overridden by STEP-002B — migrate. C-003, C-005, C-006 unresolved.
+**Status:** C-001, C-002, C-004, C-009, C-010 RESOLVED. C-007, C-008 overridden by STEP-002B — migrate. C-003, C-005, C-006 unresolved.
 
 ---
 
@@ -304,6 +304,34 @@ Does this header need renaming? After inversion, `Banza-Signature` actually beco
 
 ---
 
+## C-010 — Identity Handle Namespace: `@banza`
+
+**Wave blocked:** None (permanent exception — no migration action required)  
+**Classification would be:** IDENTITY_NAMESPACE
+
+### The conflict
+
+After the naming inversion, "Banza" becomes the protocol name. The ecosystem identity handle prefix is `@banza` (e.g., `@banza:joao`, `@banza:empresa-x`). A question arises: should the handle namespace follow the product name (becoming `@banzami`) or the protocol name?
+
+### Options
+
+**Option A — Keep `@banza` as the canonical handle namespace (permanent)**  
+Rationale: `@banza` is shorter, easier to say verbally, better for QR and social network effects. Users say "send it to my banza." The namespace belongs to the identity layer, not the brand layer. After inversion, "Banza" = protocol, which is appropriate — network identities live at the protocol level, not the product level.
+
+**Option B — Rename handle namespace to `@banzami`**  
+Rationale: The product is Banzami; consumers interact with Banzami. But this would make handles longer and harder to share. It would also treat identity as a product feature rather than a protocol primitive.
+
+### Decision
+
+✅ **RESOLVED (STEP-002C) — Option A: `@banza` is the permanent canonical handle namespace.**
+
+- Network identity handles are: `@banza:name`
+- The namespace is classified as `IDENTITY_NAMESPACE` — a new class added in STEP-002C
+- This is a permanent exception, not a deferred one. It will not be renamed in any future wave.
+- Rationale: Identity handles live at the protocol layer (`@banza` = identity on the Banza network). They must remain stable even if product or AI OS names change again. Shorter handles are better for usability.
+
+---
+
 ## Conflict Summary
 
 | ID | Description | Wave Blocked | Status |
@@ -317,6 +345,7 @@ Does this header need renaming? After inversion, `Banza-Signature` actually beco
 | C-007 | `/.well-known/banzami/` URL | 5c | ✅ RESOLVED: MIGRATE → `/.well-known/banza/` |
 | C-008 | `BANZAMI-SBX:` / `BANZAMI:` QR prefixes | 5c | ✅ RESOLVED: MIGRATE → `BANZA-SBX:` / `BANZA:` |
 | C-009 | `Banza-Signature` header | — | ✅ RESOLVED: no rename (already correct after inversion) |
+| C-010 | `@banza` identity handle namespace | — | ✅ RESOLVED: permanent `@banza` (STEP-002C) |
 
 **Minimum required before Wave 3 begins:** ✅ C-004 resolved  
 **Minimum required before Wave 5c begins:** ✅ C-007, C-008 resolved  

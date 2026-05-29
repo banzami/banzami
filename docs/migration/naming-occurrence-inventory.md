@@ -315,4 +315,20 @@ Excluded: `node_modules`, `.next`, `target`, `dist`, `.git`, `__pycache__`
 | BanzaClient (in tests) | Test instantiation | ~5 | `integrations/plugins/generic-node/tests/client.test.ts` | Rename when SDK symbol renamed |
 | BanzaError (in tests) | Test assertion | ~5 | `sdk/typescript/src/client.test.ts` | Rename when SDK symbol renamed |
 | BanzaApiError (in tests) | Test assertion | ~3 | Checkout SDK tests | Rename when SDK symbol renamed |
+
+---
+
+### CLASS: IDENTITY_NAMESPACE
+
+**Definition:** Ecosystem identity handles and the handle namespace prefix used by people, merchants, operators, and entities within the Banza network.  
+**Rename action:** PROTECTED PERMANENTLY — do not rename in any wave.
+
+| Occurrence | Meaning | File count | Example locations | Action |
+|------------|---------|------------|-------------------|--------|
+| `@banza` | Handle namespace prefix | — | Protocol RFCs, wallet UI, QR specs, developer docs | **PERMANENT EXCEPTION — DO NOT RENAME** |
+| `@banza:joao` | Example user handle | — | Developer docs, QR examples | **PERMANENT EXCEPTION — DO NOT RENAME** |
+| `@banza:merchant` | Example merchant handle | — | Developer docs, onboarding examples | **PERMANENT EXCEPTION — DO NOT RENAME** |
+| `@banza:*` | All handles on the network | — | All repos (as examples) | **PERMANENT EXCEPTION — DO NOT RENAME** |
+
+**Rationale:** The `@banza` namespace belongs to the network identity layer. Users say "send it to my banza" and "what's your banza?" The namespace must remain stable regardless of future changes to the protocol name, product name, or AI OS name. Classified separately from DOMAIN and EMAIL because this is a network identity decision, not a brand/legal decision. See ADR-025 § Identity Namespace.
 | "banzami" in query fixtures | Test question strings | 3 | BanzamIA `tests/` | Keep or update per test purpose |
