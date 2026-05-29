@@ -51,7 +51,7 @@ Banzami provides:
 - **Financial core crates** (Rust) — double-entry ledger, wallet engine, transaction FSM, settlement, reconciliation, routing, acquiring abstraction, QR runtime, identity
 - **Protocol specifications** — QR payload format, webhook schemas, OpenAPI contracts, event schemas
 - **Official SDKs** — TypeScript, Python, PHP, Go, Flutter
-- **Integration plugins** — WooCommerce, Shopify, Laravel, Node.js, PHP
+- **Integration plugins** — generic e-commerce and framework plugins (Laravel, Node.js, PHP, open plugin standard)
 - **SDK certification** — test vectors and compliance suite for third-party implementations
 - **Architecture documentation** — ADRs, domain models, design principles, sandbox environment
 
@@ -101,26 +101,29 @@ The public/private split is **not** language-based. It is:
  │  qr        │          │  QR spec     │          │  Python      │
  │  routing   │          │  Events      │          │  PHP / Go    │
  │  acquiring │          │  Cert suite  │          │  Flutter     │
- │  ...       │          │              │          │  WooCommerce │
+ │  ...       │          │              │          │  Plugins     │
  └────────────┘          └──────────────┘          └──────────────┘
-                                  │
-                                  ▼
-                    ┌─────────────────────────────┐
-                    │            BANZA             │
-                    │  First Commercial Operator   │
-                    │                             │
-                    │  Consumer app · Merchant app │
-                    │  EMIS/Multicaixa adapters   │
-                    │  Production infra · Ops     │
-                    │  Compliance · Risk rules    │
-                    └─────────────────────────────┘
+                    │                                         │
+        ┌───────────┘                         ┌──────────────┘
+        ▼                                     ▼
+┌──────────────────────┐        ┌──────────────────────────────┐
+│        BANZA         │        │          BanzamIA            │
+│  First Operator      │        │  Protocol Operating System   │
+│                      │        │                              │
+│  Consumer app        │        │  16 modules · 3 layers       │
+│  Merchant dashboard  │        │  8 capabilities              │
+│  EMIS/Multicaixa     │        │  Compreender · Explicar      │
+│  QR infrastructure   │        │  Validar · Simular · Prever  │
+│  Production infra    │        │  Guiar · Certificar · Federar│
+│  L1 Certified        │        │  banzami.org/banzamia        │
+└──────────────────────┘        └──────────────────────────────┘
 ```
 
 ---
 
-## BanzamIA — AI-native Protocol Agent
+## BanzamIA — Protocol Operating System
 
-**BanzamIA** is the AI-native intelligence layer of the Banzami protocol — publicly available at `banzami.org/banzamia`.
+**BanzamIA** is the Protocol Operating System of Banzami — publicly available at `banzami.org/banzamia`.
 
 BanzamIA is not a chatbot. It is an orchestrated AI system that combines multiple language models, live protocol knowledge retrieval, deterministic validation tools, and certification logic into a single interface.
 
