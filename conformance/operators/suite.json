@@ -1,6 +1,6 @@
 {
-  "_spec": "Banzami Operator Conformance Suite v1.0",
-  "_description": "Tests that any operator implementing the Banzami protocol must pass.",
+  "_spec": "Banza Operator Conformance Suite v1.0",
+  "_description": "Tests that any operator implementing the Banza protocol must pass.",
   "_target": "HTTP operator at configurable base URL",
 
   "suite_id": "operators",

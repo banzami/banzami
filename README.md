@@ -88,7 +88,7 @@ The public/private split is **not** language-based. It is:
 
 ```
                     ┌─────────────────────────────┐
-                    │          BANZAMI             │
+                    │           BANZA              │
                     │   Open Financial Kernel      │
                     │   Protocol · Core · SDKs     │
                     └─────────────────────────────┘
@@ -109,8 +109,8 @@ The public/private split is **not** language-based. It is:
         ┌───────────┘                         ┌──────────────┘
         ▼                                     ▼
 ┌──────────────────────┐        ┌──────────────────────────────┐
-│        BANZA         │        │          BanzamIA            │
-│  First Operator      │        │  Protocol Operating System   │
+│       Banzami        │        │           BanzAI             │
+│  Reference Operator  │        │  Protocol Operating System   │
 │                      │        │                              │
 │  Consumer app        │        │  16 modules · 3 layers       │
 │  Merchant dashboard  │        │  8 capabilities              │

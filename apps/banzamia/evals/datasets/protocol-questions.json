@@ -1,7 +1,7 @@
 [
   {
     "id": "PB-001",
-    "question": "What is the Banzami protocol?",
+    "question": "What is the Banza protocol?",
     "expected_sources": ["README.md", "docs/BANZAMI_REFERENCE.md"],
     "expected_answer_keywords": ["open", "protocol", "payment", "financial", "operator"],
     "difficulty": "easy",
@@ -588,7 +588,7 @@
   },
   {
     "id": "SET-019",
-    "question": "What settlement events does the Banzami protocol define?",
+    "question": "What settlement events does the Banza protocol define?",
     "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
     "expected_answer_keywords": ["settlement.initiated", "settlement.completed", "settlement.failed"],
     "difficulty": "medium",
@@ -1572,122 +1572,122 @@
 
   {
     "id": "BIA-001",
-    "question": "What is BanzamIA?",
+    "question": "What is BanzAI?",
     "expected_sources": ["README.md", "docs/BANZAMI_REFERENCE.md"],
-    "expected_answer_keywords": ["BanzamIA", "AI", "protocol", "agent", "intelligence"],
+    "expected_answer_keywords": ["BanzAI", "AI", "protocol", "operating-system", "protocol-os"],
     "difficulty": "easy",
-    "category": "BanzamIA"
+    "category": "BanzAI"
   },
   {
     "id": "BIA-002",
-    "question": "What models does BanzamIA use for different tasks?",
+    "question": "What models does BanzAI use for different tasks?",
     "expected_sources": ["README.md"],
     "expected_answer_keywords": ["Qwen", "Qwen Coder", "DeepSeek", "model", "routing"],
     "difficulty": "medium",
-    "category": "BanzamIA"
+    "category": "BanzAI"
   },
   {
     "id": "BIA-003",
-    "question": "What is the BanzamIA RAG pipeline?",
+    "question": "What is the BanzAI RAG pipeline?",
     "expected_sources": ["README.md"],
     "expected_answer_keywords": ["RAG", "retrieval", "Qdrant", "vector", "embeddings"],
     "difficulty": "medium",
-    "category": "BanzamIA"
+    "category": "BanzAI"
   },
   {
     "id": "BIA-004",
-    "question": "What is the BanzamIA authority ranking system?",
+    "question": "What is the BanzAI authority ranking system?",
     "expected_sources": ["README.md"],
     "expected_answer_keywords": ["authority", "ranking", "source", "weight", "BANZAMI_REFERENCE"],
     "difficulty": "medium",
-    "category": "BanzamIA"
+    "category": "BanzAI"
   },
   {
     "id": "BIA-005",
-    "question": "What is the BanzamIA protocol truth model?",
+    "question": "What is the BanzAI protocol truth model?",
     "expected_sources": ["README.md"],
     "expected_answer_keywords": ["tools determine truth", "AI explains truth", "deterministic", "grounded"],
     "difficulty": "medium",
-    "category": "BanzamIA"
+    "category": "BanzAI"
   },
   {
     "id": "BIA-006",
-    "question": "What BanzamIA deployment modes exist?",
+    "question": "What BanzAI deployment modes exist?",
     "expected_sources": ["README.md"],
     "expected_answer_keywords": ["demo", "live-api-no-model", "live-ai"],
     "difficulty": "easy",
-    "category": "BanzamIA"
+    "category": "BanzAI"
   },
   {
     "id": "BIA-007",
-    "question": "Can BanzamIA claim an operator is certified without a conformance runner result?",
+    "question": "Can BanzAI claim an operator is certified without a conformance runner result?",
     "expected_sources": ["README.md"],
     "expected_answer_keywords": ["cannot", "conformance runner", "deterministic", "tools determine truth"],
     "difficulty": "hard",
-    "category": "BanzamIA"
+    "category": "BanzAI"
   },
   {
     "id": "BIA-008",
-    "question": "What is the BanzamIA knowledge search endpoint?",
+    "question": "What is the BanzAI knowledge search endpoint?",
     "expected_sources": ["README.md"],
     "expected_answer_keywords": ["POST /knowledge/search", "query", "results", "citations"],
     "difficulty": "easy",
-    "category": "BanzamIA"
+    "category": "BanzAI"
   },
   {
     "id": "BIA-009",
-    "question": "What embedding model does BanzamIA use?",
+    "question": "What embedding model does BanzAI use?",
     "expected_sources": ["README.md"],
     "expected_answer_keywords": ["BGE", "bge-large", "embedding", "vector", "1024"],
     "difficulty": "medium",
-    "category": "BanzamIA"
+    "category": "BanzAI"
   },
   {
     "id": "BIA-010",
-    "question": "Why does BanzamIA use RAG instead of fine-tuning?",
+    "question": "Why does BanzAI use RAG instead of fine-tuning?",
     "expected_sources": ["docs/BANZAMI_REFERENCE.md", "README.md"],
     "expected_answer_keywords": ["RAG", "fine-tuning", "stale", "evolves", "live"],
     "difficulty": "medium",
-    "category": "BanzamIA"
+    "category": "BanzAI"
   },
   {
     "id": "BIA-011",
-    "question": "Can BanzamIA bypass conformance testing?",
+    "question": "Can BanzAI bypass conformance testing?",
     "expected_sources": ["README.md"],
     "expected_answer_keywords": ["cannot bypass", "deterministic", "tools", "truth", "conformance"],
     "difficulty": "hard",
-    "category": "BanzamIA"
+    "category": "BanzAI"
   },
   {
     "id": "BIA-012",
-    "question": "What is the hybrid search fallback in BanzamIA?",
+    "question": "What is the hybrid search fallback in BanzAI?",
     "expected_sources": ["README.md"],
     "expected_answer_keywords": ["keyword", "fallback", "weak", "vector", "hybrid"],
     "difficulty": "medium",
-    "category": "BanzamIA"
+    "category": "BanzAI"
   },
   {
     "id": "BIA-013",
-    "question": "What does BanzamIA return with every answer?",
+    "question": "What does BanzAI return with every answer?",
     "expected_sources": ["README.md"],
     "expected_answer_keywords": ["citations", "source", "path", "authority", "grounded"],
     "difficulty": "easy",
-    "category": "BanzamIA"
+    "category": "BanzAI"
   },
   {
     "id": "BIA-014",
-    "question": "What is the BanzamIA task routing algorithm?",
+    "question": "What is the BanzAI task routing algorithm?",
     "expected_sources": ["README.md"],
     "expected_answer_keywords": ["docs", "code", "reasoning", "validation", "certification", "trace", "route"],
     "difficulty": "medium",
-    "category": "BanzamIA"
+    "category": "BanzAI"
   },
   {
     "id": "BIA-015",
-    "question": "Is BanzamIA read-only with respect to protocol data?",
+    "question": "Is BanzAI read-only with respect to protocol data?",
     "expected_sources": ["README.md"],
     "expected_answer_keywords": ["read-only", "cannot modify", "explain", "never", "invent"],
     "difficulty": "hard",
-    "category": "BanzamIA"
+    "category": "BanzAI"
   }
 ]

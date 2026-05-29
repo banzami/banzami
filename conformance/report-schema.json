@@ -32,7 +32,7 @@
     },
     "protocol_version": {
       "type": "string",
-      "description": "Banzami protocol version being tested against."
+      "description": "Banza protocol version being tested against."
     },
     "certification_level_achieved": {
       "type": "integer",

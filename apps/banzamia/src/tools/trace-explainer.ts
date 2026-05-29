@@ -78,7 +78,7 @@ function detectAnomalies(events: TraceEvent[]): TraceAnomaly[] {
     if (!knownTypes.has(event.event_type)) {
       anomalies.push({
         type: 'unknown_event_type',
-        description: `Event type '${event.event_type}' is not in the Banzami protocol specification`,
+        description: `Event type '${event.event_type}' is not in the Banza protocol specification`,
         event_id: event.event_id,
       });
     }

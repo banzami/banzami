@@ -29,7 +29,7 @@
     "protocol_version": {
       "type": "string",
       "pattern": "^\\d+\\.\\d+$",
-      "description": "The Banzami protocol version this operator implements (e.g. 1.0)."
+      "description": "The Banza protocol version this operator implements (e.g. 1.0)."
     },
     "certification_level": {
       "type": "integer",
