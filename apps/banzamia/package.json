@@ -1,0 +1,31 @@
+{
+  "name": "banzamia",
+  "version": "1.0.0",
+  "description": "BanzamIA — AI-native protocol agent for Banzami",
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "rag:index": "tsx scripts/rag-cli.ts index",
+    "rag:search": "tsx scripts/rag-cli.ts search",
+    "rag:status": "tsx scripts/rag-cli.ts status",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.0",
+    "@qdrant/js-client-rest": "^1.9.0",
+    "fastify": "^5.0.0"
+  },
+  "optionalDependencies": {
+    "@huggingface/transformers": "^3.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}

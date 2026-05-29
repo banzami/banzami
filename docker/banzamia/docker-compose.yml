@@ -1,0 +1,42 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: banzamia-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__HTTP_PORT: 6333
+      QDRANT__SERVICE__GRPC_PORT: 6334
+
+  banzamia:
+    build:
+      context: ../../apps/banzamia
+      dockerfile: ../../docker/banzamia/Dockerfile
+    container_name: banzamia-api
+    restart: unless-stopped
+    ports:
+      - "4200:4200"
+    environment:
+      BANZAMIA_MODE: ${BANZAMIA_MODE:-live-api-no-model}
+      BANZAMIA_PORT: 4200
+      BANZAMIA_QDRANT_URL: http://qdrant:6333
+      BANZAMIA_COLLECTION: banzamia_knowledge
+      BANZAMIA_EMBEDDING_PROVIDER: ${BANZAMIA_EMBEDDING_PROVIDER:-mock}
+      BANZAMIA_EMBEDDING_DIMS: ${BANZAMIA_EMBEDDING_DIMS:-1024}
+      BANZAMIA_EMBEDDING_MODEL: ${BANZAMIA_EMBEDDING_MODEL:-Xenova/bge-large-en-v1.5}
+      BANZAMIA_VLLM_URL: ${BANZAMIA_VLLM_URL:-}
+      BANZAMIA_MODEL_QWEN: ${BANZAMIA_MODEL_QWEN:-Qwen/Qwen2.5-7B-Instruct}
+      BANZAMIA_MODEL_QWEN_CODER: ${BANZAMIA_MODEL_QWEN_CODER:-Qwen/Qwen2.5-Coder-7B-Instruct}
+      BANZAMIA_MODEL_DEEPSEEK: ${BANZAMIA_MODEL_DEEPSEEK:-deepseek-ai/DeepSeek-R1-Distill-Qwen-7B}
+      BANZAMIA_DOCS_ROOT: /repo
+    volumes:
+      - ../../:/repo:ro
+    depends_on:
+      - qdrant
+
+volumes:
+  qdrant_data:
