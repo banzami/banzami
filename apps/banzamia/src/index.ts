@@ -8,6 +8,8 @@ import { statusRoute } from './routes/status.js';
 import { knowledgeRoute } from './routes/knowledge.js';
 import { askRoute } from './routes/ask.js';
 import { chatRoute } from './routes/chat.js';
+import { graphRoute } from './routes/graph.js';
+import { ragStatsRoute } from './routes/rag-stats.js';
 import type { ModelProvider } from './orchestrator/providers/provider.js';
 
 const fastify = Fastify({
@@ -33,6 +35,8 @@ await fastify.register(statusRoute, deps);
 await fastify.register(knowledgeRoute, deps);
 await fastify.register(askRoute, deps);
 await fastify.register(chatRoute, deps);
+await fastify.register(graphRoute, { cfg: config });
+await fastify.register(ragStatsRoute, deps);
 
 fastify.get('/health', async () => ({ ok: true }));
 

@@ -5,6 +5,7 @@ import { search } from '../rag/search.js';
 import { buildContext, renderContextBlock } from '../rag/context.js';
 import type { Config } from '../config.js';
 import type { Citation, SearchFilters } from '../rag/types.js';
+import { trackQuery } from '../analytics/tracker.js';
 
 export interface AskRequest {
   question: string;
@@ -94,6 +95,7 @@ export async function ask(
   model: ModelProvider,
   req: AskRequest,
 ): Promise<AskResponse> {
+  const t0 = Date.now();
   const routing = classifyTask(req.question);
   const limit = req.context_limit ?? 8;
 
@@ -103,6 +105,21 @@ export async function ask(
 
   const messages = buildMessages(req.question, routing.task_type, contextBlock);
   const modelResponse = await model.generate(messages, routing.task_type);
+
+  const latency = Date.now() - t0;
+  const topAuthority = ctx.citations[0]?.authority ?? 0;
+
+  trackQuery({
+    timestamp: new Date().toISOString(),
+    question_hash: Buffer.from(req.question).toString('base64').slice(0, 16),
+    task_type: routing.task_type,
+    retrieval_mode: searchResponse.mode,
+    weak_retrieval: ctx.weak_retrieval,
+    source_types: [...new Set(ctx.citations.map((c) => c.source_type))],
+    latency_ms: latency,
+    citation_count: ctx.citations.length,
+    top_authority: topAuthority,
+  });
 
   return {
     answer: modelResponse.content,
@@ -121,6 +138,7 @@ export async function askStream(
   req: AskRequest,
   onToken: (token: string) => void,
 ): Promise<AskResponse> {
+  const t0 = Date.now();
   const routing = classifyTask(req.question);
   const limit = req.context_limit ?? 8;
 
@@ -130,6 +148,18 @@ export async function askStream(
 
   const messages = buildMessages(req.question, routing.task_type, contextBlock);
   const modelResponse = await model.generateStream(messages, routing.task_type, onToken);
+
+  trackQuery({
+    timestamp: new Date().toISOString(),
+    question_hash: Buffer.from(req.question).toString('base64').slice(0, 16),
+    task_type: routing.task_type,
+    retrieval_mode: searchResponse.mode,
+    weak_retrieval: ctx.weak_retrieval,
+    source_types: [...new Set(ctx.citations.map((c) => c.source_type))],
+    latency_ms: Date.now() - t0,
+    citation_count: ctx.citations.length,
+    top_authority: ctx.citations[0]?.authority ?? 0,
+  });
 
   return {
     answer: modelResponse.content,

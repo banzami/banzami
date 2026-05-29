@@ -147,6 +147,32 @@ export async function vectorSearch(
   }));
 }
 
+export async function scrollAll(cfg: Config): Promise<ChunkPayload[]> {
+  const client = getClient(cfg);
+  const results: ChunkPayload[] = [];
+  let offset: string | number | undefined = undefined;
+
+  try {
+    while (true) {
+      const result = await client.scroll(cfg.qdrant.collection, {
+        limit: 250,
+        with_payload: true,
+        with_vector: false,
+        ...(offset !== undefined ? { offset } : {}),
+      });
+      for (const p of result.points) {
+        results.push(p.payload as unknown as ChunkPayload);
+      }
+      if (!result.next_page_offset) break;
+      offset = result.next_page_offset as string | number;
+    }
+  } catch {
+    // collection doesn't exist yet
+  }
+
+  return results;
+}
+
 export async function keywordSearch(
   cfg: Config,
   query: string,

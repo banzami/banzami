@@ -11,6 +11,9 @@
     "rag:index": "tsx scripts/rag-cli.ts index",
     "rag:search": "tsx scripts/rag-cli.ts search",
     "rag:status": "tsx scripts/rag-cli.ts status",
+    "rag:coverage": "tsx scripts/coverage-cli.ts",
+    "rag:eval": "tsx scripts/eval-cli.ts",
+    "graph:index": "tsx scripts/graph-cli.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
