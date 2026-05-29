@@ -12,8 +12,8 @@
     <rect width="210" height="20" fill="url(#s)"/>
   </g>
   <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
-    <text x="45" y="15" fill="#010101" fill-opacity=".3">Banzami</text>
-    <text x="45" y="14">Banzami</text>
+    <text x="45" y="15" fill="#010101" fill-opacity=".3">Banza</text>
+    <text x="45" y="14">Banza</text>
     <text x="150" y="15" fill="#010101" fill-opacity=".3">Settlement Compatible</text>
     <text x="150" y="14">Settlement Compatible</text>
   </g>
