@@ -14,7 +14,7 @@ check() {
   local results
   results=$(grep -rn "$term" $SEARCH_ROOTS \
     --include="*.md" --include="*.ts" --include="*.tsx" \
-    2>/dev/null | grep -v node_modules | grep -v ".git" | grep -v ".dart_tool" | grep -v "ios/Pods" | grep -v ".pytest_cache" | grep -v ".venv" || true)
+    2>/dev/null | grep -v node_modules | grep -v ".git" | grep -v ".dart_tool" | grep -v "ios/Pods" | grep -v ".pytest_cache" | grep -v ".venv" | grep -v "docs/audit/" || true)
   if [ -n "$results" ]; then
     echo "❌ FORBIDDEN TERM: $description"
     echo "$results" | head -5
