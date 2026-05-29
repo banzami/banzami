@@ -118,6 +118,77 @@ The public/private split is **not** language-based. It is:
 
 ---
 
+## BanzamIA — AI-native Protocol Agent
+
+**BanzamIA** is the AI-native intelligence layer of the Banzami protocol — publicly available at `banzami.org/banzamia`.
+
+BanzamIA is not a chatbot. It is an orchestrated AI system that combines multiple language models, live protocol knowledge retrieval, deterministic validation tools, and certification logic into a single interface.
+
+```
+Tools determine truth.
+AI explains truth.
+```
+
+### Model architecture
+
+BanzamIA routes each request to the right combination of model, knowledge source, and tools:
+
+| Task | Model + Tools |
+|------|--------------|
+| Documentation / Q&A | Qwen + RAG |
+| Code generation / SDKs | Qwen Coder + OpenAPI templates |
+| Reasoning / architecture / debugging | DeepSeek + RAG |
+| Validation (manifest, schema) | Deterministic tools + DeepSeek |
+| Certification (operator levels) | Conformance Runner + DeepSeek |
+| Trace analysis / audit | Trace Parser + DeepSeek |
+
+**Models:**
+- **Qwen** — general protocol understanding, documentation, Q&A, RFC/ADR summarization
+- **Qwen Coder** — implementation assistance, SDK snippets, manifest scaffolding
+- **DeepSeek** — deep reasoning, invariant debugging, certification analysis, conformance failure explanation
+
+### Deployment modes
+
+| Mode | Status | Description |
+|------|--------|-------------|
+| `demo` | Available | Frontend-only · static examples · no backend |
+| `live-api-no-model` | Active | Real backend · deterministic tools · mock model · no GPU inference |
+| `live-ai` | Planned | RunPod / vLLM · Qwen · Qwen Coder · DeepSeek · full model routing |
+
+**Current mode: `live-api-no-model`** — real validation tools, no active GPU inference.
+
+The architecture is designed so that `live-ai` mode can be enabled without redesigning the system. The GPU node handles inference only — protocol data, indexes, and verification remain outside the GPU node.
+
+### Infrastructure
+
+Always-on: BanzamIA API · Qdrant vector store · knowledge index · deterministic tools
+
+GPU inference (planned): RunPod · RTX 4090 · vLLM · Qwen / Qwen Coder / DeepSeek
+
+### Environment variables (live-ai mode)
+
+```env
+BANZAMIA_MODE=live-ai            # demo | live-api-no-model | live-ai
+BANZAMIA_QDRANT_URL=...          # Qdrant instance URL
+BANZAMIA_VLLM_URL=...            # RunPod vLLM endpoint
+BANZAMIA_MODEL_QWEN=...          # Qwen model ID
+BANZAMIA_MODEL_QWEN_CODER=...    # Qwen Coder model ID
+BANZAMIA_MODEL_DEEPSEEK=...      # DeepSeek model ID
+```
+
+### Safety constraints
+
+BanzamIA is read-only. It must never:
+- Invent certification results or claim regulatory approval
+- Bypass conformance or replace deterministic validation
+- Expose private operator data or secrets
+- Make financial decisions without tool-verified outputs
+
+Access: `banzami.org/banzamia`  
+Documentation: `banzami.org/sobre-banzamia`
+
+---
+
 ## Repository structure
 
 ```
