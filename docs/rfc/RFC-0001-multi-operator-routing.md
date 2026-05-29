@@ -3,13 +3,13 @@ rfc: 0001
 title: Multi-Operator Routing
 status: Draft
 created: 2026-05-28
-authors: ["Banzami Core Team"]
+authors: ["Banza Core Team"]
 requires: []
 ---
 
 ## Summary
 
-Define how payment routing decisions are made when the Banzami ecosystem
+Define how payment routing decisions are made when the Banza ecosystem
 contains multiple independent operators, each with different rail access
 and geographic coverage.
 

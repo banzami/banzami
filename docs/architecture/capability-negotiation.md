@@ -2,7 +2,7 @@
 
 Version: 1.0 · Status: Experimental
 
-Capability negotiation is how Banzami operators advertise what they support and
+Capability negotiation is how Banza operators advertise what they support and
 how integrating parties discover supported features before sending requests.
 
 This is an **experimental** surface. The protocol may change without a deprecation
@@ -63,7 +63,7 @@ The manifest describes the operator's identity, environment, and capabilities.
 | `supports_qr` | QR generation and payment endpoint available |
 | `supports_payment_links` | Payment link creation and payment endpoint available |
 | `supports_settlement` | Settlement batches can be created and executed |
-| `cross_operator_routing` | Operator can route payments to other Banzami operators |
+| `cross_operator_routing` | Operator can route payments to other Banza operators |
 | `offline_payments` | Operator supports payment initiation without live API connection |
 
 ---
@@ -109,7 +109,7 @@ operator. The manifest always reflects the current enforcement state.
 
 When `cross_operator_routing` is `true`, operators participate in a federated
 network. A payment to a wallet on a different operator is routed through the
-Banzami routing layer rather than rejected.
+Banza routing layer rather than rejected.
 
 The routing layer:
 1. Resolves the destination wallet's operator via the `@handle` identity system

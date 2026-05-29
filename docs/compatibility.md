@@ -2,14 +2,14 @@
 
 Version: 1.0 · Governance status: Ratified
 
-This document defines what Banzami considers a breaking change, how versions
+This document defines what Banza considers a breaking change, how versions
 are assigned, how deprecations are signalled, and what consumers can rely on.
 
 ---
 
 ## Stability levels
 
-Every surface in Banzami carries one of three stability levels. The level
+Every surface in Banza carries one of three stability levels. The level
 determines the backward-compatibility guarantee.
 
 ### Stable
@@ -63,7 +63,7 @@ Internal surfaces:
 
 ## Version scheme
 
-Banzami follows Semantic Versioning 2.0 for all crates and SDKs:
+Banza follows Semantic Versioning 2.0 for all crates and SDKs:
 
 ```
 MAJOR.MINOR.PATCH

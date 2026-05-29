@@ -1,6 +1,6 @@
 # Conformance and Certification
 
-The Banzami conformance system lets any operator, SDK, or integration verify that it correctly implements the Banzami protocol. Conformance is binary: either a behaviour matches the spec, or it doesn't.
+The Banza conformance system lets any operator, SDK, or integration verify that it correctly implements the Banza protocol. Conformance is binary: either a behaviour matches the spec, or it doesn't.
 
 ## What conformance covers
 

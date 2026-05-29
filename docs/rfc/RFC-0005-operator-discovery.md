@@ -3,13 +3,13 @@ rfc: 0005
 title: Operator Discovery
 status: Draft
 created: 2026-05-28
-authors: ["Banzami Core Team"]
+authors: ["Banza Core Team"]
 requires: [0001, 0004]
 ---
 
 ## Summary
 
-Define a future mechanism by which Banzami operators announce their capabilities
+Define a future mechanism by which Banza operators announce their capabilities
 to the ecosystem, enabling routing, interoperability, and multi-operator
 coordination without a central registry.
 

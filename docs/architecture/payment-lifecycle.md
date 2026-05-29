@@ -2,7 +2,7 @@
 
 Version: 1.0 · Status: Stable
 
-A Banzami payment flows through five sequential stages. Every stage is
+A Banza payment flows through five sequential stages. Every stage is
 atomic: a failure at any point leaves no partial state.
 
 ---
@@ -66,7 +66,7 @@ Response: SandboxTransfer { id, trace_id, correlation_id, ... }
 
 ## Derived payment surfaces
 
-All payment surfaces in Banzami reduce to a ledger transfer:
+All payment surfaces in Banza reduce to a ledger transfer:
 
 | Surface | How it creates a transfer |
 |---------|--------------------------|

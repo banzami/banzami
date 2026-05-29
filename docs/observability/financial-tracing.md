@@ -2,7 +2,7 @@
 
 Version: 1.0 · Status: Stable · Domain: Observability
 
-Every operation in Banzami emits a causal chain of identifiers that links the
+Every operation in Banza emits a causal chain of identifiers that links the
 full lifecycle of a payment flow — from the triggering operation, through all
 derived ledger postings and events, to eventual settlement.
 
@@ -165,7 +165,7 @@ entries, events, QR codes, payment requests, and settlement batches.
 
 ## In production
 
-In a production Banzami operator, these same identifiers appear in:
+In a production Banza operator, these same identifiers appear in:
 
 - Webhook payloads delivered to merchant backends
 - Structured logs (include `trace_id` in every log line)

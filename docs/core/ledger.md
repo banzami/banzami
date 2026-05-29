@@ -1,6 +1,6 @@
 # banzami-ledger — Double-Entry Ledger Engine
 
-The ledger is the foundation of Banzami's financial correctness. All money movement flows through it.
+The ledger is the foundation of Banza's financial correctness. All money movement flows through it.
 
 ---
 

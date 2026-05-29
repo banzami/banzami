@@ -1,10 +1,10 @@
-# BanzamIA
+# BanzAI
 
-Protocol Operating System for the Banzami ecosystem.
+Protocol Operating System for the Banza ecosystem.
 
 ## Overview
 
-BanzamIA is the Protocol Operating System of Banzami — a Fastify 5 API backend that powers the BanzamIA modules on the docs site. It provides:
+BanzAI is the Protocol Operating System of Banza — a Fastify 5 API backend that powers the BanzAI modules on the docs site. It provides:
 
 - **Chat** — streaming LLM responses grounded in protocol knowledge
 - **Protocol Graph Explorer** — interactive navigation of typed protocol nodes and relationships
@@ -143,6 +143,6 @@ npm test                # Run test suite (107 tests)
 
 ## Trust Through Measurement
 
-BanzamIA's quality metrics are public. Run `npm run rag:eval` to generate a benchmark report in `reports/`. The Quality Dashboard at `/banzamia` → **Quality Dashboard** shows live retrieval analytics.
+BanzAI's quality metrics are public. Run `npm run rag:eval` to generate a benchmark report in `reports/`. The Quality Dashboard at `/banzamia` → **Quality Dashboard** shows live retrieval analytics.
 
 > Tools determine truth. AI explains truth.

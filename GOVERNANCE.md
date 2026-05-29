@@ -1,8 +1,8 @@
-# Banzami Governance
+# Banza Governance
 
 ## Overview
 
-Banzami is governed by Banzami (the organization) and maintained as an open-source ecosystem project. The governance model separates **protocol decisions** (which affect all implementations) from **implementation decisions** (which are internal to each SDK or plugin).
+Banza is governed by Banzami (the organization) and maintained as an open-source ecosystem project. The governance model separates **protocol decisions** (which affect all implementations) from **implementation decisions** (which are internal to each SDK or plugin).
 
 ---
 
@@ -50,7 +50,7 @@ ADR numbering is sequential and permanent. ADRs are never deleted — they are s
 
 ## Versioning policy
 
-Everything published in this repository is part of the **Banzami ecosystem contract surface**. Breaking changes affect every SDK implementation worldwide.
+Everything published in this repository is part of the **Banza ecosystem contract surface**. Breaking changes affect every SDK implementation worldwide.
 
 ### Semantic versioning
 
@@ -83,19 +83,19 @@ The SDK certification vectors (`contracts/sdk-certification/`) are particularly 
 
 ## SDK compatibility
 
-Banzami maintains a compatibility guarantee for SDK consumers:
+Banza maintains a compatibility guarantee for SDK consumers:
 
 - Minor versions are backwards compatible
 - Breaking changes require a major version bump, deprecation notice, and migration guide
-- The certification suite (`contracts/sdk-certification/`) defines the minimum compatibility bar for any Banzami-compatible implementation
+- The certification suite (`contracts/sdk-certification/`) defines the minimum compatibility bar for any Banza-compatible implementation
 
-Third-party SDK implementations that pass the certification suite are considered **Banzami-compatible**.
+Third-party SDK implementations that pass the certification suite are considered **Banza-compatible**.
 
 ---
 
 ## Ecosystem stewardship
 
-The Banzami protocol is stewarded by Banzami (the organization). Protocol evolution decisions are made with the following priorities:
+The Banza protocol is stewarded by Banzami (the organization). Protocol evolution decisions are made with the following priorities:
 
 1. **Backwards compatibility** — existing integrations must not break silently
 2. **Developer experience** — protocol changes should reduce, not increase, integration complexity
@@ -106,13 +106,13 @@ The Banzami protocol is stewarded by Banzami (the organization). Protocol evolut
 
 ## Maintainers
 
-The project is maintained by [Banzami](https://banzami.org). External maintainers may be added for specific SDK languages based on demonstrated sustained contribution.
+The project is maintained by [Banza](https://banzami.org). External maintainers may be added for specific SDK languages based on demonstrated sustained contribution.
 
 ---
 
 ## Ecosystem boundaries
 
-### Banzami (this repository) — infrastructure layer
+### Banza (this repository) — infrastructure layer
 
 | Scope | Examples |
 |-------|---------|
@@ -139,23 +139,23 @@ The project is maintained by [Banzami](https://banzami.org). External maintainer
 **The kernel never contains operator business logic. Operators never modify kernel
 invariants.** This boundary is permanent and enforced by code review.
 
-### Banza — one operator among many
+### Banzami — one operator among many
 
-Banza is the first commercial operator built on Banzami. It is not:
+Banzami is the first commercial operator built on Banza. It is not:
 
 - A privileged operator with special kernel access
 - The hidden center of the ecosystem
 - The reference for how all operators must work
 
-Banza implements the same public provider traits as any future operator.
+Banzami implements the same public provider traits as any future operator.
 Its private repository contains no code that belongs in the kernel, and the
-kernel contains no code specific to Banza.
+kernel contains no code specific to Banzami.
 
 ---
 
 ## RFC process
 
-Significant changes to the Banzami protocol go through the RFC process before
+Significant changes to the Banza protocol go through the RFC process before
 implementation. See [`docs/rfc/README.md`](docs/rfc/README.md).
 
 ADRs record decisions after they are made. RFCs propose changes before they are made.

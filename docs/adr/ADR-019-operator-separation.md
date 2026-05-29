@@ -54,7 +54,7 @@ Concretely:
 
 **Negative:**
 - More interface design discipline required upfront
-- Some features that "just work" for Banza must be expressed as provider traits
+- Some features that "just work" for Banzami must be expressed as provider traits
 - Reference implementations add maintenance overhead
 
 ## Alternatives considered

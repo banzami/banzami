@@ -44,7 +44,7 @@ curl http://localhost:3100/health
 
 Returns the operator's capability manifest. This path follows the RFC-0005
 operator discovery protocol and is the canonical way for clients to discover
-what a Banzami operator supports.
+what a Banza operator supports.
 
 **Response**
 

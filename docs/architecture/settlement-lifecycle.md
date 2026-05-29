@@ -3,7 +3,7 @@
 Version: 1.0 · Status: Stable
 
 Settlement converts accumulated wallet receipts into outbound bank disbursements.
-Banzami's settlement model is batch-based: unsettled inbound transfers for a wallet
+Banza's settlement model is batch-based: unsettled inbound transfers for a wallet
 are grouped into a batch, a fee is computed, and the net amount is disbursed.
 
 ---

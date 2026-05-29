@@ -156,14 +156,14 @@ operator repository.
 
 ## Long-term ecosystem direction
 
-Banzami is built to be:
+Banza is built to be:
 
 - **Infrastructure**, not application code
 - **Neutral**, not tied to any operator, geography, or provider
 - **Extensible**, not opinionated about deployment topology
 - **Correct**, where correctness is defined by financial invariants, not by tests
 
-The goal is for Banzami to occupy the same position in financial infrastructure
+The goal is for Banza to occupy the same position in financial infrastructure
 that Linux occupies in operating systems: a stable, auditable, neutral foundation
 that any operator can deploy, extend, and build commercial products on top of.
 

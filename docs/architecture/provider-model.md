@@ -2,7 +2,7 @@
 
 Version: 1.0 · Status: Stable
 
-The Banzami kernel is infrastructure. It does not know about any specific bank,
+The Banza kernel is infrastructure. It does not know about any specific bank,
 payment rail, SMS gateway, or risk engine. Every environment-specific integration
 is injected through a **provider trait** at startup time.
 
@@ -113,7 +113,7 @@ never touches a bank, SMS gateway, or cloud service.
 
 **Operator independence**: two operators can use completely different banking
 rails, notification providers, and routing strategies — both conforming to the
-same Banzami kernel protocol.
+same Banza kernel protocol.
 
 **Progressive integration**: an operator can start with simulated providers and
 swap one at a time as production infrastructure is onboarded.

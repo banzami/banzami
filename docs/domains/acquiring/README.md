@@ -1,6 +1,6 @@
 # Acquiring Domain
 
-Acquiring handles integration with external payment networks for merchant payment collection. It bridges Banzami payment links to a payment provider and processes confirmation callbacks.
+Acquiring handles integration with external payment networks for merchant payment collection. It bridges Banza payment links to a payment provider and processes confirmation callbacks.
 
 The acquiring crate (`banzami-acquiring`) provides the engine trait and generic types. Operators bring their own provider implementations by implementing `AcquirerProvider`.
 

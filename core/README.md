@@ -1,8 +1,8 @@
-# Banzami Core
+# Banza Core
 
 **Open-source Rust financial infrastructure crates for programmable instant payments.**
 
-This workspace contains the financial primitives that power Banzami-compatible payment systems. Any operator can build on these crates to create their own instant payment network.
+This workspace contains the financial primitives that power Banza-compatible payment systems. Any operator can build on these crates to create their own instant payment network.
 
 ---
 
@@ -94,7 +94,7 @@ ledger_engine.post(posting).await?;
 
 ## Operator integration
 
-Operators implement the engine traits to wire Banzami core to their own infrastructure:
+Operators implement the engine traits to wire Banza core to their own infrastructure:
 
 ```rust
 // Your private code: implement AcquirerProvider for your payment rail

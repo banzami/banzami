@@ -1,6 +1,6 @@
 # Stability Levels
 
-Every public surface of the Banzami kernel is marked with a stability level.
+Every public surface of the Banza kernel is marked with a stability level.
 This tells you what you can safely depend on and what may still change.
 
 ---
@@ -178,7 +178,7 @@ If your PR changes an **Internal** surface:
 1. Normal review applies
 2. No deprecation path required
 
-### For operators building on Banzami
+### For operators building on Banza
 
 Depend only on **Stable** surfaces in production. Use **Experimental** surfaces
 behind a feature flag and plan to upgrade when they are ratified.

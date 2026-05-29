@@ -3,13 +3,13 @@ rfc: 0004
 title: Provider Capability Negotiation
 status: Draft
 created: 2026-05-28
-authors: ["Banzami Core Team"]
+authors: ["Banza Core Team"]
 requires: [0003]
 ---
 
 ## Summary
 
-Define a protocol by which Banzami operators declare their provider capabilities
+Define a protocol by which Banza operators declare their provider capabilities
 at startup and how the kernel uses those declarations to enable graceful
 degradation and optional feature flows.
 

@@ -1,6 +1,6 @@
-# Getting Started with Banzami
+# Getting Started with Banza
 
-> The fastest way to understand the Banzami financial kernel is to run it.
+> The fastest way to understand the Banza financial kernel is to run it.
 >
 > This guide takes you from zero to executing real payment flows against the local sandbox in under five minutes.
 
@@ -8,7 +8,7 @@
 
 ## What you are running
 
-The **Banzami Sandbox Operator** is a fully local payment server — an HTTP service
+The **Banza Sandbox Operator** is a fully local payment server — an HTTP service
 on `:3100` that wires the kernel's financial primitives together using simulated
 providers. It has no external dependencies.
 
@@ -367,7 +367,7 @@ events.
 
 ## Walkthrough 4 — Trace your first payment
 
-Every operation in Banzami creates a `trace_id` that links the full causal
+Every operation in Banza creates a `trace_id` that links the full causal
 chain: the originating operation, resulting transfers, ledger postings, events,
 and eventual settlement.
 

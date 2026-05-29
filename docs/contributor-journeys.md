@@ -166,7 +166,7 @@ To test routing failure handling:
 
 ## Journey 4 — "I want to build a wallet UI"
 
-**Goal:** Build a consumer or merchant UI that talks to a Banzami operator API.
+**Goal:** Build a consumer or merchant UI that talks to a Banza operator API.
 
 ### Where to start
 

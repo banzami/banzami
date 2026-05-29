@@ -3,7 +3,7 @@ rfc: 0003
 title: Wallet Capabilities
 status: Draft
 created: 2026-05-28
-authors: ["Banzami Core Team"]
+authors: ["Banza Core Team"]
 requires: []
 ---
 

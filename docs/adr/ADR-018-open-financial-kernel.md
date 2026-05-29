@@ -1,4 +1,4 @@
-# ADR-018 — Banzami as Open Financial Infrastructure Kernel
+# ADR-018 — Banza as Open Financial Infrastructure Kernel
 
 **Status:** Accepted  
 **Date:** 2026-05-28  
@@ -10,9 +10,9 @@
 
 ## Context
 
-Banzami began as a single private fintech product targeting Angola's payment market. As the platform matured, it became clear that the generic financial primitives — double-entry ledger, wallet engine, transaction FSM, routing, settlement, QR runtime — had value beyond any single commercial deployment.
+Banza began as a single private fintech product targeting Angola's payment market. As the platform matured, it became clear that the generic financial primitives — double-entry ledger, wallet engine, transaction FSM, routing, settlement, QR runtime — had value beyond any single commercial deployment.
 
-The problem: the infrastructure was entirely private, tightly coupled to one operator (Banza), and inaccessible to contributors, researchers, and alternative operators. This created:
+The problem: the infrastructure was entirely private, tightly coupled to one operator (Banzami), and inaccessible to contributors, researchers, and alternative operators. This created:
 
 - Invisible coupling: the "infrastructure" was inseparable from the "product"
 - Contributor barrier: no way to experiment without access to private infrastructure
@@ -21,7 +21,7 @@ The problem: the infrastructure was entirely private, tightly coupled to one ope
 
 ## Decision
 
-Banzami is restructured as an **open financial infrastructure kernel**: a collection of generic Rust crates that implement the financial primitives of instant payment networks, published under Apache 2.0 at `github.com/banzami/banzami`.
+Banza is restructured as an **open financial infrastructure kernel**: a collection of generic Rust crates that implement the financial primitives of instant payment networks, published under Apache 2.0 at `github.com/banzami/banzami`.
 
 The kernel is operator-neutral. It defines:
 - Financial state machines (transactions, wallets, settlement)
@@ -30,8 +30,8 @@ The kernel is operator-neutral. It defines:
 - Protocol specifications (QR payload, webhook schemas, OpenAPI contracts)
 
 The analogy is precise:
-- Banzami kernel = Linux kernel
-- Banza (first commercial operator) = Ubuntu / first distribution
+- Banza kernel = Linux kernel
+- Banzami (first commercial operator) = Ubuntu / first distribution
 - Future operators = future distributions
 
 ## Consequences
@@ -40,7 +40,7 @@ The analogy is precise:
 - Community contribution is now possible without access to private infrastructure
 - Financial invariants are publicly auditable
 - The architecture supports multiple independent operators
-- Banza becomes clearly "one operator" rather than "the only possible implementation"
+- Banzami becomes clearly "one operator" rather than "the only possible implementation"
 - External trust increases: operators can inspect what they're running
 
 **Negative:**
@@ -52,6 +52,6 @@ The analogy is precise:
 
 **Keep everything private:** Rejected. Creates permanent contributor barrier and prevents ecosystem formation.
 
-**Open-source the entire Banza product:** Rejected. Banza includes operational secrets, compliance rules, and provider credentials that cannot be public.
+**Open-source the entire Banzami product:** Rejected. Banzami includes operational secrets, compliance rules, and provider credentials that cannot be public.
 
 **Open-source contracts only (not Rust core):** Rejected. The value is in the verifiable invariant implementations, not just the protocol specs.

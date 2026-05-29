@@ -1,6 +1,6 @@
 # banzami-acquiring — Acquiring Abstraction
 
-The acquiring crate bridges Banzami payment links to external payment networks. It is fully operator-defined: Banzami provides the engine and trait; operators bring their own provider implementations.
+The acquiring crate bridges Banza payment links to external payment networks. It is fully operator-defined: Banza provides the engine and trait; operators bring their own provider implementations.
 
 ---
 

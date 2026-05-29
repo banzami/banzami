@@ -1,6 +1,6 @@
 # Financial Invariants
 
-These invariants are mandatory across all Banzami core crates. Any operator implementation that violates them is not a correct Banzami implementation.
+These invariants are mandatory across all Banza core crates. Any operator implementation that violates them is not a correct Banza implementation.
 
 ---
 

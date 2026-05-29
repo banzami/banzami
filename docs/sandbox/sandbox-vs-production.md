@@ -1,6 +1,6 @@
 # Sandbox vs Production
 
-Banzami-based systems must maintain strict environment isolation. Mixing sandbox and production data is a hard error.
+Banza-based systems must maintain strict environment isolation. Mixing sandbox and production data is a hard error.
 
 ## Environment Variables
 
@@ -43,7 +43,7 @@ A production `AcquirerProvider` implementation:
 
 ## API Keys and Environment
 
-Banzami API keys are prefixed to indicate environment:
+Banza API keys are prefixed to indicate environment:
 - `bz_test_...` → Sandbox keys → routed to simulated provider
 - `bz_live_...` → Production keys → routed to production provider
 

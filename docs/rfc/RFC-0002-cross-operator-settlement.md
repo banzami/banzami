@@ -3,14 +3,14 @@ rfc: 0002
 title: Cross-Operator Settlement
 status: Draft
 created: 2026-05-28
-authors: ["Banzami Core Team"]
+authors: ["Banza Core Team"]
 requires: [0001]
 ---
 
 ## Summary
 
 Define how settlement is handled when a payment crosses operator boundaries —
-specifically, how two independent Banzami operators net and settle obligations
+specifically, how two independent Banza operators net and settle obligations
 between each other without a central counterparty.
 
 ## Motivation

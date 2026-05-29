@@ -3,20 +3,20 @@ rfc: 0006
 title: Offline Payment Support
 status: Draft
 created: 2026-05-28
-authors: ["Banzami Core Team"]
+authors: ["Banza Core Team"]
 requires: [0003]
 ---
 
 ## Summary
 
-Define a protocol by which Banzami wallets can authorize and complete payments
+Define a protocol by which Banza wallets can authorize and complete payments
 in conditions of intermittent or absent network connectivity, with settlement
 deferred to the next available online window.
 
 ## Motivation
 
 In markets with unreliable internet connectivity — which includes significant
-portions of Banzami's target geographies — a payment system that requires
+portions of Banza's target geographies — a payment system that requires
 constant network access excludes exactly the users who need it most. Offline
 payment support is not a convenience feature; it is an infrastructure requirement
 for inclusive financial access.
@@ -117,7 +117,7 @@ agreements.
 
 **Store-and-forward (no reservation)**: Merchant accepts payment and reconciles
 later. Risk: consumer's balance may be insufficient at settlement time. Introduces
-credit risk that Banzami should not bear.
+credit risk that Banza should not bear.
 
 **Pre-authorization with cryptographic limit enforcement (proposed)**: Funds are
 reserved in advance; offline tokens are cryptographically bounded to that

@@ -1,6 +1,6 @@
 # Demo Wallet
 
-A minimal browser-based wallet UI for experimenting with the Banzami sandbox.
+A minimal browser-based wallet UI for experimenting with the Banza sandbox.
 
 ## Usage
 

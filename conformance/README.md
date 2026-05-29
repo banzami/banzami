@@ -1,16 +1,16 @@
-# Banzami Conformance & Certification
+# Banza Conformance & Certification
 
 Version: 1.0 · Status: Stable
 
-This directory contains the canonical conformance system for the Banzami protocol
+This directory contains the canonical conformance system for the Banza protocol
 ecosystem. It defines what it means for an operator, SDK, provider, QR runtime,
-or event emitter to be **Banzami-compatible**.
+or event emitter to be **Banza-compatible**.
 
 ---
 
 ## What is conformance?
 
-Conformance means an implementation correctly implements the Banzami protocol:
+Conformance means an implementation correctly implements the Banza protocol:
 
 - **Protocol compatibility** — request/response shapes match the canonical schemas
 - **Invariant correctness** — financial invariants hold (zero-sum ledger, no negative
@@ -40,7 +40,7 @@ expected ledger effects, and expected trace structures.
 ╚════════════════════════════════════════════════════════════╝
 ```
 
-Any operator deploying Banzami in production is solely responsible for its own
+Any operator deploying Banza in production is solely responsible for its own
 regulatory compliance, security posture, and legal obligations.
 
 ---
@@ -61,7 +61,7 @@ Levels are additive — every level requires all lower levels to pass.
 
 ## Reference operator
 
-The Banzami **sandbox operator** (`reference/sandbox-operator/`) is the canonical
+The Banza **sandbox operator** (`reference/sandbox-operator/`) is the canonical
 conformance target. It is the reference implementation against which all other
 operators, SDKs, and providers validate compatibility.
 

@@ -2,7 +2,7 @@
 
 Version: 1.0 · Status: Stable
 
-Test vectors are deterministic, language-neutral JSON descriptions of Banzami
+Test vectors are deterministic, language-neutral JSON descriptions of Banza
 protocol operations. Every conformant implementation must produce matching
 results for every applicable vector.
 

@@ -1,6 +1,6 @@
-# Contributing to Banzami
+# Contributing to Banza
 
-Thank you for your interest in contributing to Banzami — open financial infrastructure for programmable instant payments.
+Thank you for your interest in contributing to Banza — open financial infrastructure for programmable instant payments.
 
 ---
 
@@ -17,8 +17,8 @@ Thank you for your interest in contributing to Banzami — open financial infras
 
 ## What is out of scope here
 
-- The Banza commercial product (apps, backend services, production infrastructure)
-- Banza design system and branded UI components
+- The Banzami commercial product (apps, backend services, production infrastructure)
+- Banzami design system and branded UI components
 - Production deployment and operational tooling
 - Operator-specific provider implementations (e.g., EMIS, specific bank adapters)
 
@@ -28,7 +28,7 @@ Thank you for your interest in contributing to Banzami — open financial infras
 
 ### 1. Open an issue first
 
-For anything beyond a trivial bug fix, open an issue to discuss the change before writing code. This prevents wasted effort and aligns with Banzami's protocol governance.
+For anything beyond a trivial bug fix, open an issue to discuss the change before writing code. This prevents wasted effort and aligns with Banza's protocol governance.
 
 ### 2. Fork and branch
 
@@ -120,7 +120,7 @@ All core crates must pass `cargo clippy --workspace --all-targets` with no warni
 
 ### No compile-time sqlx macros in public crates
 
-The public Banzami crates use runtime sqlx queries (`sqlx::query()`) instead of compile-time macros (`sqlx::query!()`). This allows contributors to build and test the crates without a live database. Keep new repository implementations consistent with this pattern.
+The public Banza crates use runtime sqlx queries (`sqlx::query()`) instead of compile-time macros (`sqlx::query!()`). This allows contributors to build and test the crates without a live database. Keep new repository implementations consistent with this pattern.
 
 ### No operator-specific logic in core
 
@@ -150,7 +150,7 @@ Changes to `contracts/` (OpenAPI, webhooks, QR, events) require an Architecture 
 
 ## SDK certification
 
-If you are implementing a new language SDK, run the certification suite against your implementation before claiming Banzami compatibility. All implementations must pass the signature vectors in `contracts/sdk-certification/`.
+If you are implementing a new language SDK, run the certification suite against your implementation before claiming Banza compatibility. All implementations must pass the signature vectors in `contracts/sdk-certification/`.
 
 ---
 

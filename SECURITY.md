@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-If you discover a security vulnerability in Banzami, please report it responsibly.
+If you discover a security vulnerability in Banza, please report it responsibly.
 
 **Do NOT open a public GitHub issue for security vulnerabilities.**
 
@@ -23,15 +23,15 @@ We will acknowledge your report within 48 hours and provide a timeline for a fix
 This security policy covers:
 
 - `core/` — Rust financial core crates (ledger, wallets, transactions, acquiring, etc.)
-- `sdk/` — all official Banzami SDKs
+- `sdk/` — all official Banza SDKs
 - `contracts/` — protocol specifications and schemas
 - `integrations/` — official integration plugins
 
 ## Out of scope
 
-- The Banza commercial product (separate private repository)
-- Third-party implementations built on Banzami
-- Infrastructure or deployment issues (report to Banzami directly at security@banzami.org)
+- The Banzami commercial product (separate private repository)
+- Third-party implementations built on Banza
+- Infrastructure or deployment issues (report to Banza directly at security@banzami.org)
 
 ---
 
@@ -64,7 +64,7 @@ When interacting with this repository (issues, PRs, discussions), do not post:
 
 ## Webhook signature security
 
-The `contracts/sdk-certification/` suite includes webhook signature vectors. If you discover that a Banzami SDK fails to correctly validate HMAC-SHA256 signatures:
+The `contracts/sdk-certification/` suite includes webhook signature vectors. If you discover that a Banza SDK fails to correctly validate HMAC-SHA256 signatures:
 
 1. Report it via email to security@banzami.org
 2. Do not publish a proof-of-concept that could be used to forge legitimate webhooks

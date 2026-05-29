@@ -1,63 +1,63 @@
-# Banzami — Documento de Referência Oficial
+# Banza — Documento de Referência Oficial
 
 **Version:** 1.0  
 **Date:** 06/05/2026  
 **Status:** Official  
-**Author:** Banzami
+**Author:** Banza
 
 ---
 
-> **Nota para contribuidores:** Este documento é a fonte canónica do ecossistema Banzami — cobre tanto a infraestrutura open-source (Banzami) como o primeiro produto comercial construído sobre ela (Banza). O repositório público em `github.com/banzami/banzami` contém os SDKs, contratos e especificações de protocolo. O produto Banza (apps, serviços, infra) é privado em `github.com/banzami/banza`.
+> **Nota para contribuidores:** Este documento é a fonte canónica do ecossistema Banza — cobre tanto a infraestrutura open-source (Banza) como o primeiro produto comercial construído sobre ela (Banzami). O repositório público em `github.com/banzami/banzami` contém os SDKs, contratos e especificações de protocolo. O produto Banzami (apps, serviços, infra) é privado em `github.com/banzami/banza`.
 
 ---
 
-> **Banza não é apenas uma carteira digital.**  
+> **Banzami não é apenas uma carteira digital.**  
 > **É uma infraestrutura programável de pagamentos instantâneos em Kwanza — com QR, wallets, APIs, SDKs e identidade financeira @banza.**  
-> Banzami constrói a infraestrutura. Banza move o dinheiro.
+> Banza constrói a infraestrutura. Banzami move o dinheiro.
 
 ---
 
 Angola não precisa de uma cópia do sistema de pagamentos de outro país.  
 Angola precisa do seu próprio — construído para o Kwanza, para o QR, para o smartphone em cada bolso.
 
-**Isso é o Banza — o produto principal do Banzami.**
+**Isso é o Banzami — o produto principal do Banza.**
 
 ---
 
 ## Índice
 
-1. [O que é o Banzami?](#1-o-que-é-o-banzami)
-2. [Por que o Banzami Existe](#2-por-que-o-banzami-existe)
+1. [O que é o Banza?](#1-o-que-é-o-banzami)
+2. [Por que o Banza Existe](#2-por-que-o-banzami-existe)
 3. [Por que Agora?](#3-por-que-agora)
 4. [A Visão](#4-a-visão)
 5. [Uma Manhã em Luanda](#5-uma-manhã-em-luanda)
-6. [Como o Banza Funciona](#6-como-o-banza-funciona)
+6. [Como o Banzami Funciona](#6-como-o-banza-funciona)
 7. [Funcionalidades Principais](#7-funcionalidades-principais)
 8. [Casos de Uso Reais em Angola](#8-casos-de-uso-reais-em-angola)
 9. [Ecossistema de Pagamentos QR](#9-ecossistema-de-pagamentos-qr)
 10. [Filosofia Wallet-Native](#10-filosofia-wallet-native)
-11. [Banza para Comerciantes](#11-banza-para-comerciantes)
-12. [Banza para Programadores](#12-banza-para-programadores)
-13. [Banza para Consumidores](#13-banza-para-consumidores)
-14. [O Motor de Crescimento do Banza](#14-o-motor-de-crescimento-do-banza)
-15. [Ecossistema de Negócio Banzami](#15-ecossistema-de-negócio-banzami)
+11. [Banzami para Comerciantes](#11-banza-para-comerciantes)
+12. [Banzami para Programadores](#12-banza-para-programadores)
+13. [Banzami para Consumidores](#13-banza-para-consumidores)
+14. [O Motor de Crescimento do Banzami](#14-o-motor-de-crescimento-do-banza)
+15. [Ecossistema de Negócio Banza](#15-ecossistema-de-negócio-banzami)
 16. [Segurança e Integridade Financeira](#16-segurança-e-integridade-financeira)
 17. [Arquitectura Técnica](#17-arquitectura-técnica)
-18. [O Ecossistema Banzami](#18-o-ecossistema-banzami)
+18. [O Ecossistema Banza](#18-o-ecossistema-banzami)
 19. [Roadmap e Futuro](#19-roadmap-e-futuro)
 20. [Arquitectura Sandbox & TestFlight](#20-arquitectura-sandbox--testflight)
 21. [Declaração de Visão Final](#21-declaração-de-visão-final)
 
 ---
 
-## 1. O que é o Banzami?
+## 1. O que é o Banza?
 
-**Banzami** constrói a infraestrutura que permite ao país pagar digitalmente — a plataforma, a missão institucional e o ecossistema de parceiros que tornam possível uma nova era de comércio digital em Angola.
+**Banza** constrói a infraestrutura que permite ao país pagar digitalmente — a plataforma, a missão institucional e o ecossistema de parceiros que tornam possível uma nova era de comércio digital em Angola.
 
-**Banza** é o produto principal do Banzami: a **infraestrutura programável de pagamentos instantâneos de Angola** — uma plataforma completa de pagamentos em Kwanza com QR, wallets, APIs, SDKs e identidade financeira @banza, construída especificamente para o comércio angolano.
+**Banzami** é o produto principal do Banza: a **infraestrutura programável de pagamentos instantâneos de Angola** — uma plataforma completa de pagamentos em Kwanza com QR, wallets, APIs, SDKs e identidade financeira @banza, construída especificamente para o comércio angolano.
 
-> *Banzami constrói a infraestrutura. Banza move o dinheiro.*  
-> *Banzami constrói a infraestrutura que permitirá Angola pagar digitalmente. Banza é como Angola paga.*
+> *Banza constrói a infraestrutura. Banzami move o dinheiro.*  
+> *Banza constrói a infraestrutura que permitirá Angola pagar digitalmente. Banzami é como Angola paga.*
 
 ### Hierarquia do produto
 
@@ -74,24 +74,24 @@ Banzami (organização / ecossistema)
     └── @banza (identidade de pagamento)
 ```
 
-O Banza não é um banco. Não é um processador de cartões. Não é uma carteira digital simples. Não é uma plataforma fintech genérica adaptada de um modelo ocidental e rebaptizada para África.
+O Banzami não é um banco. Não é um processador de cartões. Não é uma carteira digital simples. Não é uma plataforma fintech genérica adaptada de um modelo ocidental e rebaptizada para África.
 
-O Banza é uma **infraestrutura programável de pagamentos instantâneos**: cada conta é uma carteira em Kwanza, cada pagamento é uma transferência directa de carteira-para-carteira, e qualquer aplicação angolana pode integrar pagamentos instantâneos via SDK em horas. O dinheiro move-se em tempo real — confirmado, liquidado e visível em segundos.
+O Banzami é uma **infraestrutura programável de pagamentos instantâneos**: cada conta é uma carteira em Kwanza, cada pagamento é uma transferência directa de carteira-para-carteira, e qualquer aplicação angolana pode integrar pagamentos instantâneos via SDK em horas. O dinheiro move-se em tempo real — confirmado, liquidado e visível em segundos.
 
-### As quatro camadas do Banza
+### As quatro camadas do Banzami
 
 | Camada | Para quem | O que oferece |
 |--------|-----------|---------------|
-| **Consumidor** | Cada angolano | Carteira Banza, QR payments, transferências P2P @banza, histórico instantâneo |
-| **Comerciante** | Cantinas, lojas, plataformas | Banza Business, QR estático/dinâmico, pagamentos sem terminal, dashboard em tempo real |
-| **Programador** | Apps de táxi, ecommerce, delivery, doações | Banza SDK, Banza API, payment links, webhooks, sandbox — integração em horas |
+| **Consumidor** | Cada angolano | Carteira Banzami, QR payments, transferências P2P @banza, histórico instantâneo |
+| **Comerciante** | Cantinas, lojas, plataformas | Banzami Business, QR estático/dinâmico, pagamentos sem terminal, dashboard em tempo real |
+| **Programador** | Apps de táxi, ecommerce, delivery, doações | Banzami SDK, Banzami API, payment links, webhooks, sandbox — integração em horas |
 | **Infraestrutura** | Parceiros, bancos, integradores | Rails de liquidação, ledger de dupla entrada, reconciliação, EMIS/Multicaixa |
 
-### Os quatro pilares do Banza
+### Os quatro pilares do Banzami
 
 | Pilar | O que significa |
 |-------|----------------|
-| **Programmable** | Qualquer aplicação angolana integra pagamentos via SDK ou API. O Banza não é só uma app — é a camada de pagamentos de Angola. |
+| **Programmable** | Qualquer aplicação angolana integra pagamentos via SDK ou API. O Banzami não é só uma app — é a camada de pagamentos de Angola. |
 | **Wallet-native** | Cada conta é uma carteira em Kwanza. Os pagamentos são transferências directas entre carteiras. Sem IBAN. Sem código bancário. Sem cartão. |
 | **QR-native** | A principal superfície de pagamento para comerciantes é um código QR. O comerciante imprime um QR. O consumidor faz o scan. O pagamento é instantâneo. Sem terminal, sem hardware, sem atrito. |
 | **Instant settlement** | O dinheiro move-se no momento em que o pagamento é confirmado — confirmado, liquidado e visível em segundos. |
@@ -112,9 +112,9 @@ O consumidor vê a confirmação de sucesso
 
 **Tempo total desde o scan até à liquidação confirmada: menos de 3 segundos.**
 
-### Identidade no Banza
+### Identidade no Banzami
 
-Cada pessoa e cada comerciante na rede Banza tem um **@banza** — uma identidade de pagamento nativa, legível por humanos, que funciona como endereço para qualquer pagamento. Pagar no Banza tem este aspecto:
+Cada pessoa e cada comerciante na rede Banzami tem um **@banza** — uma identidade de pagamento nativa, legível por humanos, que funciona como endereço para qualquer pagamento. Pagar no Banzami tem este aspecto:
 
 ```
 Pagar: @cantina.luanda
@@ -123,7 +123,7 @@ Valor: 2.500 Kz
 
 Sem número de conta bancária. Sem IBAN. Sem códigos de referência. Sem dados de cartão. Apenas um @banza e um valor.
 
-### Quem o Banza serve
+### Quem o Banzami serve
 
 - **Consumidores** — cada angolano que quer pagar, transferir e receber dinheiro instantaneamente
 - **Comerciantes** — desde cantinas e bancas de mercado até plataformas de ecommerce e apps de táxi
@@ -132,13 +132,13 @@ Sem número de conta bancária. Sem IBAN. Sem códigos de referência. Sem dados
 
 ---
 
-### Por que os nomes Banzami e Banza?
+### Por que os nomes Banza e Banzami?
 
-**Banza** é uma palavra profundamente enraizada nas tradições linguísticas bantu de Angola, especialmente no universo Kikongo, onde *mbanza* designa historicamente um lugar de encontro, uma povoação, uma cidade ou um centro de vida comunitária. Uma *banza* é um lugar. Um encontro. Uma casa. Um centro de vida onde as pessoas se reúnem.
+**Banzami** é uma palavra profundamente enraizada nas tradições linguísticas bantu de Angola, especialmente no universo Kikongo, onde *mbanza* designa historicamente um lugar de encontro, uma povoação, uma cidade ou um centro de vida comunitária. Uma *banza* é um lugar. Um encontro. Uma casa. Um centro de vida onde as pessoas se reúnem.
 
-O **Banza** — o produto de pagamento — herda directamente este significado: um espaço onde o comércio acontece, onde o dinheiro circula, onde angolanos se encontram para trocar valor.
+O **Banzami** — o produto de pagamento — herda directamente este significado: um espaço onde o comércio acontece, onde o dinheiro circula, onde angolanos se encontram para trocar valor.
 
-O **Banzami** — a organização — parte dessa mesma raiz e constrói a partir dela o ecossistema que torna tudo isso possível.
+O **Banza** — a organização — parte dessa mesma raiz e constrói a partir dela o ecossistema que torna tudo isso possível.
 
 Um nome distintamente angolano — não uma palavra emprestada, não um conceito traduzido, não uma marca inventada noutro continente — era a única escolha honesta.
 
@@ -146,7 +146,7 @@ O nome é um sinal: esta plataforma foi feita aqui. Para aqui.
 
 ---
 
-## 2. Por que o Banzami Existe
+## 2. Por que o Banza Existe
 
 Angola tem um problema de pagamentos. Não é um problema tecnológico — Angola tem uma forte penetração móvel, infraestrutura de internet crescente e uma população pronta para o comércio digital. O problema é que a experiência de pagamento existente está quebrada de formas previsíveis e corrigíveis.
 
@@ -156,7 +156,7 @@ Apesar da utilização generalizada de smartphones, o dinheiro físico continua 
 
 Pagar digitalmente hoje significa encontrar uma agência bancária ou ATM, iniciar uma transferência, copiar um código de referência, aguardar confirmação e, por vezes, provar manualmente o pagamento ao comerciante. Para compras pequenas do dia-a-dia — uma refeição numa cantina, uma corrida para casa, uma compra no mercado — o dinheiro físico é simplesmente mais rápido.
 
-**O Banza torna os pagamentos digitais mais rápidos do que o dinheiro físico.**
+**O Banzami torna os pagamentos digitais mais rápidos do que o dinheiro físico.**
 
 ### 2.2 O problema da prova via WhatsApp
 
@@ -172,7 +172,7 @@ Passo 5 — O comerciante decide se confia nele
 
 Isto é reconciliação manual disfarçada de pagamento digital. Cria disputas. Screenshots podem ser fabricados. Falha completamente à escala. O comerciante tem de confiar numa fotografia no ecrã, e o cliente tem de esperar que o comerciante a honre.
 
-**O Banza elimina isto por completo.** Quando um cliente faz o scan de um QR Banza e confirma o pagamento, o comerciante vê uma notificação instantânea e criptograficamente confirmada na sua app. Sem screenshots. Sem mensagens de WhatsApp. Sem verificação manual. O pagamento é liquidado e a carteira do comerciante é actualizada em tempo real.
+**O Banzami elimina isto por completo.** Quando um cliente faz o scan de um QR Banzami e confirma o pagamento, o comerciante vê uma notificação instantânea e criptograficamente confirmada na sua app. Sem screenshots. Sem mensagens de WhatsApp. Sem verificação manual. O pagamento é liquidado e a carteira do comerciante é actualizada em tempo real.
 
 ### 2.3 A lacuna nos pagamentos in-app
 
@@ -180,19 +180,19 @@ As apps de táxi angolanas, plataformas de delivery e marketplaces não consegue
 
 O resultado: experiências de utilizador quebradas, altas taxas de abandono e comerciantes que não conseguem oferecer um serviço digital fluido independentemente de quão bom seja o seu produto.
 
-O Banza fornece a infraestrutura SDK que permite a qualquer aplicação angolana incorporar um fluxo de pagamento completo — confirmação, liquidação, recibo — sem o consumidor sair alguma vez da app.
+O Banzami fornece a infraestrutura SDK que permite a qualquer aplicação angolana incorporar um fluxo de pagamento completo — confirmação, liquidação, recibo — sem o consumidor sair alguma vez da app.
 
 ### 2.4 A lacuna do SDK
 
 Não existe nenhum SDK de pagamentos nativo angolano. Um programador a construir uma aplicação angolana não tem uma API limpa, tipada e pronta para produção para aceitar pagamentos instantâneos em Kwanza. Improvisa — com vulnerabilidades de segurança, comportamento inconsistente, sem lógica de retry e sem suporte significativo quando algo corre mal.
 
-O Banza é a primeira infraestrutura de pagamentos construída especificamente para programadores angolanos: SDKs tipados, idempotência automática, retry com backoff exponencial, verificação de assinaturas de webhooks e testes em sandbox — tudo de nível de produção, tudo pronto a usar.
+O Banzami é a primeira infraestrutura de pagamentos construída especificamente para programadores angolanos: SDKs tipados, idempotência automática, retry com backoff exponencial, verificação de assinaturas de webhooks e testes em sandbox — tudo de nível de produção, tudo pronto a usar.
 
 ### 2.5 O problema de exclusão dos comerciantes
 
 Pequenos comerciantes — cantinas, farmácias, vendedores de mercado — estão excluídos do comércio digital porque as soluções existentes requerem hardware caro, acordos bancários formais com requisitos complexos, ou infraestrutura de terminais de cartão à qual a maioria dos comerciantes angolanos simplesmente não tem acesso.
 
-O Banza não requer nada disto. Um comerciante precisa de um telefone e um código QR impresso. Esse é o único requisito de infraestrutura para começar a aceitar pagamentos digitais instantâneos.
+O Banzami não requer nada disto. Um comerciante precisa de um telefone e um código QR impresso. Esse é o único requisito de infraestrutura para começar a aceitar pagamentos digitais instantâneos.
 
 ---
 
@@ -202,7 +202,7 @@ As condições para uma transformação da rede de pagamentos em Angola não sã
 
 ### 3.1 O smartphone já está lá
 
-Angola tem uma das taxas de penetração móvel de crescimento mais rápido no continente. Os smartphones já não são escassos. Estão em cantinas, em mercados, em táxis, em escolas, em casas por toda a Luanda, Benguela, Huambo e além. O dispositivo que entrega o Banza já está no bolso da pessoa que precisamos de alcançar.
+Angola tem uma das taxas de penetração móvel de crescimento mais rápido no continente. Os smartphones já não são escassos. Estão em cantinas, em mercados, em táxis, em escolas, em casas por toda a Luanda, Benguela, Huambo e além. O dispositivo que entrega o Banzami já está no bolso da pessoa que precisamos de alcançar.
 
 A barreira de infraestrutura que antes bloqueava o comércio digital — "as pessoas não têm telemóveis" — já não existe.
 
@@ -210,9 +210,9 @@ A barreira de infraestrutura que antes bloqueava o comércio digital — "as pes
 
 Angola já tem uma economia digital. Funciona no WhatsApp. Produtos são vendidos, serviços são negociados e até pagamentos são confirmados — via screenshots — pelo WhatsApp todos os dias.
 
-Isto não é sinal de que os angolanos não estão prontos para o comércio digital. É prova de que já conduzem comércio digital, usando as ferramentas disponíveis. O Banza é a ferramenta melhor. Faz o que o WhatsApp-mais-screenshots faz, mas correctamente, instantaneamente e com segurança.
+Isto não é sinal de que os angolanos não estão prontos para o comércio digital. É prova de que já conduzem comércio digital, usando as ferramentas disponíveis. O Banzami é a ferramenta melhor. Faz o que o WhatsApp-mais-screenshots faz, mas correctamente, instantaneamente e com segurança.
 
-O hábito já existe. O Banza melhora-o.
+O hábito já existe. O Banzami melhora-o.
 
 ### 3.3 O QR já provou o modelo globalmente
 
@@ -230,7 +230,7 @@ Uma rede de pagamentos QR-native, sem hardware, sem taxa mensal, é a primeira s
 
 Angola tem uma geração crescente de programadores a construir aplicações móveis, plataformas web e serviços digitais para o mercado local. São qualificados, motivados e a trabalhar em problemas reais. O que lhes falta é uma API de pagamentos angolana — uma forma limpa e fiável de aceitar Kwanza nos seus produtos.
 
-O Banza é essa infraestrutura. A comunidade de programadores está pronta para construir com ela.
+O Banzami é essa infraestrutura. A comunidade de programadores está pronta para construir com ela.
 
 ### 3.6 A oportunidade do salto tecnológico
 
@@ -244,7 +244,7 @@ Angola não precisa de repetir um desvio de 40 anos. Pode começar no destino.
 
 A economia digital de Angola não está quebrada — está inacabada. A infraestrutura existe. A população está pronta. O que falta é a camada de pagamentos que os liga.
 
-A visão do Banzami é completar essa camada — através do Banza.
+A visão do Banza é completar essa camada — através do Banzami.
 
 ### O futuro alvo
 
@@ -296,42 +296,42 @@ Sem cartão internacional. Sem IBAN. Sem referência manual.
 Compra online em Kwanza. Instantaneamente.
 ```
 
-Estes não são futuros ambiciosos. São alcançáveis hoje, com infraestrutura que já existe, para utilizadores que já estão ligados. O Banza é a camada que falta.
+Estes não são futuros ambiciosos. São alcançáveis hoje, com infraestrutura que já existe, para utilizadores que já estão ligados. O Banzami é a camada que falta.
 
 ### Como é o sucesso
 
-A missão do Banzami está alcançada quando:
+A missão do Banza está alcançada quando:
 
 - Os pagamentos QR são a **expectativa normal** nas lojas, restaurantes e mercados angolanos — não uma novidade
-- Cada app de táxi, plataforma de delivery e site de ecommerce angolano usa o Banza SDK como motor de pagamentos
+- Cada app de táxi, plataforma de delivery e site de ecommerce angolano usa o Banzami SDK como motor de pagamentos
 - A prova de pagamento via WhatsApp desapareceu do comércio angolano
 - Uma parte significativa das transacções angolanas do dia-a-dia acontece digitalmente, sem dinheiro físico
 - Os programadores angolanos têm uma infraestrutura de pagamentos da qual se orgulham de construir
-- A rede Banza tornou-se infraestrutura — parte do modo como Angola funciona
+- A rede Banzami tornou-se infraestrutura — parte do modo como Angola funciona
 
 Os modelos de referência para este tipo de transformação existem. O **Pix** do Brasil tornou os pagamentos QR o padrão nacional em menos de três anos. O **UPI** da Índia tornou as transferências instantâneas por identificadores virtuais o padrão para mil milhões de pessoas. Ambos começaram com foco: um país, uma rede, uma promessa clara a cada utilizador.
 
-**O Banza é isso para Angola.**
+**O Banzami é isso para Angola.**
 
 ---
 
 ## 5. Uma Manhã em Luanda
 
-*Isto não é uma demonstração de produto. É uma visão da vida ordinária quando o Banza se tiver tornado o padrão.*
+*Isto não é uma demonstração de produto. É uma visão da vida ordinária quando o Banzami se tiver tornado o padrão.*
 
 ---
 
-**7h15.** A Amélia acorda, verifica a sua Banza Wallet no telemóvel. Recebeu 5.000 Kz durante a noite — o seu irmão mais novo pagou-lhe de volta dinheiro que ela lhe tinha emprestado na semana passada. Ele enviou de Benguela às 23h00. Chegou instantaneamente. Não houve transferência bancária. Não houve mensagem de WhatsApp. Ele escreveu `@amelia`, inseriu o valor, confirmou com o seu PIN, e estava feito.
+**7h15.** A Amélia acorda, verifica a sua Banzami Wallet no telemóvel. Recebeu 5.000 Kz durante a noite — o seu irmão mais novo pagou-lhe de volta dinheiro que ela lhe tinha emprestado na semana passada. Ele enviou de Benguela às 23h00. Chegou instantaneamente. Não houve transferência bancária. Não houve mensagem de WhatsApp. Ele escreveu `@amelia`, inseriu o valor, confirmou com o seu PIN, e estava feito.
 
 **8h00.** Na cantina da esquina perto do seu apartamento, a Amélia pede café e pão. Aponta o telemóvel para o código QR colado na parede. A app mostra `@cantina.margarida`. Ela escreve `1.500 Kz` e prime o polegar para confirmar. O telemóvel da Margarida acende-se no balcão: *"Recebeu 1.500 Kz de @amelia."* Sem troco. Sem espera. Pequeno-almoço feito.
 
-**8h30.** A Amélia trabalha como designer gráfica freelance. Um cliente devia-lhe pelo logótipo. Ela tinha enviado um link de pagamento na semana passada: `pay.banzami.org/fatura-logo-92`. Esta manhã abre o Banza Business no portátil e vê o estado mudar para **Pago** — o cliente pagou às 8h22. Ela tem o dinheiro. Tem o recibo digital. Não teve de enviar uma única mensagem de WhatsApp para o perseguir.
+**8h30.** A Amélia trabalha como designer gráfica freelance. Um cliente devia-lhe pelo logótipo. Ela tinha enviado um link de pagamento na semana passada: `pay.banzami.org/fatura-logo-92`. Esta manhã abre o Banzami Business no portátil e vê o estado mudar para **Pago** — o cliente pagou às 8h22. Ela tem o dinheiro. Tem o recibo digital. Não teve de enviar uma única mensagem de WhatsApp para o perseguir.
 
 **12h30.** Almoço com três colegas. O restaurante gera um QR dinâmico para a mesa do grupo — total 18.000 Kz, dividido por quatro. Cada pessoa faz o scan do QR do seu telemóvel e paga 4.500 Kz. A app do restaurante mostra `18.000 Kz recebidos` em segundos após o último scan. Ninguém tira a carteira. Ninguém faz aritmética mental a tentar fazer o troco. A mesa liberta-se em minutos.
 
 **17h00.** A Amélia apanha um táxi para casa. A app mostra a tarifa no fim da corrida: 3.200 Kz. Ela toca em "Pagar." Um toque, confirmação biométrica. O telemóvel do motorista notifica-o. A corrida fecha na app. Nenhum dos dois mencionou dinheiro físico.
 
-**19h30.** A escola da filha enviou um pedido de pagamento esta manhã — propinas mensais de Março: 35.000 Kz. A Amélia abre-o na app Banza. O nome da escola está lá. O valor está lá. A descrição diz "Propinas — Março 2026." Paga com um toque. A escola marca a propina como liquidada. Sem fila. Sem banco. Sem recibo para guardar.
+**19h30.** A escola da filha enviou um pedido de pagamento esta manhã — propinas mensais de Março: 35.000 Kz. A Amélia abre-o na app Banzami. O nome da escola está lá. O valor está lá. A descrição diz "Propinas — Março 2026." Paga com um toque. A escola marca a propina como liquidada. Sem fila. Sem banco. Sem recibo para guardar.
 
 **22h00.** Antes de dormir, a Amélia verifica a sua carteira. Hoje gastou 1.500 Kz (cantina), 4.500 Kz (almoço), 3.200 Kz (táxi), 35.000 Kz (propinas). Recebeu 5.000 Kz (irmão) e 25.000 Kz (cliente). Cada transacção está lá, com timestamp, etiqueta, clara. Sem mistério. Sem Kwanza em falta. Visibilidade total sobre o seu dia.
 
@@ -339,15 +339,15 @@ Os modelos de referência para este tipo de transformação existem. O **Pix** d
 
 *O dinheiro físico nunca apareceu. Imagens de prova de WhatsApp nunca foram enviadas. Ninguém ficou em fila num banco. Nenhum código de referência foi copiado. Ninguém esperou.*
 
-*Isto é uma terça-feira normal em Luanda. Com o Banza.*
+*Isto é uma terça-feira normal em Luanda. Com o Banzami.*
 
 ---
 
-## 6. Como o Banza Funciona
+## 6. Como o Banzami Funciona
 
 ### 6.1 A operação fundamental
 
-Tudo no Banza é construído sobre uma operação:
+Tudo no Banzami é construído sobre uma operação:
 
 ```
 Carteira do Consumidor  ────[transferência instantânea no ledger]────>  Carteira do Comerciante
@@ -355,11 +355,11 @@ Carteira do Consumidor  ────[transferência instantânea no ledger]─�
 
 Quando um consumidor paga um comerciante, o dinheiro move-se de uma carteira digital para outra. A transferência é atómica, instantânea e registada num ledger financeiro imutável. Não existe estado intermédio, sem período pendente, sem atraso na liquidação. O dinheiro está na carteira do comerciante no momento em que o consumidor confirma o pagamento.
 
-Este é o núcleo da rede Banza. Cada funcionalidade do produto — códigos QR, links de pagamento, pedidos de pagamento, integrações SDK — é uma forma diferente de iniciar esta mesma operação fundamental.
+Este é o núcleo da rede Banzami. Cada funcionalidade do produto — códigos QR, links de pagamento, pedidos de pagamento, integrações SDK — é uma forma diferente de iniciar esta mesma operação fundamental.
 
 ### 6.2 Carteiras
 
-Cada pessoa e cada comerciante no Banza tem uma **carteira digital em Kwanza** — uma Banza Wallet. Detém saldos em AOA, recebe pagamentos e envia transferências. Não é uma conta bancária — é uma conta de pagamento nativa Banza, acessível instantaneamente a partir de qualquer dispositivo.
+Cada pessoa e cada comerciante no Banzami tem uma **carteira digital em Kwanza** — uma Banzami Wallet. Detém saldos em AOA, recebe pagamentos e envia transferências. Não é uma conta bancária — é uma conta de pagamento nativa Banzami, acessível instantaneamente a partir de qualquer dispositivo.
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -377,7 +377,7 @@ O saldo **disponível** pode ser gasto ou transferido imediatamente. O saldo **r
 
 ### 6.3 @Banza
 
-Cada conta Banza tem um **@banza** — um identificador único e legível por humanos que funciona como identidade de pagamento nativa.
+Cada conta Banzami tem um **@banza** — um identificador único e legível por humanos que funciona como identidade de pagamento nativa.
 
 ```
 @joao          ← @banza de consumidor
@@ -386,11 +386,11 @@ Cada conta Banza tem um **@banza** — um identificador único e legível por hu
 @doa.creators        ← @banza de plataforma
 ```
 
-O @banza substitui a necessidade de números de conta bancária, IBANs ou códigos de referência. Para enviar dinheiro a alguém, escreve o seu @banza. Para receber dinheiro, partilha o seu @banza. Os comerciantes imprimem o seu @banza em cartazes físicos ao lado do seu código QR. É simultaneamente uma marca, um endereço e uma identidade de pagamento nativa do Banza.
+O @banza substitui a necessidade de números de conta bancária, IBANs ou códigos de referência. Para enviar dinheiro a alguém, escreve o seu @banza. Para receber dinheiro, partilha o seu @banza. Os comerciantes imprimem o seu @banza em cartazes físicos ao lado do seu código QR. É simultaneamente uma marca, um endereço e uma identidade de pagamento nativa do Banzami.
 
 #### Modelo de unicidade e formato
 
-O @banza é um identificador global único na rede Banza — sem ambiguidade, sem duplicados, sem colisões. As regras de formato garantem que cada handle seja legível por humanos e seguro como endereço financeiro:
+O @banza é um identificador global único na rede Banzami — sem ambiguidade, sem duplicados, sem colisões. As regras de formato garantem que cada handle seja legível por humanos e seguro como endereço financeiro:
 
 | Regra | Detalhe |
 |-------|---------|
@@ -459,9 +459,9 @@ Nenhum IBAN, nenhum número de conta bancária, nenhum código de referência en
 
 #### Camada de routing humano
 
-O @banza é a camada de routing humano da rede Banza. Em sistemas bancários tradicionais, o routing é feito por SWIFT, IBANs ou números de conta — sequências opacas que os humanos não conseguem memorizar nem verificar visualmente. O @banza inverte este paradigma: o endereço de pagamento é memorável, verificável e socialmente partilhável.
+O @banza é a camada de routing humano da rede Banzami. Em sistemas bancários tradicionais, o routing é feito por SWIFT, IBANs ou números de conta — sequências opacas que os humanos não conseguem memorizar nem verificar visualmente. O @banza inverte este paradigma: o endereço de pagamento é memorável, verificável e socialmente partilhável.
 
-Este design segue os modelos de sucesso do Pix (CPF/chave aleatória), UPI (VPA como `nome@upi`) e M-Pesa (número de telefone como endereço) — adaptado à realidade angolana com um identificador nativo da rede Banza.
+Este design segue os modelos de sucesso do Pix (CPF/chave aleatória), UPI (VPA como `nome@upi`) e M-Pesa (número de telefone como endereço) — adaptado à realidade angolana com um identificador nativo da rede Banzami.
 
 #### Como o routing @banza funciona
 
@@ -589,7 +589,7 @@ Carteira do comerciante: saldo actualizado em tempo real
 
 ### 6.5 Links de pagamento
 
-Um **link de pagamento** é um URL partilhável que contém um pedido de pagamento pré-configurado. O comerciante envia-o via WhatsApp, SMS, email ou redes sociais. O consumidor abre-o num browser e paga com a sua Banza Wallet.
+Um **link de pagamento** é um URL partilhável que contém um pedido de pagamento pré-configurado. O comerciante envia-o via WhatsApp, SMS, email ou redes sociais. O consumidor abre-o num browser e paga com a sua Banzami Wallet.
 
 ```
 https://pay.banzami.org/abc123
@@ -610,9 +610,9 @@ Resultado:           liquidação instantânea + recibo para ambos
 
 ### 6.7 EMIS e a camada bancária
 
-O Banza integra-se com o **EMIS** (Empresa Interbancária de Serviços) — a infraestrutura de pagamentos interbancários de Angola — através da infraestrutura do Banzami, para permitir que o dinheiro flua entre carteiras Banza e o sistema bancário angolano.
+O Banzami integra-se com o **EMIS** (Empresa Interbancária de Serviços) — a infraestrutura de pagamentos interbancários de Angola — através da infraestrutura do Banza, para permitir que o dinheiro flua entre carteiras Banzami e o sistema bancário angolano.
 
-O EMIS é o caminho. O Banza é o produto. O Banzami constrói a ponte.
+O EMIS é o caminho. O Banzami é o produto. O Banza constrói a ponte.
 
 ```
 ┌────────────────────────────────────────────┐
@@ -632,27 +632,27 @@ O EMIS é o caminho. O Banza é o produto. O Banzami constrói a ponte.
 └────────────────────────────────────────────┘
 ```
 
-O Banza não substitui o sistema bancário. Constrói a camada de comércio acima dele — com a infraestrutura do Banzami.
+O Banzami não substitui o sistema bancário. Constrói a camada de comércio acima dele — com a infraestrutura do Banza.
 
 ---
 
-### 6.8 Como o Dinheiro Entra na Carteira Banza
+### 6.8 Como o Dinheiro Entra na Carteira Banzami
 
-O Banza é uma rede de pagamentos de circuito fechado. Dentro da rede, todas as transferências são liquidações instantâneas de carteira-para-carteira — movimentos contabilísticos entre contas no ledger do Banzami. Para que isso seja possível, é necessário que o dinheiro entre na rede através de um canal financeiro externo validado.
+O Banzami é uma rede de pagamentos de circuito fechado. Dentro da rede, todas as transferências são liquidações instantâneas de carteira-para-carteira — movimentos contabilísticos entre contas no ledger do Banza. Para que isso seja possível, é necessário que o dinheiro entre na rede através de um canal financeiro externo validado.
 
 Este processo chama-se **carregamento de carteira** (*wallet funding*) e é a ponte entre o sistema bancário angolano e a carteira digital do utilizador.
 
 #### A distinção fundamental
 
-| Dentro do Banza | Fora do Banza |
+| Dentro do Banzami | Fora do Banzami |
 |-----------------|---------------|
 | Transferências ledger instantâneas | Movimentos bancários com confirmação assíncrona |
 | Sem dependência de terceiros | Dependência de EMIS, bancos, Multicaixa Express |
 | Liquidação em milissegundos | Liquidação sujeita a confirmação do provedor externo |
 | Gratuito para o utilizador | Sujeito a taxas e regras do banco/EMIS |
-| Controlado pelo Banzami | Regulado pelo BNA e sistema bancário angolano |
+| Controlado pelo Banza | Regulado pelo BNA e sistema bancário angolano |
 
-O Banzami não cria dinheiro nem substitui bancos. Cada Kwanza na rede Banza corresponde a um Kwanza real confirmado por um parceiro financeiro externo.
+O Banza não cria dinheiro nem substitui bancos. Cada Kwanza na rede Banzami corresponde a um Kwanza real confirmado por um parceiro financeiro externo.
 
 #### Como o utilizador carrega a carteira
 
@@ -686,11 +686,11 @@ O Banzami não cria dinheiro nem substitui bancos. Cada Kwanza na rede Banza cor
 
 O processo do ponto de vista do utilizador:
 
-1. O utilizador abre a app Banza e escolhe **"Carregar carteira"**
+1. O utilizador abre a app Banzami e escolhe **"Carregar carteira"**
 2. Selecciona o banco ou Multicaixa Express
 3. Confirma o valor e autoriza externamente
-4. O EMIS ou o banco confirma a liquidação ao Banzami
-5. O Banzami valida o callback, reconcilia e lança o crédito no ledger
+4. O EMIS ou o banco confirma a liquidação ao Banza
+5. O Banza valida o callback, reconcilia e lança o crédito no ledger
 6. A carteira reflecte o novo saldo instantaneamente
 7. O utilizador pode pagar por QR ou transferir por @banza imediatamente
 
@@ -698,7 +698,7 @@ Nenhum crédito é definitivo sem confirmação verificada do provedor externo. 
 
 #### Pagamento interno: utilizador para comerciante
 
-Uma vez que o dinheiro está dentro da rede Banza, qualquer pagamento subsequente é uma transferência ledger directa — sem envolvimento de bancos ou EMIS:
+Uma vez que o dinheiro está dentro da rede Banzami, qualquer pagamento subsequente é uma transferência ledger directa — sem envolvimento de bancos ou EMIS:
 
 ```
 [Carteira Banza do Consumidor]
@@ -714,7 +714,7 @@ Este movimento ocorre em milissegundos. O comerciante vê a confirmação instan
 
 #### Levantamento do comerciante: de carteira para banco
 
-Quando o comerciante quer transferir o saldo da sua carteira Banza para a conta bancária, o fluxo inverte-se — volta a atravessar os carris bancários externos:
+Quando o comerciante quer transferir o saldo da sua carteira Banzami para a conta bancária, o fluxo inverte-se — volta a atravessar os carris bancários externos:
 
 ```
 [Carteira Banza do Comerciante]
@@ -732,30 +732,30 @@ Quando o comerciante quer transferir o saldo da sua carteira Banza para a conta 
 [Conta Bancária do Comerciante]
 ```
 
-O crédito na conta bancária está sujeito aos prazos e regras do banco parceiro. O saldo da carteira Banza é debitado imediatamente no momento do pedido, garantindo consistência interna.
+O crédito na conta bancária está sujeito aos prazos e regras do banco parceiro. O saldo da carteira Banzami é debitado imediatamente no momento do pedido, garantindo consistência interna.
 
 #### Cenários reais
 
 **João carrega 5.000 Kz**
-João abre a app Banza, selecciona Multicaixa Express, autoriza o débito na sua conta bancária. O Banzami recebe confirmação do EMIS, valida a assinatura do callback, lança o crédito no ledger. O saldo de João passa de 0 para 5.000 Kz. João pode imediatamente pagar o táxi por QR.
+João abre a app Banzami, selecciona Multicaixa Express, autoriza o débito na sua conta bancária. O Banza recebe confirmação do EMIS, valida a assinatura do callback, lança o crédito no ledger. O saldo de João passa de 0 para 5.000 Kz. João pode imediatamente pagar o táxi por QR.
 
 **João paga uma cantina**
-João faz o scan do QR estático da cantina. Confirma 800 Kz. O Banzami debita a carteira de João e credita a carteira da cantina atomicamente no ledger. A cantina recebe notificação instantânea. Nenhum banco foi envolvido nesta transacção.
+João faz o scan do QR estático da cantina. Confirma 800 Kz. O Banza debita a carteira de João e credita a carteira da cantina atomicamente no ledger. A cantina recebe notificação instantânea. Nenhum banco foi envolvido nesta transacção.
 
 **Ana recebe dinheiro de João por @banza**
-João envia 2.000 Kz para @ana. O Banzami resolve o handle, verifica ambas as carteiras, executa a transferência ledger. Ana recebe o dinheiro imediatamente. Não são necessários dados bancários.
+João envia 2.000 Kz para @ana. O Banza resolve o handle, verifica ambas as carteiras, executa a transferência ledger. Ana recebe o dinheiro imediatamente. Não são necessários dados bancários.
 
 **Uma app de táxi cobra uma viagem**
-A app integra o Banza SDK. No fim da viagem, a app instrui o SDK a debitar a carteira do passageiro e creditar a carteira do operador. A liquidação ocorre dentro do Banza. O motorista não precisa de terminal.
+A app integra o Banzami SDK. No fim da viagem, a app instrui o SDK a debitar a carteira do passageiro e creditar a carteira do operador. A liquidação ocorre dentro do Banzami. O motorista não precisa de terminal.
 
 **Um comerciante levanta o saldo do dia**
-O comerciante abre o Banza Business, pede um payout de 50.000 Kz. O Banzami debita a carteira, inicia a instrução de transferência bancária via EMIS. O dinheiro chega à conta bancária do comerciante no prazo definido pelo banco parceiro.
+O comerciante abre o Banzami Business, pede um payout de 50.000 Kz. O Banza debita a carteira, inicia a instrução de transferência bancária via EMIS. O dinheiro chega à conta bancária do comerciante no prazo definido pelo banco parceiro.
 
 **Uma escola recebe propinas**
-Os pais digitalizam o QR da escola ou recebem um link de pagamento. Cada pagamento credita a carteira Banza da escola instantaneamente. A escola levanta para a conta bancária semanalmente.
+Os pais digitalizam o QR da escola ou recebem um link de pagamento. Cada pagamento credita a carteira Banzami da escola instantaneamente. A escola levanta para a conta bancária semanalmente.
 
-**Uma app de doações usa o Banza SDK**
-A app integra o Banza SDK para receber doações. O doador paga por QR ou link. O Banzami processa, credita a carteira da organização, emite evento webhook para a app confirmar a doação. Nenhuma integração bancária directa foi necessária.
+**Uma app de doações usa o Banzami SDK**
+A app integra o Banzami SDK para receber doações. O doador paga por QR ou link. O Banza processa, credita a carteira da organização, emite evento webhook para a app confirmar a doação. Nenhuma integração bancária directa foi necessária.
 
 #### Garantias de integridade em cada carregamento
 
@@ -802,12 +802,12 @@ Nenhum destes passos é opcional. A ausência de qualquer garantia invalida o la
 | Funcionalidade | Descrição |
 |----------------|-----------|
 | **Carteira do comerciante** | Carteira de negócio dedicada para receber pagamentos, acompanhar saldos e solicitar pagamentos |
-| **Banza Business** | Plataforma operacional do comerciante: interface móvel para operação diária e interface web para análises, reembolsos, disputas e gestão de equipa |
+| **Banzami Business** | Plataforma operacional do comerciante: interface móvel para operação diária e interface web para análises, reembolsos, disputas e gestão de equipa |
 | **Loja QR** | Página de perfil público do comerciante em `pay.banzami.org/profiles/@banza` |
 | **Geração de QR estático** | Código QR permanente para a carteira do comerciante; imprimir e exibir em qualquer lugar |
 | **Geração de QR dinâmico** | QR por transacção com valor fixo e expiração |
 | **Levantamentos** | Transferência do saldo da carteira para uma conta bancária angolana a pedido |
-| **Reembolsos** | Emite reembolsos parciais ou totais a partir do Banza Business ou da API |
+| **Reembolsos** | Emite reembolsos parciais ou totais a partir do Banzami Business ou da API |
 | **Gestão de disputas** | Processo de resolução estruturado para disputas de pagamento |
 
 ### Plataforma de programadores
@@ -842,7 +842,7 @@ Nenhum destes passos é opcional. A ausência de qualquer garantia invalida o la
 **O problema hoje:**  
 Uma app de transporte angolana completa uma corrida mas não consegue cobrar o pagamento na app. O motorista diz "só dinheiro." O passageiro procura troco. A plataforma tem zero visibilidade sobre os pagamentos. O motorista carrega dinheiro o dia todo — um risco de segurança.
 
-**Com o Banza:**  
+**Com o Banzami:**  
 A corrida termina. A app mostra a tarifa. O passageiro vê um ecrã de confirmação. Um toque — biométrico ou PIN. A tarifa transfere-se instantaneamente da carteira do passageiro para a do motorista. A plataforma recebe um webhook. A corrida fecha automaticamente.
 
 ```
@@ -855,8 +855,8 @@ DEPOIS: Corrida termina → app mostra tarifa → passageiro toca "Pagar" → li
 **O problema hoje:**  
 Uma dona de cantina quer aceitar pagamentos digitais. Um terminal POS bancário requer um acordo bancário formal e cobra por transacção. A maioria dos pequenos comerciantes não se qualifica. A única alternativa é aceitar transferências bancárias e aguardar screenshots de WhatsApp — alguns dos quais são fabricados.
 
-**Com o Banza:**  
-A dona regista-se no Banza, cria uma carteira e descarrega o seu código QR. Imprime-o em papel e coloca-o no balcão. Quando um cliente faz o scan e paga, o telemóvel da dona mostra "Recebeu 2.500 Kz." Sem terminal. Sem taxa mensal. Sem espera. Sem screenshots.
+**Com o Banzami:**  
+A dona regista-se no Banzami, cria uma carteira e descarrega o seu código QR. Imprime-o em papel e coloca-o no balcão. Quando um cliente faz o scan e paga, o telemóvel da dona mostra "Recebeu 2.500 Kz." Sem terminal. Sem taxa mensal. Sem espera. Sem screenshots.
 
 ```
 ANTES: Cliente paga → envia screenshot WhatsApp → dona verifica manualmente
@@ -868,8 +868,8 @@ DEPOIS: Cliente faz scan do QR → paga instantaneamente → telemóvel da dona 
 **O problema hoje:**  
 Um site de ecommerce angolano não tem forma fiável de cobrar pagamentos online em Kwanza. Os processadores internacionais não suportam AOA. Os clientes são redirecionados para portais bancários externos. O abandono do checkout é elevado.
 
-**Com o Banza:**  
-O site integra o Banza TypeScript SDK. No checkout, o cliente confirma o pagamento com a sua carteira. A liquidação é instantânea. A loja recebe um webhook e cumpre a encomenda. Sem redirecionamento. Sem portal externo.
+**Com o Banzami:**  
+O site integra o Banzami TypeScript SDK. No checkout, o cliente confirma o pagamento com a sua carteira. A liquidação é instantânea. A loja recebe um webhook e cumpre a encomenda. Sem redirecionamento. Sem portal externo.
 
 ```typescript
 // Checkout de ecommerce — TypeScript
@@ -887,8 +887,8 @@ const link = await client.createPaymentLink({
 **O problema hoje:**  
 Um criador ou ONG a gerir uma plataforma como o DOA não consegue aceitar doações digitais instantâneas em Kwanza. Os apoiantes enviam transferências bancárias e mandam prova por email. Muitos desistem. A plataforma não tem acompanhamento em tempo real.
 
-**Com o Banza:**  
-A plataforma integra Banza Pay Links ou pedidos de pagamento Banza. Um apoiante toca em "Apoiar com 1.000 Kz." A doação transfere-se instantaneamente. O criador vê-a em tempo real. Todo o fluxo acontece dentro da app.
+**Com o Banzami:**  
+A plataforma integra Banzami Pay Links ou pedidos de pagamento Banzami. Um apoiante toca em "Apoiar com 1.000 Kz." A doação transfere-se instantaneamente. O criador vê-a em tempo real. Todo o fluxo acontece dentro da app.
 
 ```
 ANTES: Apoiante envia transferência → manda prova por email → plataforma aguarda
@@ -900,7 +900,7 @@ DEPOIS: Apoiante toca "Apoiar" → transferência instantânea → criador vê i
 **O problema hoje:**  
 Uma app de entrega de comida não consegue fechar o ciclo de pagamento na app. O pagamento na entrega cria riscos de segurança para os motoristas, risco de fraude para os comerciantes e UX quebrada para os consumidores.
 
-**Com o Banza:**  
+**Com o Banzami:**  
 A app de delivery integra o SDK Flutter. Quando o motorista marca uma encomenda como entregue, a app do consumidor solicita o pagamento. Um toque — liquidação instantânea. O restaurante e o motorista vêem ambos. O dinheiro físico desaparece do fluxo por completo.
 
 ### 8.6 Escolas e instituições
@@ -908,8 +908,8 @@ A app de delivery integra o SDK Flutter. Quando o motorista marca uma encomenda 
 **O problema hoje:**  
 Uma escola cobra propinas via transferência bancária. Os encarregados fazem fila nos bancos. Os recibos são entregues manualmente. A escola não tem visão em tempo real dos saldos em dívida.
 
-**Com o Banza:**  
-A escola emite pedidos de pagamento para cada aluno. Os encarregados recebem uma notificação, vêem o nome do aluno e o valor, e pagam com um toque. O Banza Business mostra pagos e em dívida em tempo real.
+**Com o Banzami:**  
+A escola emite pedidos de pagamento para cada aluno. Os encarregados recebem uma notificação, vêem o nome do aluno e o valor, e pagam com um toque. O Banzami Business mostra pagos e em dívida em tempo real.
 
 ```
 ANTES: Encarregado faz fila no banco → transferência manual → entrega recibo → escola processa manualmente
@@ -921,7 +921,7 @@ DEPOIS: Encarregado toca "Pagar" → liquidação instantânea → escola vê em
 **O problema hoje:**  
 Um designer freelance factura um cliente. O cliente faz uma transferência bancária. O freelancer aguarda horas pela confirmação. Não existe registo de pagamento estruturado.
 
-**Com o Banza:**  
+**Com o Banzami:**  
 O freelancer gera um link de pagamento ou pedido. O cliente clica, confirma e a carteira é creditada instantaneamente. Ambas as partes têm um recibo digital com timestamp.
 
 ### 8.8 Restaurantes e cafés
@@ -929,14 +929,14 @@ O freelancer gera um link de pagamento ou pedido. O cliente clica, confirma e a 
 **O problema hoje:**  
 Um jantar em grupo termina. A mesa tenta dividir a conta via transferências bancárias individuais para a conta do empregado. O empregado tem de reconciliar múltiplos pagamentos manualmente antes de a mesa poder sair.
 
-**Com o Banza:**  
+**Com o Banzami:**  
 O restaurante gera um QR dinâmico para o total da mesa. Os clientes fazem o scan e pagam a sua parte. Cada pagamento é confirmado instantaneamente. Quando o valor total é atingido, a mesa está feita.
 
 ---
 
 ## 9. Ecossistema de Pagamentos QR
 
-Os códigos QR não são uma funcionalidade no Banza — são a **principal superfície de pagamento**.
+Os códigos QR não são uma funcionalidade no Banzami — são a **principal superfície de pagamento**.
 
 A lógica é fundamental. Um código QR é um endereço de pagamento visual. Pode ser impresso, exibido num ecrã, partilhado como imagem ou incorporado num documento. Não requer terminal de cartão, hardware NFC nem equipamento proprietário. Um comerciante com um telemóvel e uma impressora tem tudo o que precisa.
 
@@ -1008,7 +1008,7 @@ Os consumidores exibem o seu QR pessoal para receber dinheiro de amigos ou famí
 | Transferência bancária | IBAN e códigos de referência, sem confirmação instantânea, reconciliação manual |
 | Pagamentos NFC | Requer hardware com capacidade NFC, não é universal |
 | Dinheiro físico | Sem registo digital, risco de segurança, sem pagamento remoto ou online |
-| **QR (Banza)** | Funciona com qualquer smartphone, custo zero de hardware, confirmação instantânea, gratuito para exibir, funciona remotamente |
+| **QR (Banzami)** | Funciona com qualquer smartphone, custo zero de hardware, confirmação instantânea, gratuito para exibir, funciona remotamente |
 
 O QR elimina a barreira de infraestrutura que manteve os pequenos comerciantes fora do comércio digital. Um comerciante com um telemóvel e uma impressora está pronto para aceitar pagamentos digitais instantâneos.
 
@@ -1020,9 +1020,9 @@ O QR elimina a barreira de infraestrutura que manteve os pequenos comerciantes f
 
 Num sistema baseado em cartões, o dinheiro flui através de redes de cartões (Visa, Mastercard), é autorizado por emissores e liquida entre bancos em um a três dias úteis. O consumidor nunca detém directamente dinheiro — detém acesso a um saldo ligado a um cartão que uma rede estrangeira processa em seu nome.
 
-O Banza é fundamentalmente diferente.
+O Banzami é fundamentalmente diferente.
 
-Cada titular de conta possui uma **Banza Wallet em Kwanza**. Quando um consumidor paga um comerciante, o dinheiro move-se directamente de uma carteira para outra numa única operação de ledger atómica. Sem rede de cartões. Sem autorização estrangeira. A liquidação não é diferida — acontece na mesma transacção.
+Cada titular de conta possui uma **Banzami Wallet em Kwanza**. Quando um consumidor paga um comerciante, o dinheiro move-se directamente de uma carteira para outra numa única operação de ledger atómica. Sem rede de cartões. Sem autorização estrangeira. A liquidação não é diferida — acontece na mesma transacção.
 
 ### 10.2 O caminho de pagamento principal
 
@@ -1039,22 +1039,22 @@ Cada titular de conta possui uma **Banza Wallet em Kwanza**. Quando um consumido
 
 Esta é a imagem completa. Sem rede de cartões. Sem processador intermediário. Uma operação de ledger. Ambos os saldos actualizam instantânea e atomicamente.
 
-### 10.3 O Banza NÃO é card-first
+### 10.3 O Banzami NÃO é card-first
 
-| Modelo de pagamento | Como funciona | Banza? |
+| Modelo de pagamento | Como funciona | Banzami? |
 |---------------------|--------------|--------|
 | Stripe / Terminal POS | Tokenização do cartão → rede de cartões → autorização do emissor → liquidação em dias | ✗ |
 | Transferência bancária | IBAN + referência → mensagens interbancárias → liquidação em horas/dias | ✗ |
 | Mobile money (sem rede local) | Conta flutuante estrangeira → liquidação adiada | ✗ |
-| **Banza** | **Carteira → transferência no ledger → carteira — instantâneo, local, em Kwanza** | **✓** |
+| **Banzami** | **Carteira → transferência no ledger → carteira — instantâneo, local, em Kwanza** | **✓** |
 
-Os cartões não existem na rede principal Banza. Numa fase futura, o carregamento por cartão permitirá aos consumidores financiar a sua Banza Wallet a partir de um cartão de débito — mas esse cartão é usado para adicionar fundos, não para fazer pagamentos. Cada pagamento, independentemente de como a carteira foi financiada, é uma transferência de carteira-para-carteira.
+Os cartões não existem na rede principal Banzami. Numa fase futura, o carregamento por cartão permitirá aos consumidores financiar a sua Banzami Wallet a partir de um cartão de débito — mas esse cartão é usado para adicionar fundos, não para fazer pagamentos. Cada pagamento, independentemente de como a carteira foi financiada, é uma transferência de carteira-para-carteira.
 
 ### 10.4 Redes locais, dinheiro local
 
-A liquidação do Banza corre em infraestrutura angolana — EMIS e o sistema bancário angolano. Isto não é uma limitação. É uma vantagem deliberada.
+A liquidação do Banzami corre em infraestrutura angolana — EMIS e o sistema bancário angolano. Isto não é uma limitação. É uma vantagem deliberada.
 
-Uma rede de pagamentos construída em infraestrutura de cartões estrangeiros depende de aprovação estrangeira, preços estrangeiros e disponibilidade estrangeira. A liquidação do Banza é angolana, em Kwanza, em redes que Angola controla. Funciona quando as redes internacionais não funcionam. Cobra em AOA sem conversão de moeda. Opera dentro do quadro regulatório do Banco Nacional de Angola.
+Uma rede de pagamentos construída em infraestrutura de cartões estrangeiros depende de aprovação estrangeira, preços estrangeiros e disponibilidade estrangeira. A liquidação do Banzami é angolana, em Kwanza, em redes que Angola controla. Funciona quando as redes internacionais não funcionam. Cobra em AOA sem conversão de moeda. Opera dentro do quadro regulatório do Banco Nacional de Angola.
 
 Infraestrutura local para uma economia local.
 
@@ -1066,23 +1066,23 @@ QR ↔ QR               a identidade física — como paga presencialmente
 @banza ↔ @banza        a identidade digital — como endereça pagamentos em qualquer lugar
 ```
 
-Estas três camadas são expressões da mesma conta subjacente. Juntas, tornam o Banza utilizável em todos os contextos: comércio físico, comércio digital, pagamentos remotos e transferências pessoa-a-pessoa.
+Estas três camadas são expressões da mesma conta subjacente. Juntas, tornam o Banzami utilizável em todos os contextos: comércio físico, comércio digital, pagamentos remotos e transferências pessoa-a-pessoa.
 
 ---
 
-## 11. Banza para Comerciantes
+## 11. Banzami para Comerciantes
 
 ### 11.1 Primeiros passos
 
-Um comerciante regista-se no Banza, fornece informações básicas do negócio e recebe uma Banza Wallet de comerciante e um @banza em minutos. Um código QR estático está pronto para download imediatamente.
+Um comerciante regista-se no Banzami, fornece informações básicas do negócio e recebe uma Banzami Wallet de comerciante e um @banza em minutos. Um código QR estático está pronto para download imediatamente.
 
 Sem terminal POS necessário. Sem acordo de cartão necessário. Sem volume mensal mínimo. A verificação KYC é necessária antes da liquidação em directo, mas o processo é totalmente digital.
 
 O tempo entre "quero aceitar pagamentos digitais" e "estou a aceitar pagamentos digitais" deve ser medido em minutos, não semanas.
 
-### 11.2 Banza Business
+### 11.2 Banzami Business
 
-O Banza Business é a plataforma operacional para comerciantes no ecossistema Banza. Não é uma aplicação — é um sistema completo com duas interfaces complementares que servem o mesmo negócio em contextos diferentes.
+O Banzami Business é a plataforma operacional para comerciantes no ecossistema Banzami. Não é uma aplicação — é um sistema completo com duas interfaces complementares que servem o mesmo negócio em contextos diferentes.
 
 ```
              Banza Business
@@ -1127,7 +1127,7 @@ Optimizada para operação diária no terreno. É a interface principal para can
 
 #### 11.2.2 Interface web
 
-A interface web é a superfície administrativa avançada do Banza Business — não é um produto separado. É o centro de controlo do mesmo negócio, acessível via navegador.
+A interface web é a superfície administrativa avançada do Banzami Business — não é um produto separado. É o centro de controlo do mesmo negócio, acessível via navegador.
 
 **O que a interface web oferece:**
 
@@ -1178,19 +1178,19 @@ QR / @banza / Link
 
 ### 11.5 Levantamentos
 
-Os saldos da carteira são transferidos para uma conta bancária angolana a pedido — a partir da interface móvel, da interface web ou via API. O Banza inicia a transferência imediatamente via EMIS e acompanha-a com total transparência. Sem pedidos manuais. Sem prazos opacos.
+Os saldos da carteira são transferidos para uma conta bancária angolana a pedido — a partir da interface móvel, da interface web ou via API. O Banzami inicia a transferência imediatamente via EMIS e acompanha-a com total transparência. Sem pedidos manuais. Sem prazos opacos.
 
 ### 11.6 A loja QR
 
-Cada comerciante tem um perfil público permanente em `pay.banzami.org/profiles/@banza`. Esta é a identidade digital que ancora o comerciante na rede Banza — partilhável como link, imprimível como QR, descobrível via pesquisa. Qualquer consumidor que chegue pode pagar instantaneamente.
+Cada comerciante tem um perfil público permanente em `pay.banzami.org/profiles/@banza`. Esta é a identidade digital que ancora o comerciante na rede Banzami — partilhável como link, imprimível como QR, descobrível via pesquisa. Qualquer consumidor que chegue pode pagar instantaneamente.
 
 ### 11.7 SDK/API para ecommerce e apps
 
-Aplicações angolanas — apps de táxi, delivery, ecommerce, escolas, plataformas de doações — podem integrar pagamentos Banza directamente no fluxo do utilizador.
+Aplicações angolanas — apps de táxi, delivery, ecommerce, escolas, plataformas de doações — podem integrar pagamentos Banzami directamente no fluxo do utilizador.
 
 O consumidor paga dentro da app, em Kwanza, sem sair para outro ambiente. A carteira do comerciante actualiza instantaneamente. Sem gateway externo. Sem redireccionamento. Sem fricção.
 
-A integração é feita via Banza SDK oficial. Ver secção 12 para documentação técnica completa.
+A integração é feita via Banzami SDK oficial. Ver secção 12 para documentação técnica completa.
 
 | Plataforma | SDK |
 |------------|-----|
@@ -1201,11 +1201,11 @@ A integração é feita via Banza SDK oficial. Ver secção 12 para documentaç�
 
 ---
 
-## 12. Banza para Programadores
+## 12. Banzami para Programadores
 
 ### 12.1 Arquitectura SDK-first
 
-O Banza é construído para programadores. O caminho de integração recomendado é sempre através de um Banza SDK oficial — nunca chamadas HTTP directas, nunca clientes artesanais, nunca soluções improvisadas.
+O Banzami é construído para programadores. O caminho de integração recomendado é sempre através de um Banzami SDK oficial — nunca chamadas HTTP directas, nunca clientes artesanais, nunca soluções improvisadas.
 
 Os SDKs oficiais fornecem por defeito:
 
@@ -1218,7 +1218,7 @@ Os SDKs oficiais fornecem por defeito:
 
 ### 12.2 SDKs disponíveis
 
-| Banza SDK | Linguagem | Uso principal |
+| Banzami SDK | Linguagem | Uso principal |
 |-----------|-----------|--------------|
 | `@banza/sdk` | TypeScript / Node.js | APIs backend, ecommerce, fluxos de pagamento server-side |
 | `banza/sdk-php` | PHP | Aplicações web, Laravel, WooCommerce |
@@ -1288,7 +1288,7 @@ O SDK trata de todo o fluxo de pagamento dentro de uma folha — autenticação 
 
 ### 12.6 Webhooks
 
-Cada evento significativo no Banza aciona uma entrega de webhook assinado. As aplicações subscrevem tipos de eventos e recebem-nos em segundos após a acção desencadeadora.
+Cada evento significativo no Banzami aciona uma entrega de webhook assinado. As aplicações subscrevem tipos de eventos e recebem-nos em segundos após a acção desencadeadora.
 
 ```typescript
 // Gestor de webhooks Express
@@ -1344,11 +1344,11 @@ Cada conta tem acesso a um sandbox completo com chaves API separadas (`bz_sandbo
 
 ---
 
-## 13. Banza para Consumidores
+## 13. Banzami para Consumidores
 
 ### 13.1 A experiência do consumidor
 
-O Banza é para cada angolano com um smartphone. Não é necessária uma conta bancária tradicional para começar. Não é necessário conhecimento técnico. Um telemóvel. Uma Banza Wallet. Tudo o resto segue-se.
+O Banzami é para cada angolano com um smartphone. Não é necessária uma conta bancária tradicional para começar. Não é necessário conhecimento técnico. Um telemóvel. Uma Banzami Wallet. Tudo o resto segue-se.
 
 ### 13.2 Obter uma carteira
 
@@ -1409,7 +1409,7 @@ Toca nele. Uma página abre:
 - Valor: 15.000 Kz
 - Descrição: Encomenda #12
 
-Toca em "Pagar com Banza." Confirma com PIN. Feito.
+Toca em "Pagar com Banzami." Confirma com PIN. Feito.
 
 ### 13.6 Receber um pedido de pagamento
 
@@ -1443,7 +1443,7 @@ Feed do consumidor
 
 Um extracto bancário em papel tem uma propriedade que as pessoas assumem como garantida: a mesma transacção aparece sempre no mesmo lugar, com o mesmo valor, na mesma ordem. Se o extracto for diferente a cada vez que o abrir, o banco quebrou a confiança fundamental.
 
-O Banza mantém a mesma garantia:
+O Banzami mantém a mesma garantia:
 
 - **Imutável** — uma vez registado, um evento não se altera. Não é possível editar o valor de uma transferência passada.
 - **Ordenação determinística** — os eventos aparecem sempre pela mesma ordem: mais recente primeiro, com ordenação estável por identificador único em caso de timestamps idênticos.
@@ -1550,11 +1550,11 @@ Cada item de actividade visível:
 
 ---
 
-### 13.8 Por que os consumidores vão adoptar o Banza
+### 13.8 Por que os consumidores vão adoptar o Banzami
 
-A questão não é se os pagamentos digitais são melhores. São objectivamente. A questão é se o Banza é melhor do que as alternativas específicas que os angolanos usam hoje.
+A questão não é se os pagamentos digitais são melhores. São objectivamente. A questão é se o Banzami é melhor do que as alternativas específicas que os angolanos usam hoje.
 
-| Alternativa actual | Vantagem Banza |
+| Alternativa actual | Vantagem Banzami |
 |--------------------|-----------------|
 | Dinheiro físico | Sem troco necessário; pagamentos remotos possíveis; recibo digital completo; sem risco de transportar dinheiro |
 | Transferência bancária | Sem códigos de referência; sem IBAN; confirmação instantânea; sem prova de screenshot necessária |
@@ -1574,17 +1574,17 @@ A história da adopção pelo consumidor não é sobre adopção de tecnologia. 
 
 ---
 
-### 13.9 Sistema Visual da App Banza
+### 13.9 Sistema Visual da App Banzami
 
-O Banza é uma aplicação financeira. A confiança começa na aparência.
+O Banzami é uma aplicação financeira. A confiança começa na aparência.
 
-A interface do consumidor segue um sistema visual dedicado — construído para transmitir segurança, familiaridade e poder de pagamento instantâneo. Este sistema é a referência canónica para qualquer trabalho de UI no Banza.
+A interface do consumidor segue um sistema visual dedicado — construído para transmitir segurança, familiaridade e poder de pagamento instantâneo. Este sistema é a referência canónica para qualquer trabalho de UI no Banzami.
 
-![Banza App Design System — mockup oficial das 16 ecrãs do consumidor](/images/banza/banza-app-design-system-mockup.png)
+![Banzami App Design System — mockup oficial das 16 ecrãs do consumidor](/images/banza/banza-app-design-system-mockup.png)
 
 #### O mockup oficial é a referência canónica
 
-O mockup acima documenta as 16 ecrãs aprovadas da app Banza. Qualquer trabalho de UI na app do consumidor — novas funcionalidades, iterações, revisões de design — deve alinhar com este sistema visual. Não pode divergir sem revisão explícita.
+O mockup acima documenta as 16 ecrãs aprovadas da app Banzami. Qualquer trabalho de UI na app do consumidor — novas funcionalidades, iterações, revisões de design — deve alinhar com este sistema visual. Não pode divergir sem revisão explícita.
 
 #### Ecrãs oficiais
 
@@ -1615,7 +1615,7 @@ Na ecrã Home, a ordem das acções é:
 2. **Enviar**
 3. **Receber**
 
-O QR Code é a acção primária porque o Banza é QR-native. O QR é o modelo de interacção principal do ecossistema. Esta ordem não é negociável e reflecte a identidade do produto.
+O QR Code é a acção primária porque o Banzami é QR-native. O QR é o modelo de interacção principal do ecossistema. Esta ordem não é negociável e reflecte a identidade do produto.
 
 Não usar: Enviar / Receber / QR Code.
 
@@ -1657,11 +1657,11 @@ linear-gradient(to bottom, #FFFFFF 0%, #FCF6F5 55%, #D8D0CF 100%)
 - **Identidade QR-native** — QR é sempre a acção primária visível
 - **Sem aspecto Flutter genérico** — sem Material Design padrão; visual proprietário
 - **Sem vermelho inconsistente** — toda a superfície vermelha usa os tokens oficiais acima
-- **Sem branding antigo** — a marca Banzami não aparece na interface do consumidor
+- **Sem branding antigo** — a marca Banza não aparece na interface do consumidor
 
 ---
 
-## 14. O Motor de Crescimento do Banza
+## 14. O Motor de Crescimento do Banzami
 
 Uma rede de pagamentos não é um produto que se constrói e lança. É uma rede que se faz crescer — e o seu valor compõe-se à medida que cresce.
 
@@ -1706,27 +1706,27 @@ Uma rede de pagamentos não é um produto que se constrói e lança. É uma rede
 
 **Motor 1 — Densidade QR dos comerciantes**
 
-Cada comerciante que se junta ao Banza é uma nova razão para um consumidor obter uma Banza Wallet. Uma cantina, uma farmácia, um vendedor de mercado, um restaurante — cada um é um nó na rede. À medida que a densidade de comerciantes aumenta num bairro ou cidade, o atrito para um consumidor ficar sem Banza Wallet aumenta. Eventualmente a questão não é "devo obter o Banza?" mas "por que é que ainda não tenho o Banza?"
+Cada comerciante que se junta ao Banzami é uma nova razão para um consumidor obter uma Banzami Wallet. Uma cantina, uma farmácia, um vendedor de mercado, um restaurante — cada um é um nó na rede. À medida que a densidade de comerciantes aumenta num bairro ou cidade, o atrito para um consumidor ficar sem Banzami Wallet aumenta. Eventualmente a questão não é "devo obter o Banzami?" mas "por que é que ainda não tenho o Banzami?"
 
 **Motor 2 — Integrações SDK**
 
-Cada app angolana que integra o Banza SDK traz toda a sua base de utilizadores para contacto com o Banza Wallet. Uma app de táxi com 50.000 utilizadores activos cria mais activações de carteiras do que qualquer campanha de marketing. Uma plataforma de delivery, um serviço de streaming, uma app de jogos — cada integração é um multiplicador na adopção pelo consumidor, sem custo de aquisição adicional.
+Cada app angolana que integra o Banzami SDK traz toda a sua base de utilizadores para contacto com o Banzami Wallet. Uma app de táxi com 50.000 utilizadores activos cria mais activações de carteiras do que qualquer campanha de marketing. Uma plataforma de delivery, um serviço de streaming, uma app de jogos — cada integração é um multiplicador na adopção pelo consumidor, sem custo de aquisição adicional.
 
 **Motor 3 — Circulação de carteiras**
 
-À medida que mais consumidores têm carteiras e mais comerciantes aceitam pagamentos, o dinheiro começa a circular dentro da rede Banza. Um consumidor paga uma cantina. A cantina paga um fornecedor. O fornecedor paga pessoal. O pessoal paga comerciantes. Cada Kwanza que fica na rede em vez de sair como levantamento em dinheiro aumenta a liquidez para todos e reduz o atrito de sair.
+À medida que mais consumidores têm carteiras e mais comerciantes aceitam pagamentos, o dinheiro começa a circular dentro da rede Banzami. Um consumidor paga uma cantina. A cantina paga um fornecedor. O fornecedor paga pessoal. O pessoal paga comerciantes. Cada Kwanza que fica na rede em vez de sair como levantamento em dinheiro aumenta a liquidez para todos e reduz o atrito de sair.
 
 ### Por que densidade antes de expansão
 
 O motor não gira pela geografia. Gira dentro de um mercado.
 
-Uma rede Banza com 10.000 comerciantes angolanos e 500.000 carteiras angolanas é dramaticamente mais valiosa para cada participante do que uma presença Banza em 10 países com 100 comerciantes cada. O efeito de rede requer concentração. É por isso que Angola vem primeiro — não porque outros mercados são sem importância, mas porque o motor deve estar a girar fortemente antes que a expansão faça sentido.
+Uma rede Banzami com 10.000 comerciantes angolanos e 500.000 carteiras angolanas é dramaticamente mais valiosa para cada participante do que uma presença Banzami em 10 países com 100 comerciantes cada. O efeito de rede requer concentração. É por isso que Angola vem primeiro — não porque outros mercados são sem importância, mas porque o motor deve estar a girar fortemente antes que a expansão faça sentido.
 
 ---
 
-## 15. Ecossistema de Negócio Banzami
+## 15. Ecossistema de Negócio Banza
 
-O Banzami não é uma empresa de produto único — é um ecossistema de participantes interligados, todos conectados pelo produto Banza, cada um beneficiando do crescimento da rede.
+O Banza não é uma empresa de produto único — é um ecossistema de participantes interligados, todos conectados pelo produto Banzami, cada um beneficiando do crescimento da rede.
 
 ### 15.1 Participantes da rede
 
@@ -1755,12 +1755,12 @@ O Banzami não é uma empresa de produto único — é um ecossistema de partici
 
 ### 15.2 Relações com bancos e parceiros
 
-Os bancos angolanos não são concorrentes do Banza. São parceiros essenciais do Banzami.
+Os bancos angolanos não são concorrentes do Banzami. São parceiros essenciais do Banza.
 
-- **Os bancos fornecem:** contas licenciadas, infraestrutura de liquidação, conformidade regulatória e os saldos em Kwanza que financiam as Banza Wallets.
-- **O Banza fornece:** UX de pagamento instantâneo, camada de comércio QR, Banza SDKs para programadores, ferramentas para comerciantes e o efeito de rede que torna os pagamentos digitais habituais.
+- **Os bancos fornecem:** contas licenciadas, infraestrutura de liquidação, conformidade regulatória e os saldos em Kwanza que financiam as Banzami Wallets.
+- **O Banzami fornece:** UX de pagamento instantâneo, camada de comércio QR, Banzami SDKs para programadores, ferramentas para comerciantes e o efeito de rede que torna os pagamentos digitais habituais.
 
-Os bancos ganham um produto de comércio moderno sobre a sua infraestrutura existente sem o construírem eles próprios. O Banzami ganha acesso à infraestrutura regulada que não pode possuir directamente. Esta é uma parceria com incentivos alinhados — não um conflito.
+Os bancos ganham um produto de comércio moderno sobre a sua infraestrutura existente sem o construírem eles próprios. O Banza ganha acesso à infraestrutura regulada que não pode possuir directamente. Esta é uma parceria com incentivos alinhados — não um conflito.
 
 ### 15.3 Modelo de receita
 
@@ -1777,11 +1777,11 @@ Todas as comissões são transparentes e divulgadas no onboarding. Sem encargos 
 
 ## 16. Segurança e Integridade Financeira
 
-O Banza lida com dinheiro real. A segurança e a integridade financeira não são funcionalidades — são a fundação sobre a qual tudo o resto é construído.
+O Banzami lida com dinheiro real. A segurança e a integridade financeira não são funcionalidades — são a fundação sobre a qual tudo o resto é construído.
 
 ### 16.1 Ledger de dupla entrada
 
-Cada movimento monetário no Banza é registado como uma **entrada de ledger de dupla entrada** imutável — o mesmo princípio contabilístico usado por bancos e instituições financeiras há séculos.
+Cada movimento monetário no Banzami é registado como uma **entrada de ledger de dupla entrada** imutável — o mesmo princípio contabilístico usado por bancos e instituições financeiras há séculos.
 
 ```
 O consumidor paga 2.500 Kz a um comerciante:
@@ -1804,7 +1804,7 @@ Em caso de qualquer auditoria, disputa ou inquérito regulatório, cada pagament
 
 Cada operação de pagamento é **idempotente** — submeter a mesma operação duas vezes não produz efeito adicional. As falhas de rede por vezes causam retries. Sem idempotência, um retry criaria uma cobrança duplicada.
 
-O Banza atribui uma chave de idempotência única a cada operação. Se a mesma chave for submetida novamente, o resultado original é devolvido imediatamente, sem criar uma nova transacção.
+O Banzami atribui uma chave de idempotência única a cada operação. Se a mesma chave for submetida novamente, o resultado original é devolvido imediatamente, sem criar uma nova transacção.
 
 ### 16.4 Motor de risco
 
@@ -1855,7 +1855,7 @@ Qualquer discrepância — por menor que seja — aciona um alerta e um fluxo de
 
 ### 17.1 Princípios de design
 
-O Banza é construído como **infraestrutura financeira à escala nacional**, pelo Banzami. Não um MVP de startup. Não uma prova de conceito. Infraestrutura concebida para operar durante décadas.
+O Banzami é construído como **infraestrutura financeira à escala nacional**, pelo Banza. Não um MVP de startup. Não uma prova de conceito. Infraestrutura concebida para operar durante décadas.
 
 Cada decisão arquitectural é ordenada por:
 
@@ -1961,7 +1961,7 @@ Três contratos arquitecturais sustentam cada transacção:
 
 ### 17.6 Abordagem de monólito modular
 
-O Banza é um **monólito modular** — uma unidade implementável com módulos internos fortemente isolados, fronteiras de domínio claras e interfaces internas explícitas.
+O Banzami é um **monólito modular** — uma unidade implementável com módulos internos fortemente isolados, fronteiras de domínio claras e interfaces internas explícitas.
 
 Esta é uma escolha deliberada. Os microsserviços prematuros introduzem complexidade de sistemas distribuídos, sobrecarga operacional e modos de falha que não são justificados até que os limites de escala sejam provados por tráfego real. O monólito modular é mais simples de raciocinar, implementar e manter — e pode ser decomposto em serviços exactamente quando, e apenas quando, a evidência o exige.
 
@@ -1986,13 +1986,13 @@ Três painéis principais Grafana fornecem visibilidade operacional:
 
 ### 17.8 Arquitectura de Carregamento de Carteira
 
-O carregamento de carteira é a fronteira mais crítica do ecossistema Banza: o ponto onde o dinheiro real do sistema bancário angolano entra na rede de ledger imutável do Banzami. Esta secção documenta a arquitectura interna que torna essa transição segura, auditável e idempotente.
+O carregamento de carteira é a fronteira mais crítica do ecossistema Banzami: o ponto onde o dinheiro real do sistema bancário angolano entra na rede de ledger imutável do Banza. Esta secção documenta a arquitectura interna que torna essa transição segura, auditável e idempotente.
 
 #### O problema fundamental
 
 O sistema bancário angolano — EMIS, Multicaixa Express, transferências interbancárias — é **assíncrono e eventualmente consistente**. Um pagamento iniciado pode ser confirmado segundos, minutos ou horas depois. Os callbacks podem chegar em duplicado. Uma transacção confirmada pode ser revertida pelo banco dias mais tarde.
 
-O ledger interno do Banzami é **síncrono e fortemente consistente**. Cada lançamento é atómico, imutável e reconciliável. Nenhum crédito pode existir sem um lançamento de dupla entrada balanceado e auditável.
+O ledger interno do Banza é **síncrono e fortemente consistente**. Cada lançamento é atómico, imutável e reconciliável. Nenhum crédito pode existir sem um lançamento de dupla entrada balanceado e auditável.
 
 A arquitectura de carregamento é a ponte entre estes dois mundos.
 
@@ -2164,7 +2164,7 @@ Este lançamento é:
 
 #### Reversão
 
-Quando um banco reverte uma transacção confirmada, o Banzami não apaga nada. Cria um segundo lançamento que anula o primeiro:
+Quando um banco reverte uma transacção confirmada, o Banza não apaga nada. Cria um segundo lançamento que anula o primeiro:
 
 ```
 Lançamento original:
@@ -2271,7 +2271,7 @@ O motor garante:
 
 ---
 
-## 18. O Ecossistema Banzami
+## 18. O Ecossistema Banza
 
 ### 18.1 Mapa completo da plataforma
 
@@ -2354,7 +2354,7 @@ Os plugins usam o SDK internamente — herdam todas as garantias do SDK: idempot
 | Funcionalidade | Descrição |
 |----------------|-----------|
 | **SDK Python** | Async-first com Pydantic v2; integrações Django e FastAPI |
-| **Gestão de perfil de comerciante** | Interface no Banza Business para criar e editar perfis públicos de comerciantes |
+| **Gestão de perfil de comerciante** | Interface no Banzami Business para criar e editar perfis públicos de comerciantes |
 | **Notificações FCM de pedidos de pagamento** | Notificações push para pedidos de pagamento recebidos |
 | **Expansão de eventos webhook** | Eventos para reembolsos, disputas e pedidos de pagamento |
 
@@ -2373,14 +2373,14 @@ Os plugins usam o SDK internamente — herdam todas as garantias do SDK: idempot
 | Funcionalidade | Descrição |
 |----------------|-----------|
 | **Pagamentos em marketplace** | Liquidação multi-comerciante numa única compra do consumidor |
-| **Carregamento de carteira por cartão** | Financiar uma Banza Wallet usando um cartão de débito (o cartão é uma via de financiamento — não o modelo de pagamento) |
+| **Carregamento de carteira por cartão** | Financiar uma Banzami Wallet usando um cartão de débito (o cartão é uma via de financiamento — não o modelo de pagamento) |
 | **Interoperabilidade financeira** | Integração EMIS mais profunda; compatibilidade mais ampla com infraestrutura bancária angolana |
 | **Expansão geográfica** | Após Angola atingir densidade de rede: o mesmo modelo, aplicado a mercados vizinhos |
 | **Contas empresariais** | Contas multi-utilizador com permissões baseadas em funções e integrações contabilísticas |
 
 ### Sobre a expansão geográfica
 
-A expansão é um marco futuro, não um objectivo actual. Uma rede de pagamentos torna-se valiosa através da densidade. Uma rede fina em muitos países vale menos para cada participante do que uma rede densa num só. O Banza atinge densidade de rede real em Angola primeiro, depois expande com um modelo que já foi provado.
+A expansão é um marco futuro, não um objectivo actual. Uma rede de pagamentos torna-se valiosa através da densidade. Uma rede fina em muitos países vale menos para cada participante do que uma rede densa num só. O Banzami atinge densidade de rede real em Angola primeiro, depois expande com um modelo que já foi provado.
 
 A arquitectura já está concebida para isso. O momento ainda não chegou.
 
@@ -2391,13 +2391,13 @@ A arquitectura já está concebida para isso. O momento ainda não chegou.
 > **Princípio central: o dinheiro LIVE é sagrado.**  
 > O sandbox existe para testar o ecossistema em segurança — sem nenhuma possibilidade de contaminar dinheiro de produção ou fluxos de liquidação.
 
-Esta secção documenta a arquitectura completa de isolamento de ambiente do Banza: por que existe, como funciona, as garantias que fornece e como os operadores a mantêm e validam.
+Esta secção documenta a arquitectura completa de isolamento de ambiente do Banzami: por que existe, como funciona, as garantias que fornece e como os operadores a mantêm e validam.
 
 ---
 
 ### 20.1 Por que o Sandbox Existe
 
-O Banza lida com dinheiro angolano real. Antes de qualquer versão chegar a utilizadores reais, é necessário um ambiente onde o produto possa ser testado exaustivamente — com fluxos de pagamento completos, saldos de carteira realistas e comportamento de rede real — sem que nenhum Kwanza real se mova.
+O Banzami lida com dinheiro angolano real. Antes de qualquer versão chegar a utilizadores reais, é necessário um ambiente onde o produto possa ser testado exaustivamente — com fluxos de pagamento completos, saldos de carteira realistas e comportamento de rede real — sem que nenhum Kwanza real se mova.
 
 O sandbox serve:
 
@@ -2439,7 +2439,7 @@ A correcção permanente: o core-api agora aplica um guarda de runtime em cada e
 
 ### 20.3 Modelo de Ambiente
 
-O Banza define dois ambientes mutuamente exclusivos:
+O Banzami define dois ambientes mutuamente exclusivos:
 
 | Ambiente | Descrição |
 |----------|-----------|
@@ -2559,7 +2559,7 @@ O SANDBOX e o LIVE nunca partilham infra-estrutura. São stacks Docker completam
 
 ### 20.5 Modelo de Financiamento Sandbox
 
-Os consumidores de sandbox precisam de saldos de teste para executar fluxos de pagamento. O Banza fornece três mecanismos de financiamento fictício:
+Os consumidores de sandbox precisam de saldos de teste para executar fluxos de pagamento. O Banzami fornece três mecanismos de financiamento fictício:
 
 #### Crédito automático no registo
 
@@ -2742,7 +2742,7 @@ SANDBOX: "[SANDBOX] Recebeu 2.500 Kz"
 
 ### 20.9 Arquitectura TestFlight
 
-O TestFlight é o canal de distribuição de beta para testers iOS. A configuração de build do Banza garante que as builds TestFlight conectam exclusivamente a `staging.banzami.org` e nunca a `api.banzami.org`.
+O TestFlight é o canal de distribuição de beta para testers iOS. A configuração de build do Banzami garante que as builds TestFlight conectam exclusivamente a `staging.banzami.org` e nunca a `api.banzami.org`.
 
 #### Fluxo do testador
 
@@ -2863,7 +2863,7 @@ O script imprime os comandos de build completos quando tem sucesso, incluindo os
 
 ### 20.12 Telemetria e Separação de Observabilidade
 
-Todos os serviços Banza carimbam o atributo `deployment.environment` em cada trace e métrica OpenTelemetry:
+Todos os serviços Banzami carimbam o atributo `deployment.environment` em cada trace e métrica OpenTelemetry:
 
 | Serviço | Ambiente LIVE | Ambiente SANDBOX |
 |---------|--------------|-----------------|
@@ -2950,7 +2950,7 @@ Estes princípios são regras de arquitectura vinculativas, não orientações:
 | **Reset nocturno automático** | Job automático que limpa e faz seed da base de dados de staging diariamente à meia-noite |
 | **Dashboards de QA** | Painel de observabilidade dedicado ao staging — latências, taxas de erro, cobertura de testes |
 | **Sandboxes multi-tenant de parceiros** | Ambientes sandbox isolados por parceiro — cada integrador tem o seu próprio namespace de teste |
-| **Simulation mode SDK** | Mode offline no Banza SDK que simula respostas da API sem conectividade — para testes unitários de integradores |
+| **Simulation mode SDK** | Mode offline no Banzami SDK que simula respostas da API sem conectividade — para testes unitários de integradores |
 | **Injecção de falhas** | Modo de staging que pode injectar falhas sintéticas (timeout, 500, ledger conflict) para testar resiliência |
 
 ---
@@ -2982,7 +2982,7 @@ Não infraestrutura adaptada de um modelo estrangeiro que nunca foi concebido pa
 
 Infraestrutura construída aqui. Para aqui.
 
-**Isso é o Banza — construído pelo Banzami.**
+**Isso é o Banzami — construído pelo Banza.**
 
 ### A transformação
 
@@ -2994,12 +2994,12 @@ Infraestrutura construída aqui. Para aqui.
 - Uma cantina não tem escolha senão dinheiro físico
 - Uma escola reconcilia pagamentos de propinas a partir de recibos físicos, manualmente, no fim da semana
 
-**Amanhã — com o Banza:**
+**Amanhã — com o Banzami:**
 - Um comerciante imprime um QR e aceita pagamentos instantâneos de qualquer smartphone, imediatamente
 - Um consumidor faz o scan, confirma e paga em menos de 3 segundos — com um recibo criptográfico
-- Um programador integra o Banza SDK tipado e pronto para produção e lança uma funcionalidade de pagamento em horas
+- Um programador integra o Banzami SDK tipado e pronto para produção e lança uma funcionalidade de pagamento em horas
 - Uma app de táxi fecha cada corrida com liquidação instantânea na app
-- Uma cantina tem uma Banza Wallet, o Banza Business e visibilidade total sobre cada transacção
+- Uma cantina tem uma Banzami Wallet, o Banzami Business e visibilidade total sobre cada transacção
 - Uma escola sabe em tempo real exactamente quem pagou
 
 ### Por que isto importa para além do comércio
@@ -3008,11 +3008,11 @@ Os pagamentos não são apenas transacções. São confiança.
 
 Quando um pagamento é instantâneo e confirmado, ambas as partes podem avançar sem dúvida. Quando um recibo é digital e permanente, não há disputa sobre o que foi acordado. Quando uma carteira é sempre acessível, a capacidade de participar na vida económica não é restringida pela geografia, pelo acesso bancário formal ou pelo dinheiro físico.
 
-O Banza torna a economia angolana mais líquida, mais transparente e mais acessível — não substituindo o que existe, mas completando o que falta. Construído pelo Banzami.
+O Banzami torna a economia angolana mais líquida, mais transparente e mais acessível — não substituindo o que existe, mas completando o que falta. Construído pelo Banza.
 
 ### A promessa
 
-Cada decisão de engenharia, cada escolha de produto e cada design no Banza reflecte um compromisso do Banzami:
+Cada decisão de engenharia, cada escolha de produto e cada design no Banzami reflecte um compromisso do Banza:
 
 **Os pagamentos digitais em Angola devem ser instantâneos, acessíveis, integrados e utilizáveis por todos.**
 
@@ -3028,14 +3028,14 @@ Para Angola.
 
 ---
 
-*Banza — O sistema de pagamentos instantâneos de Angola. Wallet-native. QR-first. Construído para cada angolano.*  
-*Banzami — A infraestrutura que permite Angola pagar digitalmente.*
+*Banzami — O sistema de pagamentos instantâneos de Angola. Wallet-native. QR-first. Construído para cada angolano.*  
+*Banza — A infraestrutura que permite Angola pagar digitalmente.*
 
 ---
 
 **Referências do documento:**
 
-- ADR-016 — Arquitectura de Marca Banzami/Banza
+- ADR-016 — Arquitectura de Marca Banza/Banzami
 - ADR-015 — Arquitectura de Conteúdo Markdown-First
 - ADR-014 — Missão Nacional Angola-First
 - ADR-013 — Identidade de Rede de Pagamentos Wallet-Native
@@ -3045,6 +3045,6 @@ Para Angola.
 - Filosofia UX Móvel
 - Onboarding de Comerciantes
 - README de Arquitectura
-- Banza SDK TypeScript
-- Banza SDK PHP
+- Banzami SDK TypeScript
+- Banzami SDK PHP
 - CLAUDE.md — Constituição de Engenharia

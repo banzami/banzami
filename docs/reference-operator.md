@@ -1,11 +1,11 @@
 # Reference Operator
 
-The reference operator is a minimal HTTP server that wires up the Banzami kernel
+The reference operator is a minimal HTTP server that wires up the Banza kernel
 using fully simulated providers. It runs entirely in memory — no database, no cloud
 services, no external network calls.
 
 **The reference operator is not a production financial institution implementation.**
-It exists to let developers explore, validate, and build against the Banzami kernel
+It exists to let developers explore, validate, and build against the Banza kernel
 without standing up any external infrastructure.
 
 ## What it is
@@ -28,7 +28,7 @@ The reference operator is emphatically **not** any of the following:
 | A licensed financial institution | No regulatory compliance, no real accounts |
 | A commercial operator | No revenue, no customers, no SLA |
 | A fintech product | No UI beyond the educational demo wallet |
-| A second Banza | No EMIS, no Multicaixa, no real bank rails |
+| A second Banzami | No EMIS, no Multicaixa, no real bank rails |
 | A production security reference | Fake HMAC secrets, no TLS enforcement, no auth |
 | A deployment template | Not hardened, not monitored, not recoverable |
 
@@ -53,9 +53,9 @@ When in doubt: if it involves real money or real people, it does not belong in
 The reference operator must remain a thin, educational shell around the kernel.
 New features in `reference/` should answer **yes** to all three:
 
-1. Does it help a developer understand the Banzami kernel?
+1. Does it help a developer understand the Banza kernel?
 2. Can it run entirely without external infrastructure?
-3. Would it be useful in any operator's context (not just Banza)?
+3. Would it be useful in any operator's context (not just Banzami)?
 
 Features that answer **no** to any of these belong in an operator deployment,
 not in the public kernel repository.

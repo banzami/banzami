@@ -1,6 +1,6 @@
-# Banzami Conformance Runner
+# Banza Conformance Runner
 
-Tests a running Banzami operator against the protocol conformance suite and produces a structured JSON report.
+Tests a running Banza operator against the protocol conformance suite and produces a structured JSON report.
 
 ## Requirements
 

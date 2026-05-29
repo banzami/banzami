@@ -1,9 +1,9 @@
-# Banzami
+# Banza
 
 **The open financial infrastructure core for programmable instant payments in Angola.**
 
-> "O Banzami constrói a infraestrutura. O Banza é o primeiro produto construído sobre ela."  
-> "Banzami builds the infrastructure. Banza is the first product built on top of it."
+> "O Banza constrói a infraestrutura. O Banzami é o primeiro produto construído sobre ela."  
+> "Banza builds the infrastructure. Banzami is the first product built on top of it."
 
 ---
 
@@ -22,7 +22,7 @@ Then open `reference/demo-wallet/index.html` in your browser.
 
 In five minutes you will have executed real wallet transfers, QR payments,
 payment requests, settlement batches, and a live event stream — all against
-the Banzami financial kernel, with zero cloud infrastructure.
+the Banza financial kernel, with zero cloud infrastructure.
 
 ```bash
 # Verify the kernel is running
@@ -40,13 +40,15 @@ OpenAPI spec: [`contracts/openapi/reference-operator.yaml`](contracts/openapi/re
 
 ---
 
-## What is Banzami?
+## What is Banza?
 
-Banzami is the **open-source financial infrastructure kernel** that operators, developers, and fintech builders use to create instant, wallet-native payment networks.
+> **Naming note:** Banza was formerly called Banzami. The naming inversion (ADR-025, 2026-05-29) assigned Banza to the protocol and Banzami to the product. See `docs/migration/` for the full migration record.
 
-Like Linux for operating systems, like Kubernetes for container orchestration, like PostgreSQL for databases — Banzami is the open foundation that any financial operator can deploy, extend, and build on.
+Banza is the **open-source financial infrastructure kernel** that operators, developers, and fintech builders use to create instant, wallet-native payment networks.
 
-Banzami provides:
+Like Linux for operating systems, like Kubernetes for container orchestration, like PostgreSQL for databases — Banza is the open foundation that any financial operator can deploy, extend, and build on.
+
+Banza provides:
 
 - **Financial core crates** (Rust) — double-entry ledger, wallet engine, transaction FSM, settlement, reconciliation, routing, acquiring abstraction, QR runtime, identity
 - **Protocol specifications** — QR payload format, webhook schemas, OpenAPI contracts, event schemas
@@ -57,13 +59,13 @@ Banzami provides:
 
 ---
 
-## What is Banza?
+## What is Banzami?
 
-**Banza is the first commercial operator and product built on Banzami.**
+**Banzami is the first commercial operator and product built on Banza.**
 
-Banza is Angola's instant payment and wallet network — the consumer app, merchant dashboard, QR infrastructure, and payment experience. Banza uses Banzami core crates, conforms to Banzami contracts, and implements Banzami SDKs.
+Banzami is Angola's instant payment and wallet network — the consumer app, merchant dashboard, QR infrastructure, and payment experience. Banzami uses Banza core crates, conforms to Banza contracts, and implements Banza SDKs.
 
-Banza is to Banzami what:
+Banzami is to Banza what:
 - Ubuntu is to the Linux kernel
 - Google Kubernetes Engine is to Kubernetes
 - Samsung One UI is to Android AOSP
@@ -71,7 +73,7 @@ Banza is to Banzami what:
 
 The public/private split is **not** language-based. It is:
 
-| Public — Banzami | Private — Banza |
+| Public — Banza | Private — Banzami |
 |---|---|
 | Generic financial infrastructure | Operator-specific business logic |
 | Ledger, wallets, routing, QR engine | EMIS/Multicaixa provider adapters |
@@ -121,11 +123,11 @@ The public/private split is **not** language-based. It is:
 
 ---
 
-## BanzamIA — Protocol Operating System
+## BanzAI — Protocol Operating System
 
-**BanzamIA** is the Protocol Operating System of Banzami — publicly available at `banzami.org/banzamia`.
+**BanzAI** is the Protocol Operating System of Banza — publicly available at `banzami.org/banzamia`.
 
-BanzamIA is not a chatbot. It is an orchestrated AI system that combines multiple language models, live protocol knowledge retrieval, deterministic validation tools, and certification logic into a single interface.
+BanzAI is not a chatbot. It is an orchestrated AI system that combines multiple language models, live protocol knowledge retrieval, deterministic validation tools, and certification logic into a single interface.
 
 ```
 Tools determine truth.
@@ -134,7 +136,7 @@ AI explains truth.
 
 ### Model architecture
 
-BanzamIA routes each request to the right combination of model, knowledge source, and tools:
+BanzAI routes each request to the right combination of model, knowledge source, and tools:
 
 | Task | Model + Tools |
 |------|--------------|
@@ -164,7 +166,7 @@ The architecture is designed so that `live-ai` mode can be enabled without redes
 
 ### Infrastructure
 
-Always-on: BanzamIA API · Qdrant vector store · knowledge index · deterministic tools
+Always-on: BanzAI API · Qdrant vector store · knowledge index · deterministic tools
 
 GPU inference (planned): RunPod · RTX 4090 · vLLM · Qwen / Qwen Coder / DeepSeek
 
@@ -181,7 +183,7 @@ BANZAMIA_MODEL_DEEPSEEK=...      # DeepSeek model ID
 
 ### Safety constraints
 
-BanzamIA is read-only. It must never:
+BanzAI is read-only. It must never:
 - Invent certification results or claim regulatory approval
 - Bypass conformance or replace deterministic validation
 - Expose private operator data or secrets
@@ -252,7 +254,7 @@ banzami/
 
 ![Sandbox operator architecture](docs/images/reference/sandbox-architecture.svg)
 
-The sandbox operator wires the Banzami kernel crates together with four simulated
+The sandbox operator wires the Banza kernel crates together with four simulated
 providers (FakeAcquirer, SimulatedSettlement, StdoutNotifications, MockRouting)
 and exposes a REST API + SSE event stream on `:3100`. No external services required.
 
@@ -291,7 +293,7 @@ See [`core/README.md`](core/README.md) for full documentation.
 
 ## Local sandbox — full feature set
 
-The sandbox operator is the **official local development target** for Banzami.
+The sandbox operator is the **official local development target** for Banza.
 Run it before touching any kernel crate or building any integration.
 
 ```bash
@@ -359,7 +361,7 @@ See [`sdk/`](sdk/) for all languages.
 
 ## Payment model
 
-Banzami is wallet-native. The canonical operation:
+Banza is wallet-native. The canonical operation:
 
 ```
 Consumer Wallet  ──ledger transfer──▶  Merchant Wallet
@@ -460,5 +462,5 @@ Report vulnerabilities to [security@banzami.org](mailto:security@banzami.org). D
 
 ## Related
 
-- **Banza** — first commercial operator (`github.com/banzami/banza`, private)
+- **Banzami** — first commercial operator (`github.com/banzami/banza`, private)
 - **banzami.org** — public documentation and ecosystem reference

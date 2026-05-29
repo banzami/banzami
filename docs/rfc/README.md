@@ -1,7 +1,7 @@
-# Banzami RFC Process
+# Banza RFC Process
 
 RFCs (Request for Comments) are the mechanism for proposing, discussing, and
-tracking significant changes to the Banzami ecosystem.
+tracking significant changes to the Banza ecosystem.
 
 ---
 

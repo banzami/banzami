@@ -11,7 +11,7 @@
 
 ## Context
 
-The Banzami kernel must integrate with external systems: payment rails, notification services, risk engines, identity providers, routing databases. These integrations are operator-specific — each operator uses different services and has different credentials.
+The Banza kernel must integrate with external systems: payment rails, notification services, risk engines, identity providers, routing databases. These integrations are operator-specific — each operator uses different services and has different credentials.
 
 The original architecture coupled provider implementations directly into the kernel crates (e.g., `EMISProvider`, `SimulatedProvider` as enum variants). This created:
 

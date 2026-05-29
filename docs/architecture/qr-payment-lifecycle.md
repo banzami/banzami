@@ -2,7 +2,7 @@
 
 Version: 1.0 · Status: Stable
 
-Banzami QR payments are single-use pull payments. A merchant generates a QR code
+Banza QR payments are single-use pull payments. A merchant generates a QR code
 (fixed-amount or open-amount), a consumer scans and confirms, and a ledger transfer
 is executed. The QR code transitions from `active` to `paid` atomically with the
 transfer.

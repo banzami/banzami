@@ -11,7 +11,7 @@
 
 ## Context
 
-ADR-002 decided that Banzami uses double-entry bookkeeping. This ADR specifies where and how the zero-sum invariant is enforced, and what guarantees operators can rely on.
+ADR-002 decided that Banza uses double-entry bookkeeping. This ADR specifies where and how the zero-sum invariant is enforced, and what guarantees operators can rely on.
 
 The question: if enforcement is too weak (only application-level), a bug can corrupt the ledger silently. If enforcement is too strict (only database-level), it becomes hard to build and test without a live database.
 
