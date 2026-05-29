@@ -169,13 +169,17 @@ A global search-and-replace will produce incorrect results because the same stri
 
 ### API_ROUTE
 
-**Definition:** The occurrence is part of a public API route path.
+**Definition:** The occurrence is part of a public API route path, including protocol wire format identifiers.
 
-**Rename rule:** DO NOT RENAME without versioning. Changing a public API route is a breaking change for SDK consumers. Must version the API (v2 route) and deprecate the old route with a sunset period.
+**Rename rule:** Wire protocol identifiers are migrated as part of the naming inversion. This is a breaking protocol migration and must be versioned and tested. Legacy names may be accepted during a compatibility window, but the canonical name is the new name immediately after migration.
+
+See `naming-breaking-protocol-migration.md` for the full compatibility and deprecation strategy.
 
 **Examples:**
-- `/api/banzamia/...`
-- `/v1/banza/...`
+- `/api/banzamia/...` → `/api/banzai/...`
+- `/.well-known/banzami/operator.json` → `/.well-known/banza/operator.json` (legacy path: 301 redirect)
+- `BANZAMI:` QR prefix → `BANZA:` (legacy prefix: accepted during compatibility window, not emitted)
+- `BANZAMI-SBX:` → `BANZA-SBX:` (same)
 
 ---
 
@@ -230,10 +234,10 @@ A global search-and-replace will produce incorrect results because the same stri
 | Email address | EMAIL | No | Protected |
 | Repository path | REPO | No (deferred) | Separate ADR |
 | Published package | PACKAGE | No (deferred) | Separate ADR |
-| Environment variable | ENV_VAR | No (deferred) | Coordinated step |
+| Environment variable | ENV_VAR | Yes, Wave 5 | Coordinated deploy |
 | Code symbol | CODE_SYMBOL | Yes, with refactor tools | Matches product/AI_OS |
 | Database object | DATABASE | No (deferred) | Separate migration |
-| API route | API_ROUTE | No (deferred) | Versioned change |
+| API route | API_ROUTE | Yes, with compatibility window | Rename + legacy redirect; see breaking-protocol-migration.md |
 | User-visible text | PUBLIC_COPY | Yes, Wave 2+ | Matches semantic class |
 | SVG text | SVG_TEXT | Yes, with PUBLIC_COPY | Matches semantic class |
 | Test file | TEST_FIXTURE | Yes, with code symbols | Matches what is tested |

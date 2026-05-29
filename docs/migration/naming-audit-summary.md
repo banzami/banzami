@@ -50,7 +50,7 @@ Three repositories:
 | ENV_VAR | 11 | BANZAMIA_* → BANZAI_* | High |
 | CODE_SYMBOL | ~30 | Mixed (see conflicts) | Medium–Critical |
 | DATABASE | 0 | No action | — |
-| API_ROUTE | ~15 | 2 PROTECTED, rest rename | Critical (for protected) |
+| API_ROUTE | ~15 | All rename (with compatibility window); wire format in Wave 5c | High |
 | PUBLIC_COPY | ~80 | Rename per wave | Medium |
 | SVG_TEXT | ~40 | Rename in Wave 2 (with exceptions) | Low–Medium |
 | TEST_FIXTURE | ~15 | Rename with code symbols | Low |
@@ -59,17 +59,16 @@ Three repositories:
 
 ## Protected Occurrences (must never rename)
 
+**STEP-002B override:** `/.well-known/banzami/operator.json` and QR prefixes are no longer permanently protected — they migrate in Wave 5c.
+
 | Occurrence | Reason |
 |------------|--------|
-| `banzami.org` (and all subdomains) | Registered domain |
-| `contact@banzami.org`, `security@banzami.org` | Email addresses |
-| `github.com/banzami` org | GitHub organization |
-| `/.well-known/banzami/operator.json` | Protocol wire contract (C-007: RESOLVED KEEP) |
-| `BANZAMI-SBX:` QR prefix | Protocol wire format (C-008: RESOLVED KEEP) |
-| `BANZAMI:` QR prefix | Protocol wire format (C-008: RESOLVED KEEP) |
-| `Banzami Lda` (legal entity name in formal docs) | Legally binding |
+| `banzami.org` (and all subdomains) | Registered domain — **PROTECTED** |
+| `contact@banzami.org`, `security@banzami.org` | Email addresses — **PROTECTED** |
+| `github.com/banzami` org | GitHub organization — separate ADR required |
+| `Banzami Lda` (legal entity name in formal docs) | Legally binding text |
 
-**Total protected occurrences: ~50**
+**Total permanently protected occurrences: ~35** (reduced from ~50 by removing wire format from protected list)
 
 ---
 
@@ -80,12 +79,14 @@ These occurrences have no external consumers and no ambiguity. They can be renam
 | Occurrence | Target | Wave |
 |------------|--------|------|
 | ADR prose text (all non-016 ADRs) | Banzami → Banza | 1 |
-| RFC prose text (protocol strings excluded) | Banzami → Banza | 1 |
+| RFC prose text (excluding wire format identifier strings) | Banzami → Banza | 1 |
 | GOVERNANCE.md, CONTRIBUTING.md | Banzami → Banza | 1 |
-| Architecture SVG labels (non-protocol strings) | Banzami → Banza; BanzamIA → BanzAI | 2 |
+| Architecture SVG labels (diagram text) | Banzami → Banza; BanzamIA → BanzAI | 2 |
 | BanzamIA React component symbols | BanzamIA* → BanzAI* | 4 |
 | BanzamIA UI text strings | BanzamIA → BanzAI | 4 |
-| BANZAMIA_* env vars (internal) | → BANZAI_* | 5 |
+| BANZAMIA_* env vars (internal) | → BANZAI_* | 5a |
+| QR generator prefix | BANZAMI: → BANZA:; BANZAMI-SBX: → BANZA-SBX: | 5c |
+| Operator manifest path | /.well-known/banzami/ → /.well-known/banza/ (+ redirect) | 5c |
 | All 21 banzami-* Rust crates (unpublished) | → banza-* | 7 |
 | Internal SDK (checkout-web): BanzamiApiError | → BanzaApiError | 6 |
 
@@ -130,43 +131,54 @@ Two conflicts are permanently resolved (C-007, C-008 — protocol wire format, c
 
 ## Migration Readiness Score
 
-**Score: 68 / 100**
+**Score: 82 / 100** *(updated from 68/100 after STEP-002B)*
 
 | Dimension | Score | Notes |
 |-----------|-------|-------|
-| Planning completeness | 95/100 | ADR, map, classification rules, conflict register all complete |
-| Critical conflict resolution | 40/100 | 3 of 7 conflicts unresolved (C-001, C-002, C-004 are wave blockers) |
-| Protected items identified | 100/100 | All protocol wire format items confirmed and protected |
-| Safe rename scope defined | 90/100 | ~120 files identified as safe; classification complete |
-| Wave sequencing | 85/100 | Waves defined; repo swap sequencing (Wave 8) still needs separate ADR |
-| SDK strategy | 30/100 | C-001 unresolved — critical since SDK renames are the highest-risk action |
+| Planning completeness | 98/100 | ADR, map, classification rules, conflict register, breaking migration doc all complete |
+| Critical conflict resolution | 80/100 | C-001, C-002, C-004, C-007, C-008, C-009 resolved. C-003, C-005, C-006 unresolved (low stakes) |
+| Protected items identified | 100/100 | Domains/emails protected; wire format correctly marked for migration |
+| Safe rename scope defined | 92/100 | ~130 files identified as safe; wire format now included |
+| Wave sequencing | 90/100 | Wave 5 split into 5a/5b/5c; repo swap (Wave 8) still needs separate ADR |
+| SDK strategy | 90/100 | C-001 resolved: no breaking class renames; Wave 6 is mostly documentation |
 | Domain/repo strategy | 20/100 | Wave 8 deferred; no ADR yet for repo renames |
+| Wire format strategy | 85/100 | Breaking protocol migration documented; compatibility strategy defined |
 
-**Composite: 68/100**
+**Composite: 82/100**
 
 ---
 
 ## Recommendation
 
-> **More decisions required before Wave 3 can begin.**
+> **✅ Ready to begin Wave 1 now. All major blockers resolved.**
 
 ### What must be decided before Wave 1–2 (low-risk waves)
 
-None — Wave 1 (documentation) and Wave 2 (SVGs) can begin immediately. No conflicts block these waves. All PROTOCOL and AI_OS prose renames are safe.
+Nothing. Wave 1 (documentation) and Wave 2 (SVGs) can begin immediately.
 
 ### What must be decided before Wave 3
 
-**C-004 must be resolved:** Does `/banzamia` become `/banzai` with a redirect, or does the URL stay as `/banzamia`? This is the only Wave 3 blocker.
+Nothing. C-004 resolved: canonical route is `/banzai`. Proceed after Wave 2.
 
-### What must be decided before Wave 6
+### What must be decided before Wave 5c (wire format)
 
-**C-001 must be resolved:** If `@banza/sdk` stays (recommended), then `BanzaClient`, `BanzaError`, and `BanzaPay` also stay — Wave 6 becomes documentation-only (Low risk). If `@banza/sdk` renames, Wave 6 requires breaking SDK releases (Critical risk).
+Nothing — C-007 and C-008 resolved by STEP-002B. Read `naming-breaking-protocol-migration.md` before executing; test requirements are mandatory.
 
-This single decision dramatically changes Wave 6 complexity.
+### What must be decided before Wave 6 (SDKs)
 
-### What must be decided before Wave 8
+Nothing — C-001 and C-002 resolved. Wave 6 is primarily documentation updates, not breaking releases. Python SDK `BanzamiAuthenticationError` rename is the only code change.
 
-A separate ADR (ADR-026) for repository rename sequencing is required. The "swap problem" (kernel wants `banza`, operator is currently `banza`) requires a temporary intermediate name.
+### What must be decided before Wave 8 (repos)
+
+A separate ADR (ADR-026) for repository rename sequencing. The "swap problem" requires temporary intermediate names. This is the only remaining unresolved high-stakes item.
+
+### Remaining unresolved (all low stakes, non-blockers)
+
+| Conflict | Stakes | Recommendation |
+|----------|--------|----------------|
+| C-003 BanzamIA root package | Low — internal only | Defer to Wave 8 |
+| C-005 Component directory name | Low | Defer to Wave 9 |
+| C-006 BANZAMI_REFERENCE.md filename | Medium | Rename to PROTOCOL_REFERENCE.md (Wave 9) |
 
 ---
 
@@ -174,6 +186,4 @@ A separate ADR (ADR-026) for repository rename sequencing is required. The "swap
 
 **✅ READY FOR WAVE 1 NOW**
 
-Wave 1 (documentation prose) can begin immediately. No conflict resolution is required. ~30–40 files, all PROTOCOL and AI_OS class, all internal.
-
-Recommended first action: Resolve C-001 and C-004 while Wave 1 is in progress, so Wave 3 can follow without delay.
+Wave 1 (documentation prose) can begin immediately. ~30–40 files, all PROTOCOL and AI_OS class, all internal. No further decisions required.

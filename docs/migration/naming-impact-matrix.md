@@ -79,9 +79,9 @@
 | Component file names | 5 files | `BanzamIAChat.tsx` etc. File renames require import updates in all importing files. |
 | UI text strings | ~15 occurrences | Welcome text, placeholder text, aria labels, footer text. |
 | Import paths | ~10 occurrences | `import { BanzamIAChat }` in `BanzamIAApp.tsx` and pages. Must update all. |
-| Module route `/banzamia` (docs site) | 1 file | `app/banzamia/page.tsx` — URL path change is a breaking link. **CONFLICT.** |
+| Module route `/banzamia` (docs site) | 1 file | `app/banzamia/page.tsx` — canonical route is `/banzai`. Add permanent redirect from `/banzamia`. C-004 resolved. |
 
-**Action:** Wave 4. Use IDE rename for component symbols to catch all imports. File renames require manual import updates. Resolve `/banzamia` URL conflict first.
+**Action:** Wave 4. Use IDE rename for component symbols to catch all imports. File renames require manual import updates. C-004 is resolved: canonical route is `/banzai`, redirect `/banzamia` → `/banzai` via `next.config.js`.
 
 ---
 
@@ -91,14 +91,14 @@
 
 | Sub-area | Occurrences | Notes |
 |----------|-------------|-------|
-| `/.well-known/banzami/operator.json` | ~8 files | **CRITICAL — PUBLIC PROTOCOL CONTRACT.** All deployed operators have published this URL. Changing it breaks operator discovery for all certified operators. Cannot rename without a protocol version (RFC). |
-| `BANZAMI-SBX:` QR prefix | ~5 files | **CRITICAL — ENCODED IN ALL GENERATED QR CODES.** Every QR code ever generated with this prefix would fail validation if the validator changes the prefix it expects. Cannot rename without a QR protocol version bump. |
-| `BANZAMI:` production QR prefix | ~3 files | **CRITICAL** — same as above. |
-| `/webhooks/banzami` (SDK docs/examples) | ~4 files | Low risk — these are example route paths in documentation, not actual API routes. Rename in SDK docs to `/webhooks/banza` in Wave 6. |
-| BanzamIA internal API routes (`/banzamia/*`) | ~12 routes | Internal to BanzamIA service. Consumers are the docs site. Coordinate rename with frontend route update. Medium risk. |
-| `Banza-Signature` webhook header | ~5 files | **CONFLICT — UNRESOLVED.** This header is part of the webhook verification protocol. After inversion, "Banza" = protocol, so "Banza-Signature" becomes more correct, not less. No rename needed. But confirm. |
+| `/.well-known/banzami/operator.json` | ~8 files | **Breaking protocol migration.** Canonical: `/.well-known/banza/operator.json`. Legacy path serves 301 redirect. See `naming-breaking-protocol-migration.md`. Wave 5c. |
+| `BANZAMI-SBX:` QR prefix | ~5 files | **Breaking protocol migration.** Canonical: `BANZA-SBX:`. Generators emit new prefix; validators accept both during compatibility window. Wave 5c. |
+| `BANZAMI:` production QR prefix | ~3 files | **Breaking protocol migration.** Canonical: `BANZA:`. Same strategy. Wave 5c. |
+| `/webhooks/banzami` (SDK docs/examples) | ~4 files | Documentation only. Rename to `/webhooks/banza` in Wave 6. |
+| BanzamIA internal API routes (`/banzamia/*`) | ~12 routes | Internal. Canonical: `/banzai/*`. Coordinate with frontend route rename. Wave 5b. |
+| `Banza-Signature` webhook header | ~5 files | **No rename needed (C-009 resolved).** After inversion, "Banza" = protocol, so `Banza-Signature` is already correct. Update documentation only. |
 
-**Action:** Protocol routes (/.well-known, QR prefixes) must NOT be renamed in this migration. BanzamIA internal routes rename in Wave 5.
+**Action:** Wire protocol identifiers (/.well-known, QR prefixes) are migrated as part of the naming inversion — this is a breaking protocol migration, versioned and tested. See `naming-breaking-protocol-migration.md`. BanzamIA internal routes rename in Wave 5b. Wire format changes in Wave 5c.
 
 ---
 
@@ -115,7 +115,7 @@
 | Node plugin (`@banza/node`) | ~10 refs | Internal usage primarily; npm package. |
 | Checkout web SDK (internal) | ~5 refs | `BanzamiApiError` — internal SDK, not published. Can rename without deprecation. |
 
-**Action:** Wave 6. Published packages require a breaking-change release with deprecation. Internal-only SDKs (checkout-web) can rename freely. Must resolve SDK naming conflict (see conflicts doc) before beginning.
+**Action:** Wave 6. C-001 resolved: `@banza/sdk`, `BanzaClient`, `BanzaError`, `BanzaPay` are already correct after inversion — no class renames needed. Wave 6 is primarily documentation updates and the `BanzamiAuthenticationError` rename in the Python SDK. Risk drops from Critical to Medium.
 
 ---
 
@@ -143,7 +143,7 @@
 | `@banzami/banzamia` | Internal root package | `@banza/banzai`? | Internal only — no external consumers. Rename in Wave 4. |
 | `banzamia-client` (internal module) | Internal | `banzai-client`? | Internal only — rename in Wave 4. |
 
-**Action:** Resolve SDK conflict first. Published packages may require no rename if "@banza" scope is already correct after inversion.
+**Action (C-001 resolved):** `@banza/sdk` and `@banza/node` scopes are already correct after inversion — no rename needed. `@banzami/banzamia` → `@banza/banzai` (internal, rename in Wave 4; C-003 unresolved, defer to Wave 8).
 
 ---
 
@@ -272,10 +272,11 @@ All ADRs except ADR-016 and ADR-025 use "Banzami" to mean the protocol. Update i
 |----------|------|------|---------|
 | Documentation | Low | 1 | No |
 | SVG diagrams | Low–Medium | 2 | No |
-| Website copy | Medium | 3 | Resolve /banzamia URL conflict first |
-| BanzAI UI | Medium | 4 | Resolve /banzamia URL conflict first |
-| APIs / env vars / Docker | Medium–Critical | 5 | Coordinate with production deploy |
-| SDKs | Critical | 6 | Resolve SDK naming conflict first |
-| Code symbols / Rust crates | Medium | 7 | After SDK decision |
+| Website copy | Medium | 3 | No (C-004 resolved: /banzai canonical) |
+| BanzAI UI | Medium | 4 | No (C-004 resolved) |
+| APIs / env vars / Docker (5a+5b) | High | 5a–5b | Coordinate with production deploy |
+| Wire format (5c) | High | 5c | After 5a–5b stable; see breaking-protocol-migration.md |
+| SDKs | Medium | 6 | No (C-001 resolved: mostly docs updates) |
+| Code symbols / Rust crates | Medium | 7 | After Wave 6 docs complete |
 | GitHub repos / org | Critical | 8 | Separate ADR required |
 | Final cleanup | Low | 9 | After all above |

@@ -260,11 +260,11 @@ Excluded: `node_modules`, `.next`, `target`, `dist`, `.git`, `__pycache__`
 
 | Occurrence | Meaning | File count | Example locations | Action |
 |------------|---------|------------|-------------------|--------|
-| /.well-known/banzami/operator.json | Operator manifest discovery URL | ~8 | Go router, OpenAPI spec, reference operator | **CRITICAL — DO NOT RENAME** without protocol version bump. This is a public protocol contract. |
-| BANZAMI-SBX: (QR prefix) | Sandbox QR payload prefix | ~5 | `qr-payment-lifecycle.svg`, OpenAPI, QR code generators | **CRITICAL — DO NOT RENAME** — encoded in all generated QR codes |
-| BANZAMI: (QR prefix) | Production QR payload prefix | ~3 | OpenAPI, QR generators | **CRITICAL — DO NOT RENAME** |
+| /.well-known/banzami/operator.json | Operator manifest discovery URL | ~8 | Go router, OpenAPI spec, reference operator | **Breaking protocol migration (STEP-002B override).** Canonical: `/.well-known/banza/operator.json`. Legacy: 301 redirect. Wave 5c. |
+| BANZAMI-SBX: (QR prefix) | Sandbox QR payload prefix | ~5 | `qr-payment-lifecycle.svg`, OpenAPI, QR code generators | **Breaking protocol migration (STEP-002B override).** Canonical: `BANZA-SBX:`. Legacy accepted during compatibility window, not emitted. Wave 5c. |
+| BANZAMI: (QR prefix) | Production QR payload prefix | ~3 | OpenAPI, QR generators | **Breaking protocol migration (STEP-002B override).** Canonical: `BANZA:`. Same strategy as BANZAMI-SBX:. Wave 5c. |
 | /webhooks/banzami (example) | Webhook receiver example route | ~4 | SDK docs, plugin READMEs | Rename to /webhooks/banza (Wave 6 — SDK docs only) |
-| /banzamia/* (BanzamIA API) | AI OS API path prefix | ~12 | BanzamIA Fastify router | Rename to /banzai/* (Wave 5) |
+| /banzamia/* (BanzamIA API) | AI OS API path prefix | ~12 | BanzamIA Fastify router | Rename to /banzai/* (Wave 5b) |
 
 ---
 
@@ -296,8 +296,8 @@ Excluded: `node_modules`, `.next`, `target`, `dist`, `.git`, `__pycache__`
 | "Banzami Kernel" label | Architecture SVG | 3 | `event-flow.svg`, `provider-model.svg` | → "Banza Kernel" (Wave 2) |
 | "BANZAMI KERNEL CRATES" | Provider model SVG | 1 | `provider-model.svg` | → "BANZA KERNEL CRATES" (Wave 2) |
 | "Banzami Sandbox Operator" | Sandbox architecture SVG | 1 | `sandbox-architecture.svg` | → "Banza Sandbox Operator" (Wave 2) |
-| "/.well-known/banzami/operator.json" | SVG label | 1 | `sandbox-architecture.svg` | **CRITICAL** — keep as-is; reflects actual protocol endpoint |
-| "BANZAMI-SBX:" | QR diagram label | 1 | `qr-payment-lifecycle.svg` | **CRITICAL** — keep as-is; reflects actual QR prefix |
+| "/.well-known/banzami/operator.json" | SVG label | 1 | `sandbox-architecture.svg` | Update to `/.well-known/banza/operator.json` in Wave 5c (after actual endpoint changes) — diagram should reflect current canonical endpoint |
+| "BANZAMI-SBX:" | QR diagram label | 1 | `qr-payment-lifecycle.svg` | Update to `BANZA-SBX:` in Wave 5c — diagram should reflect canonical QR prefix |
 | "Event Flow — Banzami Kernel" | SVG title | 1 | `event-flow.svg` | → "Event Flow — Banza Kernel" (Wave 2) |
 | BanzamIA module labels | Product architecture SVG | ~20 | `banzamia-product-architecture.svg` | → BanzAI labels (Wave 2) |
 | BanzamIA canonical architecture | Canonical SVG | ~15 | `banzamia-canonical-architecture.svg` | → BanzAI (Wave 2) |

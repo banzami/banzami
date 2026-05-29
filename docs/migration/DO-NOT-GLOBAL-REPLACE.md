@@ -56,18 +56,29 @@ Formal contracts and legal filings use "Banzami Lda" (the registered name). A gl
 
 ---
 
-## Occurrences that MUST NOT be renamed (ever, without a separate ADR)
+## Occurrences that MUST NOT be renamed without a separate decision
 
 | Occurrence | Reason |
 |------------|--------|
-| `banzami.org` in any form | Registered domain |
-| `contact@banzami.org` | Public email address |
-| `github.com/banzami` | GitHub organization — rename breaks clone URLs |
-| `@banzami` social handles | Requires platform coordination |
-| Published npm/crate/pub package names | Breaks consumer installations |
-| Public API routes (versioned or not) | Breaking change without versioning |
-| Database table/column names | Requires migration |
-| Legal entity name in formal documents | Legally binding text |
+| `banzami.org` in any form | Registered domain — **PROTECTED** |
+| `contact@banzami.org`, `security@banzami.org` | Email addresses — **PROTECTED** |
+| `github.com/banzami` | GitHub organization — rename breaks all clone URLs; requires separate ADR |
+| `@banzami` social handles | Requires platform coordination; separate decision |
+| Published npm/crate/pub package names | Breaks consumer installations; requires deprecation plan |
+| Database table/column names | Requires migration files and coordinated deploy |
+| Legal entity name in formal documents | Legally binding text — `Banzami Lda` stays |
+
+## Wire protocol identifiers — MIGRATE (not permanently protected)
+
+The following were previously listed as permanently protected. **This was overridden by STEP-002B.** They must be migrated with a compatibility window:
+
+| Occurrence | Canonical target | Compatibility |
+|------------|-----------------|---------------|
+| `/.well-known/banzami/operator.json` | `/.well-known/banza/operator.json` | Legacy path: 301 redirect |
+| `BANZAMI:` QR prefix | `BANZA:` | Legacy prefix: accepted during window, not emitted |
+| `BANZAMI-SBX:` QR prefix | `BANZA-SBX:` | Same |
+
+See `naming-breaking-protocol-migration.md` for the full strategy.
 
 ---
 

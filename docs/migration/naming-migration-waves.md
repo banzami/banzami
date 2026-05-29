@@ -39,12 +39,11 @@ Before beginning any wave: resolve all conflicts in that wave listed in `naming-
 
 ### What NOT to rename in Wave 1
 
-- `BANZAMI_REFERENCE.md` (filename) — conflict pending resolution
-- `BANZAMI:`, `BANZAMI-SBX:` in RFC normative text
-- `/.well-known/banzami/operator.json` in RFC text
-- `banzami.org`, `contact@banzami.org`
+- `BANZAMI_REFERENCE.md` (filename) — conflict C-006 pending resolution
+- `banzami.org`, `contact@banzami.org` — protected
 - Any code symbol
-- Any URL or route
+- Any URL or route (those go in Wave 3–5)
+- Note: RFC normative text for `BANZAMI:`, `BANZAMI-SBX:`, `/.well-known/banzami/` **may** be updated in Wave 1 as prose (calling them "legacy" or "deprecated"), but the actual identifiers are migrated in Wave 5c
 
 ### Commit message
 
@@ -179,75 +178,140 @@ feat(banzai-ui): Wave 4 — BanzamIA components renamed to BanzAI
 
 ---
 
-## Wave 5 — APIs, Environment Variables, Docker
+## Wave 5 — APIs, Environment Variables, Docker, Wire Format
 
-**Scope:** BanzamIA internal API routes, all BANZAMIA_* env vars, Docker service names.  
+Wave 5 is split into three sub-waves that must complete in sequence.
+
+---
+
+### Wave 5a — Environment Variables and Docker
+
+**Scope:** All BANZAMIA_* env vars, Docker service names.  
 **Repos:** BanzamIA, Banzami  
-**Estimated files:** 10–15  
+**Estimated files:** 8–10  
 **Risk:** High — requires production coordination  
 **Rollback:** Complex — requires coordinated rollback of server config
 
-### Prerequisite
+#### Prerequisite
 
-Wave 4 must be complete. Coordinate with live server before beginning this wave.
+Wave 4 must be complete. Coordinate with live server before beginning.
 
-### Files in scope
+#### Files in scope
 
 | File | Action |
 |------|--------|
 | `BanzamIA/.env.example` | Rename all BANZAMIA_* → BANZAI_* |
 | `BanzamIA/docker/docker-compose.yml` | Rename service `banzamia` → `banzai`, image names, BANZAMIA_* → BANZAI_*, container names |
 | `Banzami/docker/banzamia/docker-compose.yml` | Same |
-| `Banzami/docker/banzamia/` directory | → `docker/banzai/` (Wave 9 cleanup or here) |
-| BanzamIA Fastify router | `/banzamia/*` routes → `/banzai/*` routes |
-| Frontend API client that calls BanzamIA routes | Update base URL if using `/banzamia` prefix |
-| Production server `.env` files | **Coordinate with deploy — update server config simultaneously with code change** |
+| Production server `.env` files | **Coordinate with deploy — update simultaneously with code change** |
 | CI/CD secrets | Rename BANZAMIA_* secrets in GitHub Actions |
 
-### Special consideration
-
-`Banza-Signature` webhook header — after inversion, "Banza" is the protocol name, so `Banza-Signature` becomes the more accurate name. This is not a rename in the traditional sense — it may already be correct after the inversion. Confirm and document.
-
-### Commit message
+#### Commit message
 
 ```
-chore(infra): Wave 5 — BanzamIA env vars, docker, API routes renamed to BanzAI
+chore(infra): Wave 5a — rename BANZAMIA_* env vars and Docker services to BANZAI_*
+```
+
+---
+
+### Wave 5b — BanzAI API Routes
+
+**Scope:** BanzamIA Fastify router and frontend API client.  
+**Estimated files:** 5–8  
+**Risk:** Medium  
+**Rollback:** `git revert` + deploy
+
+#### Prerequisite
+
+Wave 5a stable and deployed.
+
+#### Files in scope
+
+| File | Action |
+|------|--------|
+| BanzamIA Fastify router | `/banzamia/*` routes → `/banzai/*` routes |
+| Frontend API client calling BanzamIA routes | Update base URL if using `/banzamia` prefix |
+
+#### Note
+
+`Banza-Signature` webhook header: **no rename needed** (C-009 resolved). After inversion, `Banza-Signature` correctly identifies a Banza-protocol signature. Update documentation only.
+
+#### Commit message
+
+```
+chore(infra): Wave 5b — rename /banzamia API routes to /banzai
+```
+
+---
+
+### Wave 5c — Wire Format Migration (Breaking Protocol)
+
+**Scope:** QR payload prefixes, operator manifest discovery URL.  
+**Estimated files:** 10–15  
+**Risk:** High — affects deployed operators and generated QR codes  
+**Rollback:** Revert generators and validators simultaneously; legacy codes still scan during compatibility window
+
+#### Prerequisite
+
+Wave 5b stable. Read `naming-breaking-protocol-migration.md` fully before beginning.
+
+#### Actions
+
+| Action | Details |
+|--------|---------|
+| QR generator | Change emitted prefix from `BANZAMI:` → `BANZA:` and `BANZAMI-SBX:` → `BANZA-SBX:` |
+| QR validator | Accept both `BANZAMI:` and `BANZA:` prefixes; add deprecation warning when legacy prefix detected |
+| Operator manifest discovery | Serve `/.well-known/banza/operator.json` as primary; serve `/.well-known/banzami/operator.json` as 301 redirect |
+| Discovery clients (BanzamIA, conformance tools) | Fetch `/.well-known/banza/operator.json` first; fallback to legacy path during compatibility window |
+| SVG labels referencing wire format strings | Update in Wave 2 if not already done; these are diagram labels — keep legacy string if the diagram is showing "what exists" |
+
+#### Tests required
+
+```
+PASS: generator emits BANZA: (not BANZAMI:)
+PASS: validator accepts BANZA:
+PASS: validator accepts BANZAMI: with deprecation warning (compatibility window)
+PASS: discovery client finds operator at /.well-known/banza/operator.json
+PASS: discovery client follows 301 from /.well-known/banzami/ to canonical path
+```
+
+#### Commit message
+
+```
+feat(protocol): Wave 5c — wire format migration: BANZA: prefix, /.well-known/banza/ operator manifest
 ```
 
 ---
 
 ## Wave 6 — SDKs
 
-**Scope:** SDK class names, published package renames, SDK documentation.  
+**Scope:** SDK documentation updates, internal SDK rename, Python SDK rename.  
 **Repos:** Banzami (sdk/), Banza (plugins/)  
-**Estimated files:** 30–40  
-**Risk:** Critical — published packages  
-**Rollback:** Publish previous version; deprecate new; notify consumers
+**Estimated files:** 15–20  
+**Risk:** Medium (C-001 resolved — no breaking class renames needed for published SDKs)  
+**Rollback:** `git revert` for docs; semver patch for any published SDK updates
 
 ### Prerequisite
 
-Resolve conflicts C-001 (SDK name), C-002 (BanzaClient class name) before beginning.
+Wave 5c complete. C-001 and C-002 are resolved — no further prerequisite.
 
-### Actions (after conflict resolution)
+### Actions
 
 | Action | Risk |
 |--------|------|
-| Checkout web SDK (internal): rename `BanzamiApiError` | Low — not published |
-| Published TypeScript SDK: if renaming `BanzaClient` → `BanzamiClient`, ship v2.0.0 with deprecation of v1 | Critical |
-| Published PHP SDK: same | Critical |
-| Published Flutter SDK: same | Critical |
-| Python SDK: rename `BanzamiAuthenticationError` per conflict resolution | Medium |
-| Update SDK docs: webhook example route `/webhooks/banzami` → `/webhooks/banza` | Low |
-| Update SDK README branding | Medium |
-
-### Note
-
-If conflict C-001 resolves that `@banza/sdk` is already correct after inversion (SDK for the Banza protocol), then no class renames are needed — only documentation updates. This would reduce Wave 6 from Critical to Low.
+| Checkout web SDK (internal): rename `BanzamiApiError` → `BanzaApiError` | Low — not published |
+| Python SDK: rename `BanzamiAuthenticationError` → `BanzaAuthenticationError` | Medium — confirm consumers |
+| TypeScript SDK (`@banza/sdk`): `BanzaClient`, `BanzaError`, `BanzaPay` stay — no rename needed | None |
+| PHP SDK (`banza/sdk-php`): same — no class rename needed | None |
+| Flutter SDK (`banza_flutter`): same — no class rename needed | None |
+| All SDK docs: update `/webhooks/banzami` example → `/webhooks/banza` | Low |
+| All SDK READMEs: update branding (BanzamIA → BanzAI where referenced) | Low |
+| SDK docs: update env var examples (`BANZAMIA_API_URL` → `BANZA_API_URL` pattern) | Low |
 
 ### Commit message
 
 ```
-feat(sdk): Wave 6 — SDK rename per ADR-025 (breaking: see CHANGELOG)
+docs(sdk): Wave 6 — SDK documentation and minor renames per ADR-025
 ```
 
 ---
@@ -356,12 +420,14 @@ chore(naming): Wave 9 — final cleanup, directory and filename renames
 
 | Wave | Scope | Est. Files | Risk | Blocker |
 |------|-------|------------|------|---------|
-| 1 | Documentation (prose) | 30–40 | Low | None |
+| 1 | Documentation (prose) | 30–40 | Low | None — **ready now** |
 | 2 | SVG diagrams | 8–10 | Low–Medium | None |
-| 3 | Website copy | 15–20 | Medium | Resolve C-004 (URL path) |
-| 4 | BanzAI UI components | 20–25 | Medium | Wave 3 complete; resolve C-005 |
-| 5 | APIs, env vars, Docker | 10–15 | High | Coordinate with production |
-| 6 | SDKs | 30–40 | Critical | Resolve C-001, C-002 |
-| 7 | Rust crates, code symbols | 60–80 | Medium | Wave 6 decisions final |
-| 8 | GitHub repos | N/A | Critical | Separate ADR; resolve sequencing |
+| 3 | Website copy | 15–20 | Medium | None (C-004 resolved: /banzai) |
+| 4 | BanzAI UI components | 20–25 | Medium | Wave 3 complete |
+| 5a | Env vars, Docker | 8–10 | High | Coordinate with production |
+| 5b | BanzAI API routes | 5–8 | Medium | Wave 5a stable |
+| 5c | Wire format (QR, manifest) | 10–15 | High | Wave 5b stable; see breaking-protocol-migration.md |
+| 6 | SDKs (mostly docs) | 15–20 | Medium | Wave 5c complete (C-001 resolved: no class renames) |
+| 7 | Rust crates, code symbols | 60–80 | Medium | Wave 6 complete |
+| 8 | GitHub repos | N/A | Critical | Separate ADR required |
 | 9 | Final cleanup | 10–15 | Low | All previous waves complete |

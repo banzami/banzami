@@ -58,14 +58,30 @@ Before renaming any occurrence, classify it using `naming-classification-rules.m
 | BanzamIA App | Application shell | BanzAI App | Same | Class: AI_OS + CODE_SYMBOL |
 | banzamia-client | Client library identifier | banzai-client | Same | Class: PACKAGE. Rename with AI_OS wave. |
 
+## Wire Format Identifiers — MIGRATE (STEP-002B)
+
+Previously classified as protected. Overridden by STEP-002B: the naming inversion is total.
+
+| Legacy Name | Legacy Meaning | New Name | New Meaning | Migration Notes |
+|-------------|----------------|----------|-------------|-----------------|
+| `BANZAMI:` (QR prefix) | Production QR payload prefix | `BANZA:` | Same | Class: API_ROUTE. Generators emit new; validators accept both. Wave 5c. |
+| `BANZAMI-SBX:` (QR prefix) | Sandbox QR payload prefix | `BANZA-SBX:` | Same | Class: API_ROUTE. Same strategy. Wave 5c. |
+| `/.well-known/banzami/operator.json` | Operator manifest discovery URL | `/.well-known/banza/operator.json` | Same | Class: API_ROUTE. Legacy path: 301 redirect. Wave 5c. |
+| `banzami-operator` (type ID) | Operator type identifier | `banza-operator` | Same | Class: PROTOCOL. Rename in Wave 5c or Wave 7. |
+| `banzami-conformance` (tool) | Conformance runner | `banza-conformance` | Same | Class: PROTOCOL + CODE_SYMBOL. Wave 7. |
+
+See `naming-breaking-protocol-migration.md` for compatibility strategy and test requirements.
+
 ## Protected Names — DO NOT RENAME
 
 | Name | Class | Reason |
 |------|-------|--------|
-| `banzami.org` | DOMAIN | Registered domain. DNS migration is a separate decision. |
-| `contact@banzami.org` | EMAIL | Public contact address on all communications. |
-| `github.com/banzami` | REPO | GitHub organization. Renaming breaks all clone URLs. Deferred. |
-| `@banzami` handles | SOCIAL | Social media handles. Deferred to brand team. |
+| `banzami.org` | DOMAIN | Registered domain. DNS migration is a separate decision. **PROTECTED** |
+| `contact@banzami.org` | EMAIL | Public contact address on all communications. **PROTECTED** |
+| `security@banzami.org` | EMAIL | Security disclosure address. **PROTECTED** |
+| `github.com/banzami` | REPO | GitHub organization. Renaming breaks all clone URLs. Deferred — separate ADR. |
+| `@banzami` social handles | SOCIAL | Social media handles. Deferred to brand team. |
+| `Banzami Lda` | ORG | Legal entity name in formal documents. **PROTECTED** |
 
 ## Certification Levels
 
@@ -81,13 +97,20 @@ No renaming required. Invariant IDs (INV-LEDGER-001, INV-STL-001, etc.) and RFC 
 
 Renaming should proceed in waves to minimize broken states:
 
-| Wave | Scope | Trigger |
-|------|-------|---------|
-| 1 | Documentation only (ADRs, READMEs, BANZAMI_REFERENCE.md) | After ADR-025 accepted |
-| 2 | Website copy (banzami.org pages, metadata, SVG text) | After Wave 1 complete |
-| 3 | AI OS rename (BanzamIA → BanzAI components, routes, identifiers) | After Wave 2 complete |
-| 4 | Repository renames | Separate decision and ADR required |
-| 5 | Package/crate renames | Separate decision and ADR required; involves published packages |
-| 6 | Domain/email migration | Separate decision and ADR required; DNS transition plan needed |
+See `naming-migration-waves.md` for the full wave breakdown. Summary:
 
-Each wave requires a separate commit or PR with a scoped audit of changed occurrences.
+| Wave | Scope |
+|------|-------|
+| 1 | Documentation prose (ADRs, READMEs, reference docs) |
+| 2 | SVG diagram text labels |
+| 3 | Website copy (banzami.org pages, metadata) |
+| 4 | BanzAI UI components, routes, lib rename |
+| 5a | Env vars (BANZAMIA_* → BANZAI_*), Docker |
+| 5b | BanzAI API routes (/banzamia → /banzai) |
+| 5c | Wire format (QR prefixes, operator manifest path) |
+| 6 | SDK documentation, Python SDK rename |
+| 7 | Rust crates (banzami-* → banza-*), code symbols |
+| 8 | GitHub repository renames (separate ADR required) |
+| 9 | Final cleanup (directory/filename renames) |
+
+Each wave is a separate commit. No wave begins until the previous is merged and the working tree is clean.

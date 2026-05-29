@@ -3,7 +3,7 @@
 **ADR:** ADR-025 — Ecosystem Naming Inversion  
 **Version:** 1.0  
 **Date:** 2026-05-29  
-**Status:** All conflicts UNRESOLVED — decisions required before renaming
+**Status:** C-001, C-002, C-004, C-009 RESOLVED. C-007, C-008 overridden by STEP-002B — migrate. C-003, C-005, C-006 unresolved.
 
 ---
 
@@ -53,7 +53,7 @@ Rationale: Clean separation between protocol SDK and product SDK. But adds compl
 
 ### Decision
 
-☐ UNRESOLVED — Fidel Monteiro to decide
+✅ **RESOLVED (STEP-002B) — Option A: `@banza/sdk` remains canonical.** Banza is the protocol; the SDK is a protocol-level tool. No rename needed for the npm scope.
 
 ---
 
@@ -85,7 +85,7 @@ Contingent on C-001 → Option B/C. Only makes sense if the SDK scope also becom
 
 ### Decision
 
-☐ UNRESOLVED — depends on C-001
+✅ **RESOLVED (STEP-002B) — Option A: `BanzaClient`, `BanzaError`, `BanzaPay` remain canonical.** C-001 resolved to keep `@banza/sdk`; these class names follow. No rename needed.
 
 ---
 
@@ -159,7 +159,7 @@ Future clean-up option. Redirect chain: `/banzamia` → `/banzai`.
 
 ### Decision
 
-☐ UNRESOLVED — Fidel Monteiro to decide
+✅ **RESOLVED (STEP-002B) — Canonical route is `/banzai`. Legacy `/banzamia` may redirect temporarily. Implement permanent redirect in `next.config.js`.**
 
 ---
 
@@ -233,56 +233,54 @@ Neutral name that doesn't depend on the brand name. Future-proof if the brand ch
 
 ## C-007 — Protocol API Discovery URL: `/.well-known/banzami/operator.json`
 
-**Wave blocked:** Permanently BLOCKED from rename without a new RFC  
+**Wave blocked:** Wave 5 (wire format migration)  
 **Classification would be:** API_ROUTE
 
-### The conflict
+### STEP-002B Override
 
-The operator manifest discovery URL is `/.well-known/banzami/operator.json`. This is a normative protocol URL defined in RFC-0005 (or equivalent). After the inversion:
+Previously marked "RESOLVED: KEEP AS-IS." This decision is overridden by STEP-002B.
 
-- The new protocol name is "Banza"
-- The "correct" URL after inversion would be `/.well-known/banza/operator.json`
-
-However:
-- Every certified and deployed operator has already implemented `/.well-known/banzami/operator.json`
-- Changing this URL is a **breaking change to the protocol wire format**
-- All operators would need to simultaneously update their implementations
-- The change requires a new RFC and a protocol version bump
+**The naming inversion is total.** Wire protocol identifiers are migrated as part of the naming inversion. This is a breaking protocol migration and must be versioned and tested.
 
 ### Decision
 
-**This conflict CANNOT be resolved in this migration without a protocol version.**
+✅ **RESOLVED (STEP-002B overrides STEP-002) — MIGRATE.**
 
-`/.well-known/banzami/operator.json` remains as-is. A future RFC can introduce `/.well-known/banza/operator.json` in a new protocol version with a compatibility period.
+- **Canonical:** `/.well-known/banza/operator.json`
+- **Legacy (compatibility window):** `/.well-known/banzami/operator.json` → 301 redirect to canonical
+- Operators should serve the redirect immediately; discovery clients should fetch the canonical path
+- See `naming-breaking-protocol-migration.md` for full compatibility strategy
 
 ### Status
 
-✅ RESOLVED — KEEP AS-IS. No migration action.
+✅ RESOLVED — MIGRATE in Wave 5c.
 
 ---
 
 ## C-008 — QR Payload Prefixes: `BANZAMI-SBX:` and `BANZAMI:`
 
-**Wave blocked:** Permanently BLOCKED from rename without a new RFC  
+**Wave blocked:** Wave 5 (wire format migration)  
 **Classification would be:** API_ROUTE
 
-### The conflict
+### STEP-002B Override
 
-QR payment codes use the prefixes `BANZAMI-SBX:` (sandbox) and `BANZAMI:` (production). These are:
+Previously marked "RESOLVED: KEEP AS-IS." This decision is overridden by STEP-002B.
 
-- Normative protocol strings
-- Encoded in every QR code ever generated
-- Validated by all scanners
-
-Renaming to `BANZA-SBX:` and `BANZA:` would invalidate all existing QR codes.
+**The naming inversion is total.** Wire protocol identifiers are migrated as part of the naming inversion. This is a breaking protocol migration and must be versioned and tested.
 
 ### Decision
 
-**RESOLVED — KEEP AS-IS.** A future RFC introducing QR protocol v2 can define new prefixes with a compatibility period where both are accepted.
+✅ **RESOLVED (STEP-002B overrides STEP-002) — MIGRATE.**
+
+- **Canonical prefixes:** `BANZA:` (production), `BANZA-SBX:` (sandbox)
+- **Legacy prefixes (compatibility window):** `BANZAMI:` and `BANZAMI-SBX:` accepted by validators; not emitted by generators
+- Generators must emit only canonical prefixes immediately after migration
+- Validators accept legacy prefixes during compatibility window; reject after sunset
+- See `naming-breaking-protocol-migration.md` for full compatibility strategy and test requirements
 
 ### Status
 
-✅ RESOLVED — KEEP AS-IS. No migration action.
+✅ RESOLVED — MIGRATE in Wave 5c.
 
 ---
 
@@ -302,11 +300,7 @@ Does this header need renaming? After inversion, `Banza-Signature` actually beco
 
 ### Decision
 
-☐ LIKELY NO RENAME NEEDED — but confirm that `Banza-Signature` (Banza = protocol) is the intended meaning. If yes, update documentation to reflect the corrected semantics without changing the actual header value.
-
-### Status
-
-☐ UNRESOLVED — confirm with Fidel Monteiro
+✅ **RESOLVED (STEP-002B) — NO RENAME.** After inversion, "Banza" = protocol. `Banza-Signature` correctly means "signature from the Banza protocol." The header value is already semantically correct under the new naming. Update documentation to reflect this — the header does not change, but its name is now more accurate than before.
 
 ---
 
@@ -314,15 +308,17 @@ Does this header need renaming? After inversion, `Banza-Signature` actually beco
 
 | ID | Description | Wave Blocked | Status |
 |----|-------------|-------------|--------|
-| C-001 | SDK package scope `@banza/*` | 6 | UNRESOLVED |
-| C-002 | `BanzaClient` class name | 6 | UNRESOLVED (depends on C-001) |
-| C-003 | BanzamIA root package name | 4 | UNRESOLVED (defer recommended) |
-| C-004 | URL route `/banzamia` | 3 | UNRESOLVED |
-| C-005 | Component directory name | 4 | UNRESOLVED (defer recommended) |
-| C-006 | `BANZAMI_REFERENCE.md` filename | 9 | UNRESOLVED |
-| C-007 | `/.well-known/banzami/` URL | — | RESOLVED: KEEP AS-IS |
-| C-008 | `BANZAMI-SBX:` / `BANZAMI:` QR prefixes | — | RESOLVED: KEEP AS-IS |
-| C-009 | `Banza-Signature` header | 6 | UNRESOLVED (likely no rename) |
+| C-001 | SDK package scope `@banza/*` | 6 | ✅ RESOLVED: keep `@banza/sdk` |
+| C-002 | `BanzaClient` class name | 6 | ✅ RESOLVED: keep `BanzaClient` |
+| C-003 | BanzamIA root package name | 4 | ☐ UNRESOLVED (defer recommended) |
+| C-004 | URL route `/banzamia` | 3 | ✅ RESOLVED: canonical is `/banzai` |
+| C-005 | Component directory name | 4 | ☐ UNRESOLVED (defer to Wave 9) |
+| C-006 | `BANZAMI_REFERENCE.md` filename | 9 | ☐ UNRESOLVED |
+| C-007 | `/.well-known/banzami/` URL | 5c | ✅ RESOLVED: MIGRATE → `/.well-known/banza/` |
+| C-008 | `BANZAMI-SBX:` / `BANZAMI:` QR prefixes | 5c | ✅ RESOLVED: MIGRATE → `BANZA-SBX:` / `BANZA:` |
+| C-009 | `Banza-Signature` header | — | ✅ RESOLVED: no rename (already correct after inversion) |
 
-**Minimum required before Wave 3 begins:** Resolve C-004  
-**Minimum required before Wave 6 begins:** Resolve C-001, C-002, C-009
+**Minimum required before Wave 3 begins:** ✅ C-004 resolved  
+**Minimum required before Wave 5c begins:** ✅ C-007, C-008 resolved  
+**Minimum required before Wave 6 begins:** ✅ C-001, C-002, C-009 resolved  
+**Remaining unresolved:** C-003 (low stakes), C-005 (low stakes), C-006 (deferred to Wave 9)
