@@ -8,7 +8,13 @@ export type NodeType =
   | 'manifest_schema'
   | 'sdk_doc'
   | 'architecture_doc'
-  | 'glossary_term';
+  | 'glossary_term'
+  | 'operator'
+  | 'capability'
+  | 'federation_profile'
+  | 'digital_twin'
+  | 'timeline_event'
+  | 'simulation_result';
 
 export type RelationshipType =
   | 'REFERENCES'
@@ -18,7 +24,11 @@ export type RelationshipType =
   | 'VALIDATES'
   | 'EXPLAINS'
   | 'DEPENDS_ON'
-  | 'RELATED_TO';
+  | 'RELATED_TO'
+  | 'CAN_FEDERATE_WITH'
+  | 'REQUIRES_CAPABILITY'
+  | 'BLOCKED_BY'
+  | 'CERTIFIED_FOR';
 
 export interface GraphNode {
   id: string;

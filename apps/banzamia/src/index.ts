@@ -12,6 +12,10 @@ import { graphRoute } from './routes/graph.js';
 import { ragStatsRoute } from './routes/rag-stats.js';
 import { researchRoute } from './routes/research.js';
 import { certificationCopilotRoute } from './routes/certification-copilot.js';
+import { simulateRoute } from './routes/simulate.js';
+import { federationRoute } from './routes/federation.js';
+import { memoryRoute } from './routes/memory.js';
+import { digitalTwinRoute } from './routes/digital-twin.js';
 import type { ModelProvider } from './orchestrator/providers/provider.js';
 
 const fastify = Fastify({
@@ -41,6 +45,10 @@ await fastify.register(graphRoute, { cfg: config });
 await fastify.register(ragStatsRoute, deps);
 await fastify.register(researchRoute, deps);
 await fastify.register(certificationCopilotRoute);
+await fastify.register(simulateRoute);
+await fastify.register(federationRoute);
+await fastify.register(memoryRoute);
+await fastify.register(digitalTwinRoute);
 
 fastify.get('/health', async () => ({ ok: true }));
 
