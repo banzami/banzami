@@ -49,11 +49,11 @@ regulatory compliance, security posture, and legal obligations.
 
 | Level | Name | What it certifies |
 |-------|------|-------------------|
-| **Level 0** | Reference-compatible | Health, wallet creation, basic transfer, health endpoint |
-| **Level 1** | Protocol-compatible | All Level 0 + QR, payment requests, events, ledger, settlement |
-| **Level 2** | Trace-compatible | All Level 1 + trace_id on all operations, GET /traces, causation_id |
-| **Level 3** | Federation-ready | All Level 2 + valid manifest, capability declaration, environment isolation |
-| **Level 4** | Settlement-compatible | All Level 3 + settlement lifecycle, fee model, no-money-creation invariant |
+| **Level 0** | Sandbox Operator | Health, wallet creation, basic transfer, health endpoint |
+| **Level 1** | Payment Operator | All Level 0 + QR, payment requests, events, ledger, settlement |
+| **Level 2** | Settlement Operator | All Level 1 + trace_id on all operations, GET /traces, causation_id |
+| **Level 3** | Federation Operator | All Level 2 + valid manifest, capability declaration, environment isolation |
+| **Level 4** | Infrastructure Operator | All Level 3 + settlement lifecycle, fee model, no-money-creation invariant |
 
 Levels are additive — every level requires all lower levels to pass.
 

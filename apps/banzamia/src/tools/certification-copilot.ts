@@ -40,7 +40,7 @@ export interface CopilotResult {
 const LEVEL_DEFINITIONS: Array<{ level: number; name: string; requirements: LevelRequirement[] }> = [
   {
     level: 0,
-    name: 'Reference-compatible',
+    name: 'Sandbox Operator',
     requirements: [
       { id: 'L0-001', description: 'GET /health returns 200', conformance_check: 'health', rfc: 'RFC-0006' },
       { id: 'L0-002', description: 'POST /wallets creates wallet with minor-unit balance', conformance_check: 'wallets', rfc: 'RFC-0001', adr: 'ADR-001' },
@@ -49,7 +49,7 @@ const LEVEL_DEFINITIONS: Array<{ level: number; name: string; requirements: Leve
   },
   {
     level: 1,
-    name: 'Protocol-compatible',
+    name: 'Payment Operator',
     requirements: [
       { id: 'L1-001', description: 'QR payment lifecycle (create, scan, pay, expire)', conformance_check: 'qr', rfc: 'RFC-0004', capability: 'supports_qr' },
       { id: 'L1-002', description: 'Payment requests (e-commerce flow)', conformance_check: 'payment-requests', rfc: 'RFC-0009', capability: 'supports_payment_requests' },
@@ -59,7 +59,7 @@ const LEVEL_DEFINITIONS: Array<{ level: number; name: string; requirements: Leve
   },
   {
     level: 2,
-    name: 'Trace-compatible',
+    name: 'Settlement Operator',
     requirements: [
       { id: 'L2-001', description: 'GET /v1/traces/:trace_id reconstructs causal flow', conformance_check: 'traces', rfc: 'RFC-0007', capability: 'supports_traces' },
       { id: 'L2-002', description: 'INV-TRACE-001: trace_id propagates to all flow entities', conformance_check: 'trace-propagation', rfc: 'RFC-0007' },
@@ -68,7 +68,7 @@ const LEVEL_DEFINITIONS: Array<{ level: number; name: string; requirements: Leve
   },
   {
     level: 3,
-    name: 'Federation-ready',
+    name: 'Federation Operator',
     requirements: [
       { id: 'L3-001', description: 'Valid /.well-known/banzami/operator.json manifest', conformance_check: 'manifest', rfc: 'RFC-0006', manifest_field: 'operator_id', capability: 'supports_manifest' },
       { id: 'L3-002', description: 'Federation discovery endpoint', conformance_check: 'federation-discovery', rfc: 'RFC-0008', capability: 'supports_federation' },
@@ -77,7 +77,7 @@ const LEVEL_DEFINITIONS: Array<{ level: number; name: string; requirements: Leve
   },
   {
     level: 4,
-    name: 'Settlement-compatible',
+    name: 'Infrastructure Operator',
     requirements: [
       { id: 'L4-001', description: 'Settlement batch lifecycle (open, close, settle)', conformance_check: 'settlement-lifecycle', rfc: 'RFC-0005' },
       { id: 'L4-002', description: 'INV-STL-001: net + fee = gross for all transfers', conformance_check: 'settlement-invariants', rfc: 'RFC-0005' },

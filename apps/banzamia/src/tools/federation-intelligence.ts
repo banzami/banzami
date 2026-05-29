@@ -98,10 +98,10 @@ export function analyzeFederation(a: OperatorProfile, b: OperatorProfile): Feder
 
   // Certification level checks (both must be L3+)
   if (certA.current_level < 3) {
-    blocking.push(`${a.operator_id} has not reached Level 3 (Federation-ready). Current level: ${certA.current_level < 0 ? 'none' : certA.current_level}.`);
+    blocking.push(`${a.operator_id} has not reached Level 3 (Federation Operator). Current level: ${certA.current_level < 0 ? 'none' : certA.current_level}.`);
   }
   if (certB.current_level < 3) {
-    blocking.push(`${b.operator_id} has not reached Level 3 (Federation-ready). Current level: ${certB.current_level < 0 ? 'none' : certB.current_level}.`);
+    blocking.push(`${b.operator_id} has not reached Level 3 (Federation Operator). Current level: ${certB.current_level < 0 ? 'none' : certB.current_level}.`);
   }
 
   // Missing federation capabilities

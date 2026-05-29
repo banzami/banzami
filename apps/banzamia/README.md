@@ -122,11 +122,11 @@ npm test                # Run test suite (107 tests)
 
 | Level | Name | Key capability |
 |-------|------|----------------|
-| L0 | Reference-compatible | Valid manifest + sandbox environment |
-| L1 | Protocol-compatible | Wallets + Transfers + QR |
-| L2 | Trace-compatible | Trace IDs + event correlation |
-| L3 | Federation-ready | Cross-operator + federation |
-| L4 | Settlement-compatible | Payment requests + webhooks + settlement |
+| L0 | Sandbox Operator | Valid manifest + sandbox environment |
+| L1 | Payment Operator | Wallets + Transfers + QR |
+| L2 | Settlement Operator | Trace IDs + event correlation |
+| L3 | Federation Operator | Cross-operator + federation |
+| L4 | Infrastructure Operator | Payment requests + webhooks + settlement |
 
 ## Protocol Operating System Capabilities
 

@@ -15,11 +15,11 @@ The Banzami conformance system lets any operator, SDK, or integration verify tha
 
 | Level | Name | Description |
 |-------|------|-------------|
-| 0 | Reference-compatible | Health, wallet creation, basic transfer, environment isolation |
-| 1 | Protocol-compatible | All Level 0 + QR, payment requests, events, ledger, settlement |
-| 2 | Trace-compatible | All Level 1 + `trace_id` on all entities, `GET /traces` endpoint |
-| 3 | Federation-ready | All Level 2 + valid operator manifest, capability declaration |
-| 4 | Settlement-compatible | All Level 3 + settlement fee model, no-money-creation invariant |
+| 0 | Sandbox Operator | Health, wallet creation, basic transfer, environment isolation |
+| 1 | Payment Operator | All Level 0 + QR, payment requests, events, ledger, settlement |
+| 2 | Settlement Operator | All Level 1 + `trace_id` on all entities, `GET /traces` endpoint |
+| 3 | Federation Operator | All Level 2 + valid operator manifest, capability declaration |
+| 4 | Infrastructure Operator | All Level 3 + settlement fee model, no-money-creation invariant |
 
 The reference sandbox operator is certified at **Level 2**.
 
@@ -102,7 +102,7 @@ Include a badge in your operator's README to declare the certification level:
 
 ## Operator manifest
 
-Federation-ready operators (Level 3+) must serve a manifest at `/.well-known/banzami/operator.json`:
+Federation Operators (Level 3+) must serve a manifest at `/.well-known/banzami/operator.json`:
 
 ```json
 {

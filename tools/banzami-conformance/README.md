@@ -42,11 +42,11 @@ Or via the shell wrapper:
 
 | Level | Name | Required suites |
 |-------|------|----------------|
-| 0 | Reference-compatible | health, wallets, transfers |
-| 1 | Protocol-compatible | + QR, payment requests, events, ledger, settlement |
-| 2 | Trace-compatible | + traces |
-| 3 | Federation-ready | + manifest |
-| 4 | Settlement-compatible | + settlement invariants |
+| 0 | Sandbox Operator | health, wallets, transfers |
+| 1 | Payment Operator | + QR, payment requests, events, ledger, settlement |
+| 2 | Settlement Operator | + traces |
+| 3 | Federation Operator | + manifest |
+| 4 | Infrastructure Operator | + settlement invariants |
 
 ## Exit codes
 
