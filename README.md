@@ -46,7 +46,7 @@ OpenAPI spec: [`contracts/openapi/reference-operator.yaml`](contracts/openapi/re
 
 ## What is Banza?
 
-> **Naming note:** Banza was formerly called Banzami. The naming inversion (ADR-025, 2026-05-29) assigned Banza to the protocol and Banzami to the product. See `docs/migration/` for the full migration record.
+> **Naming note:** Before ADR-025, the ecosystem used a different naming model where the protocol and operator shared identity. ADR-025 (2026-05-29) established the current three-layer hierarchy: BANZA is the open protocol, BanzAI is the Protocol Operating System, and Banzami is the reference operator. See `docs/migration/` for the full migration record.
 
 Banza is the **open-source financial infrastructure kernel** that operators, developers, and fintech builders use to create instant, wallet-native payment networks.
 
@@ -118,10 +118,10 @@ The public/private split is **not** language-based. It is:
 │                      │        │                              │
 │  Consumer app        │        │  16 modules · 3 layers       │
 │  Merchant dashboard  │        │  8 capabilities              │
-│  EMIS/Multicaixa     │        │  Compreender · Explicar      │
-│  QR infrastructure   │        │  Validar · Simular · Prever  │
-│  Production infra    │        │  Guiar · Certificar · Federar│
-│  L1 Certified        │        │  banzami.org/banzamia        │
+│  EMIS/Multicaixa     │        │  6 operational verbs         │
+│  QR infrastructure   │        │  Compreender · Explicar      │
+│  Production infra    │        │  Validar · Simular           │
+│  L2 Certified        │        │  banzami.org/banzai          │
 └──────────────────────┘        └──────────────────────────────┘
 ```
 
@@ -129,7 +129,7 @@ The public/private split is **not** language-based. It is:
 
 ## BanzAI — Protocol Operating System
 
-**BanzAI** is the Protocol Operating System of Banza — publicly available at `banzami.org/banzamia`.
+**BanzAI** is the Protocol Operating System of BANZA — publicly available at `banzami.org/banzai`.
 
 BanzAI is not a chatbot. It is an orchestrated AI system that combines multiple language models, live protocol knowledge retrieval, deterministic validation tools, and certification logic into a single interface.
 
@@ -177,12 +177,12 @@ GPU inference (planned): RunPod · RTX 4090 · vLLM · Qwen / Qwen Coder / DeepS
 ### Environment variables (live-ai mode)
 
 ```env
-BANZAMIA_MODE=live-ai            # demo | live-api-no-model | live-ai
-BANZAMIA_QDRANT_URL=...          # Qdrant instance URL
-BANZAMIA_VLLM_URL=...            # RunPod vLLM endpoint
-BANZAMIA_MODEL_QWEN=...          # Qwen model ID
-BANZAMIA_MODEL_QWEN_CODER=...    # Qwen Coder model ID
-BANZAMIA_MODEL_DEEPSEEK=...      # DeepSeek model ID
+BANZAI_MODE=live-ai            # demo | live-api-no-model | live-ai
+BANZAI_QDRANT_URL=...          # Qdrant instance URL
+BANZAI_VLLM_URL=...            # RunPod vLLM endpoint
+BANZAI_MODEL_QWEN=...          # Qwen model ID
+BANZAI_MODEL_QWEN_CODER=...    # Qwen Coder model ID
+BANZAI_MODEL_DEEPSEEK=...      # DeepSeek model ID
 ```
 
 ### Safety constraints
@@ -193,8 +193,8 @@ BanzAI is read-only. It must never:
 - Expose private operator data or secrets
 - Make financial decisions without tool-verified outputs
 
-Access: `banzami.org/banzamia`  
-Documentation: `banzami.org/sobre-banzamia`
+Access: `banzami.org/banzai`  
+Documentation: `banzami.org/sobre-o-banzai`
 
 ---
 
@@ -270,8 +270,8 @@ The core is a Rust workspace. Each crate is independently usable.
 
 ```toml
 [dependencies]
-banzami-types  = { git = "https://github.com/banzami/banzami" }
-banzami-ledger = { git = "https://github.com/banzami/banzami" }
+banzami-types  = { git = "https://github.com/banza-protocol/banzami" }
+banzami-ledger = { git = "https://github.com/banza-protocol/banzami" }
 ```
 
 Core financial operation — double-entry ledger transfer:
@@ -466,5 +466,5 @@ Report vulnerabilities to [security@banzami.org](mailto:security@banzami.org). D
 
 ## Related
 
-- **Banzami** — first commercial operator (`github.com/banzami/banza`, private)
+- **Banzami** — reference operator implementation · [github.com/banza-protocol/banzami](https://github.com/banza-protocol/banzami)
 - **banzami.org** — public documentation and ecosystem reference
