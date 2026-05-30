@@ -83,9 +83,9 @@ The following names must remain unchanged regardless of this inversion:
 | Name | Class | Reason |
 |------|-------|--------|
 | `@banza` | IDENTITY_NAMESPACE | Network identity handle namespace. Permanent — see Identity Namespace section above. |
-| `banzami.org` | DOMAIN | Domain is registered and has SEO equity. Renaming requires DNS migration and a transition period. Deferred to a separate decision. |
-| `contact@banzami.org` | EMAIL | Public email address on all communications. |
-| `security@banzami.org` | EMAIL | Security disclosure address. |
+| `banzami.com` | DOMAIN | Domain is registered and has SEO equity. Renaming requires DNS migration and a transition period. Deferred to a separate decision. |
+| `contact@banzami.com` | EMAIL | Public email address on all communications. |
+| `security@banzami.com` | EMAIL | Security disclosure address. |
 | GitHub organization `github.com/banzami` | REPO | Public repository URLs. Renaming GitHub org breaks all existing clone URLs and links. |
 
 Domain and email exceptions are temporary. A separate ADR will govern domain and email migration. The `@banza` identity namespace exception is permanent.
@@ -157,11 +157,11 @@ Those actions are governed by the migration map and will be executed in subseque
 **Negative (managed):**
 - Significant migration effort across three repositories, documentation, SVGs, and websites
 - Existing documentation, READMEs, and ADRs will be temporarily inconsistent during migration
-- SEO impact if/when banzami.org transitions to banza.org (deferred decision)
+- SEO impact if/when banzami.com transitions to banza.org (deferred decision)
 
 **Neutral:**
 - github.com/banzami remains unchanged for now
-- banzami.org remains unchanged for now
+- banzami.com remains unchanged for now
 
 ---
 

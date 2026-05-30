@@ -69,7 +69,7 @@ A fully isolated test environment with the same kernel as production, test walle
 
 Developers can ask BanzAI protocol questions in natural language. Instead of reading dozens of ADRs to understand how idempotency works in the payment flow, a developer can ask BanzAI and receive a grounded answer with ADR citations.
 
-**What currently exists:** BanzAI `POST /ask` and `POST /chat` are operational. BanzAI is accessible at `banzami.org/banzai`.
+**What currently exists:** BanzAI `POST /ask` and `POST /chat` are operational. BanzAI is accessible at `banzami.com/banzai`.
 
 ### 4. Financial invariants enforced by the kernel
 

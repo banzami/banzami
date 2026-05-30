@@ -65,7 +65,7 @@ The following are architectural errors. Never generate content that implies them
 - The reference operator product
 - Consumer wallets and the Banzami app
 - The merchant dashboard and QR infrastructure
-- `banzami.org` and all operator-facing services
+- `banzami.com` and all operator-facing services
 - The commercial entity behind the reference implementation
 - "Banzami is built on BANZA"
 
@@ -74,7 +74,7 @@ The following are architectural errors. Never generate content that implies them
 - Conformance and certification tooling
 - RAG-based protocol intelligence
 - ADR navigation and operator onboarding tools
-- Lives at `banzami.org/banzai`
+- Lives at `banzami.com/banzai`
 
 ### SDK naming (protocol-level, Banza-prefixed)
 - `@banza/sdk` (TypeScript), `banza/sdk-php`, `banza-go`, `banza-python`, `banza_flutter`
@@ -84,8 +84,8 @@ The following are architectural errors. Never generate content that implies them
 
 ### Protected names (ADR-025 — do not rename yet)
 - `@banza` — identity namespace, permanent
-- `banzami.org` — domain, deferred
-- `contact@banzami.org`, `security@banzami.org` — emails, deferred
+- `banzami.com` — domain, deferred
+- `contact@banzami.com`, `security@banzami.com` — emails, deferred
 - `github.com/banzami` — old org, deferred
 - Rust crate names `banzami-types`, `banzami-ledger`, etc. — explicitly out of scope
 

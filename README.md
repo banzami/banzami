@@ -2,7 +2,9 @@
 
 > **BANZA** = open financial infrastructure protocol ← this repository  
 > **BanzAI** = Protocol Operating System · [github.com/banza-protocol/banzai](https://github.com/banza-protocol/banzai)  
-> **Banzami** = reference operator implementation · [github.com/banza-protocol/banzami](https://github.com/banza-protocol/banzami)
+> **Banzami** = reference operator (independent commercial startup) · [github.com/banzami/banzami](https://github.com/banzami/banzami)
+
+> **Institutional note:** Banzami is an independent company and reference operator built on BANZA. It is not part of the BANZA protocol organization (`github.com/banza-protocol`). BANZA is an open protocol — Banzami is one operator that implements it.
 
 **The open financial infrastructure protocol for programmable instant payments in Angola.**
 
@@ -17,7 +19,7 @@ Before touching any crate, reading any ADR, or building any integration:
 **run the sandbox operator**.
 
 ```bash
-git clone https://github.com/banza-protocol/banzami
+git clone https://github.com/banzami/banzami
 cd banzami/reference
 cargo run --bin sandbox-operator
 ```
@@ -121,7 +123,7 @@ The public/private split is **not** language-based. It is:
 │  EMIS/Multicaixa     │        │  6 operational verbs         │
 │  QR infrastructure   │        │  Compreender · Explicar      │
 │  Production infra    │        │  Validar · Simular           │
-│  L2 Certified        │        │  banzami.org/banzai          │
+│  L2 Certified        │        │  banzami.com/banzai          │
 └──────────────────────┘        └──────────────────────────────┘
 ```
 
@@ -129,7 +131,7 @@ The public/private split is **not** language-based. It is:
 
 ## BanzAI — Protocol Operating System
 
-**BanzAI** is the Protocol Operating System of BANZA — publicly available at `banzami.org/banzai`.
+**BanzAI** is the Protocol Operating System of BANZA — publicly available at `banzami.com/banzai`.
 
 BanzAI is not a chatbot. It is an orchestrated AI system that combines multiple language models, live protocol knowledge retrieval, deterministic validation tools, and certification logic into a single interface.
 
@@ -193,8 +195,8 @@ BanzAI is read-only. It must never:
 - Expose private operator data or secrets
 - Make financial decisions without tool-verified outputs
 
-Access: `banzami.org/banzai`  
-Documentation: `banzami.org/sobre-o-banzai`
+Access: `banzami.com/banzai`  
+Documentation: `banzami.com/sobre-o-banzai`
 
 ---
 
@@ -270,8 +272,8 @@ The core is a Rust workspace. Each crate is independently usable.
 
 ```toml
 [dependencies]
-banzami-types  = { git = "https://github.com/banza-protocol/banzami" }
-banzami-ledger = { git = "https://github.com/banza-protocol/banzami" }
+banzami-types  = { git = "https://github.com/banzami/banzami" }
+banzami-ledger = { git = "https://github.com/banzami/banzami" }
 ```
 
 Core financial operation — double-entry ledger transfer:
@@ -451,7 +453,7 @@ and [`docs/contributor-journeys.md`](docs/contributor-journeys.md).
 
 ## Security
 
-Report vulnerabilities to [security@banzami.org](mailto:security@banzami.org). Do not open public issues. See [BANZA_SECURITY.md](BANZA_SECURITY.md).
+Report vulnerabilities to [security@banzami.com](mailto:security@banzami.com). Do not open public issues. See [BANZA_SECURITY.md](BANZA_SECURITY.md).
 
 ---
 
@@ -466,5 +468,5 @@ Report vulnerabilities to [security@banzami.org](mailto:security@banzami.org). D
 
 ## Related
 
-- **Banzami** — reference operator implementation · [github.com/banza-protocol/banzami](https://github.com/banza-protocol/banzami)
-- **banzami.org** — public documentation and ecosystem reference
+- **Banzami** — reference operator implementation · [github.com/banzami/banzami](https://github.com/banzami/banzami)
+- **banzami.com** — public documentation and ecosystem reference

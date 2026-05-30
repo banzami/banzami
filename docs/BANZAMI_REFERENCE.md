@@ -333,7 +333,7 @@ Os modelos de referência para este tipo de transformação existem. O **Pix** d
 
 **8h00.** Na cantina da esquina perto do seu apartamento, a Amélia pede café e pão. Aponta o telemóvel para o código QR colado na parede. A app mostra `@cantina.margarida`. Ela escreve `1.500 Kz` e prime o polegar para confirmar. O telemóvel da Margarida acende-se no balcão: *"Recebeu 1.500 Kz de @amelia."* Sem troco. Sem espera. Pequeno-almoço feito.
 
-**8h30.** A Amélia trabalha como designer gráfica freelance. Um cliente devia-lhe pelo logótipo. Ela tinha enviado um link de pagamento na semana passada: `pay.banzami.org/fatura-logo-92`. Esta manhã abre o Banzami Business no portátil e vê o estado mudar para **Pago** — o cliente pagou às 8h22. Ela tem o dinheiro. Tem o recibo digital. Não teve de enviar uma única mensagem de WhatsApp para o perseguir.
+**8h30.** A Amélia trabalha como designer gráfica freelance. Um cliente devia-lhe pelo logótipo. Ela tinha enviado um link de pagamento na semana passada: `pay.banzami.com/fatura-logo-92`. Esta manhã abre o Banzami Business no portátil e vê o estado mudar para **Pago** — o cliente pagou às 8h22. Ela tem o dinheiro. Tem o recibo digital. Não teve de enviar uma única mensagem de WhatsApp para o perseguir.
 
 **12h30.** Almoço com três colegas. O restaurante gera um QR dinâmico para a mesa do grupo — total 18.000 Kz, dividido por quatro. Cada pessoa faz o scan do QR do seu telemóvel e paga 4.500 Kz. A app do restaurante mostra `18.000 Kz recebidos` em segundos após o último scan. Ninguém tira a carteira. Ninguém faz aritmética mental a tentar fazer o troco. A mesa liberta-se em minutos.
 
@@ -600,7 +600,7 @@ Carteira do comerciante: saldo actualizado em tempo real
 Um **link de pagamento** é um URL partilhável que contém um pedido de pagamento pré-configurado. O comerciante envia-o via WhatsApp, SMS, email ou redes sociais. O consumidor abre-o num browser e paga com a sua Banzami Wallet.
 
 ```
-https://pay.banzami.org/abc123
+https://pay.banzami.com/abc123
 ```
 
 Os links de pagamento substituem directamente o fluxo "envia-me o screenshot do WhatsApp". O consumidor clica num link, vê o comerciante e o valor, confirma o pagamento, e o comerciante vê a liquidação instantânea — sem screenshot, sem verificação manual, sem necessidade de confiança.
@@ -811,7 +811,7 @@ Nenhum destes passos é opcional. A ausência de qualquer garantia invalida o la
 |----------------|-----------|
 | **Carteira do comerciante** | Carteira de negócio dedicada para receber pagamentos, acompanhar saldos e solicitar pagamentos |
 | **Banzami Business** | Plataforma operacional do comerciante: interface móvel para operação diária e interface web para análises, reembolsos, disputas e gestão de equipa |
-| **Loja QR** | Página de perfil público do comerciante em `pay.banzami.org/profiles/@banza` |
+| **Loja QR** | Página de perfil público do comerciante em `pay.banzami.com/profiles/@banza` |
 | **Geração de QR estático** | Código QR permanente para a carteira do comerciante; imprimir e exibir em qualquer lugar |
 | **Geração de QR dinâmico** | QR por transacção com valor fixo e expiração |
 | **Levantamentos** | Transferência do saldo da carteira para uma conta bancária angolana a pedido |
@@ -984,7 +984,7 @@ O consumidor faz o scan. O valor está pré-preenchido. Só precisa de confirmar
 
 ### 9.3 Loja QR do comerciante
 
-Cada comerciante tem uma página de perfil público em `pay.banzami.org/profiles/@banza`:
+Cada comerciante tem uma página de perfil público em `pay.banzami.com/profiles/@banza`:
 
 ```
 ┌──────────────────────────────────────────────┐
@@ -1190,7 +1190,7 @@ Os saldos da carteira são transferidos para uma conta bancária angolana a pedi
 
 ### 11.6 A loja QR
 
-Cada comerciante tem um perfil público permanente em `pay.banzami.org/profiles/@banza`. Esta é a identidade digital que ancora o comerciante na rede Banzami — partilhável como link, imprimível como QR, descobrível via pesquisa. Qualquer consumidor que chegue pode pagar instantaneamente.
+Cada comerciante tem um perfil público permanente em `pay.banzami.com/profiles/@banza`. Esta é a identidade digital que ancora o comerciante na rede Banzami — partilhável como link, imprimível como QR, descobrível via pesquisa. Qualquer consumidor que chegue pode pagar instantaneamente.
 
 ### 11.7 SDK/API para ecommerce e apps
 
@@ -1240,7 +1240,7 @@ Os SDKs oficiais fornecem por defeito:
 import { BanzaClient } from '@banza/sdk';
 
 const client = new BanzaClient({
-  baseUrl: 'https://api.banzami.org',   // infrastructure endpoint (Banzami org)
+  baseUrl: 'https://api.banzami.com',   // infrastructure endpoint (Banzami org)
   apiKey:  'bz_live_...',
 });
 
@@ -1272,7 +1272,7 @@ $link = $client->createPaymentLink([
     'expires_at'   => (new DateTime('+24 hours'))->format(DateTime::RFC3339),
 ]);
 
-// Redirecionar cliente para: https://pay.banzami.org/{$link['slug']}
+// Redirecionar cliente para: https://pay.banzami.com/{$link['slug']}
 ```
 
 ### 12.5 SDK Flutter — folha de pagamento in-app
@@ -1409,7 +1409,7 @@ Ela recebe: "Recebeu 3.000 Kz de @joao."
 Um comerciante envia via WhatsApp:
 
 ```
-"Aqui está o link: pay.banzami.org/xyz789"
+"Aqui está o link: pay.banzami.com/xyz789"
 ```
 
 Toca nele. Uma página abre:
@@ -2289,7 +2289,7 @@ O motor garante:
 │                                                                     │
 │  CAMADA DO CONSUMIDOR                                               │
 │  ┌──────────────────┐   ┌──────────────────────────────────────┐    │
-│  │  App Banza       │   │  pay.banzami.org                     │    │
+│  │  App Banza       │   │  pay.banzami.com                     │    │
 │  │  (Flutter)       │   │  links · QR · lojas de comerciantes  │    │
 │  └──────────────────┘   └──────────────────────────────────────┘    │
 │                                                                     │
@@ -2544,7 +2544,7 @@ O SANDBOX e o LIVE nunca partilham infra-estrutura. São stacks Docker completam
 │  JWT_SECRET  = <produção>       │   │  JWT_SECRET  = <staging>        │
 │  DATABASE_URL = banzami         │   │  DATABASE_URL = banzami_staging │
 │                                 │   │                                 │
-│  api.banzami.org                │   │  staging.banzami.org            │
+│  api.banzami.com                │   │  staging.banzami.com            │
 └─────────────────────────────────┘   └─────────────────────────────────┘
 ```
 
@@ -2557,7 +2557,7 @@ O SANDBOX e o LIVE nunca partilham infra-estrutura. São stacks Docker completam
 | Carteiras | Saldos reais | Saldos de teste |
 | Contas de trânsito | Trânsito de produção | Trânsito de staging |
 | JWT secret | Segredo de produção | Segredo de staging diferente |
-| Endpoints de API | `api.banzami.org` | `staging.banzami.org` |
+| Endpoints de API | `api.banzami.com` | `staging.banzami.com` |
 | Telemetria OTel | `environment=LIVE` | `environment=SANDBOX` |
 | EMIS/carris bancários | Activos | Desactivados |
 
@@ -2695,7 +2695,7 @@ As builds sandbox usam um ícone de app permanente e pré-construído (`sbanza_i
 
 #### Bloqueio por configuração inválida
 
-No arranque, a app verifica que o flag de build (`--dart-define=ENVIRONMENT=sandbox`) corresponde ao URL da API configurado. Se uma build sandbox estiver apontada para `api.banzami.org` (produção), ou uma build LIVE para `staging.banzami.org`, a app mostra um AlertDialog bloqueante e recusa navegar:
+No arranque, a app verifica que o flag de build (`--dart-define=ENVIRONMENT=sandbox`) corresponde ao URL da API configurado. Se uma build sandbox estiver apontada para `api.banzami.com` (produção), ou uma build LIVE para `staging.banzami.com`, a app mostra um AlertDialog bloqueante e recusa navegar:
 
 ```
 Configuração de ambiente inválida.
@@ -2724,7 +2724,7 @@ SANDBOX: banza-sandbox://pay/u/fm65?amount=250000&currency=AOA
 - Uma app sandbox **não pode ler** um QR de produção — o esquema não corresponde
 - Elimina completamente o risco de um testador fazer o scan de um QR de produção com uma build sandbox, ou vice-versa
 
-O URL de partilha de QR sandbox aponta para `staging.banzami.org/pay/u/<handle>`, não para `api.banzami.org`. Os links de sandbox não encaminham pagamentos reais.
+O URL de partilha de QR sandbox aponta para `staging.banzami.com/pay/u/<handle>`, não para `api.banzami.com`. Os links de sandbox não encaminham pagamentos reais.
 
 #### Recibos sandbox
 
@@ -2750,7 +2750,7 @@ SANDBOX: "[SANDBOX] Recebeu 2.500 Kz"
 
 ### 20.9 Arquitectura TestFlight
 
-O TestFlight é o canal de distribuição de beta para testers iOS. A configuração de build do Banzami garante que as builds TestFlight conectam exclusivamente a `staging.banzami.org` e nunca a `api.banzami.org`.
+O TestFlight é o canal de distribuição de beta para testers iOS. A configuração de build do Banzami garante que as builds TestFlight conectam exclusivamente a `staging.banzami.com` e nunca a `api.banzami.com`.
 
 #### Fluxo do testador
 
@@ -2812,14 +2812,14 @@ cd apps/mobile
 flutter build ipa \
   --flavor consumer_sandbox \
   -t lib/main_consumer.dart \
-  --dart-define=PUBLIC_API_URL=https://staging.banzami.org \
+  --dart-define=PUBLIC_API_URL=https://staging.banzami.com \
   --dart-define=ENVIRONMENT=sandbox \
   --export-options-plist=ios/ExportOptions.plist
 ```
 
 Os dois `--dart-define` são obrigatórios:
 - `ENVIRONMENT=sandbox` activa o modo sandbox em toda a app (banner, QR scheme, recibos, branding)
-- `PUBLIC_API_URL=https://staging.banzami.org` aponta a app para a infra de staging
+- `PUBLIC_API_URL=https://staging.banzami.com` aponta a app para a infra de staging
 
 O ícone sandbox é um asset permanente — nenhuma geração dinâmica ou restauração é necessária antes ou depois do build.
 
@@ -2842,14 +2842,14 @@ O script `tools/testflight-readiness.sh` executa 11 verificações de saúde ant
 ```bash
 ./tools/testflight-readiness.sh
 # ou com URL personalizado:
-STAGING_URL=https://staging.banzami.org ./tools/testflight-readiness.sh
+STAGING_URL=https://staging.banzami.com ./tools/testflight-readiness.sh
 ```
 
 **As 11 verificações:**
 
 | # | Verificação | O que valida |
 |---|-------------|--------------|
-| 1 | **Rede / TLS** | Host staging.banzami.org acessível; certificado TLS válido e não expirado |
+| 1 | **Rede / TLS** | Host staging.banzami.com acessível; certificado TLS válido e não expirado |
 | 2 | **Health endpoint** | `/health` ou `/healthz` devolve 200 |
 | 3 | **Registo de consumidor** | `POST /v1/auth/register` para dois consumidores de teste devolve 201 |
 | 4 | **Login** | `POST /v1/auth/token` devolve 200 e token JWT válido |
@@ -2858,7 +2858,7 @@ STAGING_URL=https://staging.banzami.org ./tools/testflight-readiness.sh
 | 7 | **Transferência P2P** | `POST /v1/transfers` entre consumidores de teste devolve 200/201; saldo do destinatário actualizado |
 | 8 | **Feed de actividade** | `GET /v1/me/activity` devolve 200 com items |
 | 9 | **Lookup de consumidor** | `GET /v1/consumers/{handle}` devolve 200 |
-| 10 | **Isolamento LIVE** | `POST /v1/sandbox/fund` contra `api.banzami.org` devolve 403 |
+| 10 | **Isolamento LIVE** | `POST /v1/sandbox/fund` contra `api.banzami.com` devolve 403 |
 | 11 | **Sanidade de rate limit** | Chamadas repetidas a sandbox/fund devolvem 200 ou 429 (nunca outro código inesperado) |
 
 **Comportamento de saída:**

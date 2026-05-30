@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-LIVE_URL    = "https://api.banzami.org"
-SANDBOX_URL = "https://sandbox-api.banzami.org"
+LIVE_URL    = "https://api.banzami.com"
+SANDBOX_URL = "https://sandbox-api.banzami.com"
 
 
 @dataclass(frozen=True)

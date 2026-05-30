@@ -136,8 +136,8 @@ For a Tier 1 informal merchant, "setup" means printing a piece of paper and havi
 | Dispute and refund guide | New `docs/merchant/disputes.md` | HIGH |
 | Non-technical merchant onboarding guide | New `docs/merchant/get-started.md` | HIGH |
 | Settlement timeline explanation (when does money reach bank?) | Merchant FAQ / BANZAMI_PRODUCTS.md | HIGH |
-| Merchant directory (public, even small-scale) | banzami.org/merchants | MEDIUM |
-| Published transaction volume (network size signal) | banzami.org / press section | MEDIUM |
+| Merchant directory (public, even small-scale) | banzami.com/merchants | MEDIUM |
+| Published transaction volume (network size signal) | banzami.com / press section | MEDIUM |
 | Customer support contact for merchants | BANZAMI_PRODUCTS.md | MEDIUM |
 
 ---

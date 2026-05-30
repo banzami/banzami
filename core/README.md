@@ -69,8 +69,8 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-banzami-types  = { git = "https://github.com/banza-protocol/banzami" }
-banzami-ledger = { git = "https://github.com/banza-protocol/banzami" }
+banzami-types  = { git = "https://github.com/banzami/banzami" }
+banzami-ledger = { git = "https://github.com/banzami/banzami" }
 ```
 
 Core financial operation — ledger transfer between two wallets:

@@ -6,7 +6,7 @@ If you discover a security vulnerability in Banza, please report it responsibly.
 
 **Do NOT open a public GitHub issue for security vulnerabilities.**
 
-Instead, email: **security@banzami.org**
+Instead, email: **security@banzami.com**
 
 Include:
 - A description of the vulnerability
@@ -31,7 +31,7 @@ This security policy covers:
 
 - The Banzami commercial product (separate private repository)
 - Third-party implementations built on Banza
-- Infrastructure or deployment issues (report to Banza directly at security@banzami.org)
+- Infrastructure or deployment issues (report to Banza directly at security@banzami.com)
 
 ---
 
@@ -66,7 +66,7 @@ When interacting with this repository (issues, PRs, discussions), do not post:
 
 The `contracts/sdk-certification/` suite includes webhook signature vectors. If you discover that a Banza SDK fails to correctly validate HMAC-SHA256 signatures:
 
-1. Report it via email to security@banzami.org
+1. Report it via email to security@banzami.com
 2. Do not publish a proof-of-concept that could be used to forge legitimate webhooks
 3. We will coordinate a fix and notify all known SDK implementors
 

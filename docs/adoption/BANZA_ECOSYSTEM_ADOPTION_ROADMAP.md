@@ -98,10 +98,10 @@ Network effects (more consumers = more merchant adoption)
 
 | Action | Owner Layer | Deliverable |
 |--------|------------|-------------|
-| Publish merchant pricing (even if minimal: flat fee % + withdrawal fee) | Banzami product | Pricing page on banzami.org |
+| Publish merchant pricing (even if minimal: flat fee % + withdrawal fee) | Banzami product | Pricing page on banzami.com |
 | Launch Banzami Business mobile app production release | Banzami product | App on Google Play Store |
 | Write non-technical merchant onboarding guide | Banzami docs | `docs/merchant/get-started.md` |
-| Onboard first 10 merchants publicly listed on site | Banzami commercial | Merchant directory on banzami.org |
+| Onboard first 10 merchants publicly listed on site | Banzami commercial | Merchant directory on banzami.com |
 
 **Why in P1:** Merchants are the network's supply side. Without them, consumers have nowhere to pay. Without pricing transparency, merchant adoption decisions cannot be made.
 
@@ -142,7 +142,7 @@ Network effects (more consumers = more merchant adoption)
 
 | Action | Deliverable |
 |--------|-------------|
-| Publish public metrics dashboard (transaction count, volume, merchant count, consumer count) | banzami.org/metrics |
+| Publish public metrics dashboard (transaction count, volume, merchant count, consumer count) | banzami.com/metrics |
 | Publish governance independence roadmap (path to independent governance body) | `BANZA_GOVERNANCE.md` update |
 | Prepare investor brief (protocol economics model, market size, team) | Investor deck / memo |
 
@@ -166,7 +166,7 @@ Network effects (more consumers = more merchant adoption)
 |--------|-------------|
 | 10,000 active consumer wallets | Publicly announced milestone |
 | 100 merchants accepting Banzami QR | Merchant directory update |
-| Consumer testimonials (organic) | banzami.org/stories |
+| Consumer testimonials (organic) | banzami.com/stories |
 
 ### P3.3 — Regulatory formalization
 

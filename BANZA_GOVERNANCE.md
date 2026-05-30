@@ -4,7 +4,19 @@
 
 BANZA is governed as an **open protocol** — its rules, contracts, and certification framework are defined by the RFC and ADR process, not by any single operator. The governance model separates **protocol decisions** (which affect all operator implementations) from **implementation decisions** (which are internal to each SDK or plugin).
 
-Banzami is the reference operator implementation of the BANZA protocol. It is not the protocol's governing body. No single operator governs the protocol. See [BANZA_REFERENCE.md](BANZA_REFERENCE.md) for the canonical ecosystem hierarchy.
+## Operator Independence
+
+**Banzami is an independent commercial company.** It is not the protocol's governing body. Key facts:
+
+- BANZA is **not owned by Banzami**
+- BANZA is **not governed by Banzami**
+- Banzami does **not control** the certification framework
+- Banzami is **not part of** the BANZA protocol organization (`github.com/banza-protocol`)
+- Banzami operates at `github.com/banzami` and `banzami.com`
+- Banzami may contribute to BANZA via the ADR process, like any other operator
+- The BANZA protocol continues to exist if Banzami ceases operations
+
+**No single operator governs the protocol.** See [BANZA_REFERENCE.md](BANZA_REFERENCE.md) for the canonical ecosystem hierarchy.
 
 ---
 
@@ -168,5 +180,5 @@ ADRs record decisions after they are made. RFCs propose changes before they are 
 
 - Protocol questions: open a GitHub Discussion
 - RFC proposals: open a PR to `docs/rfc/`
-- Security issues: security@banzami.org (see [BANZA_SECURITY.md](BANZA_SECURITY.md))
-- Code of conduct: conduct@banzami.org
+- Security issues: security@banzami.com (see [BANZA_SECURITY.md](BANZA_SECURITY.md))
+- Code of conduct: conduct@banzami.com
