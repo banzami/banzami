@@ -43,7 +43,7 @@ All migration planning documents live in `docs/migration/`:
 
 ## What Has NOT Been Done Yet
 
-- [ ] Wave 1: Documentation rename (ADRs, READMEs, BANZAMI_REFERENCE.md)
+- [ ] Wave 1: Documentation rename (ADRs, READMEs, BANZA_REFERENCE.md)
 - [ ] Wave 2: Website copy rename (banzami.org pages, metadata, SVG text)
 - [ ] Wave 3: AI OS rename (BanzAI → BanzAI, components, routes, identifiers)
 - [ ] Wave 4: Repository renames (requires separate ADR)
