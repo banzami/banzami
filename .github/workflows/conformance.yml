@@ -242,7 +242,7 @@ jobs:
           echo "OPERATOR_PID=$!" >> "$GITHUB_ENV"
           # Wait for health endpoint
           for i in $(seq 1 20); do
-            if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
+            if curl -sf http://localhost:3100/health > /dev/null 2>&1; then
               echo "Operator ready"
               break
             fi
@@ -252,7 +252,7 @@ jobs:
       - name: Run conformance suite (Level 2)
         run: |
           python3 tools/banzami-conformance/run.py \
-            --url http://localhost:3000 \
+            --url http://localhost:3100 \
             --level 2 \
             --output conformance-report.json \
             --quiet
