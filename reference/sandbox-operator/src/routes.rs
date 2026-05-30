@@ -33,7 +33,8 @@ pub fn build_router() -> Router {
         .route("/wallets",     get(list_wallets).post(create_wallet))
         .route("/wallets/:id", get(get_wallet))
         // Transfers
-        .route("/transfers",   get(list_transfers).post(create_transfer))
+        .route("/transfers",     get(list_transfers).post(create_transfer))
+        .route("/transfers/:id", get(get_transfer))
         // Payment requests
         .route("/payment-requests",      get(list_payment_requests).post(create_payment_request))
         .route("/payment-requests/:id",  get(get_payment_request))
@@ -143,10 +144,19 @@ async fn list_transfers(
     Json(serde_json::json!({ "transfers": state.list_transfers() }))
 }
 
+async fn get_transfer(
+    State(state): State<Arc<AppState>>,
+    Path(id):     Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let transfer = state.get_transfer(&id)
+        .ok_or_else(|| err(StatusCode::NOT_FOUND, format!("transfer {id} not found")))?;
+    Ok(Json(serde_json::to_value(&transfer).unwrap()))
+}
+
 async fn create_transfer(
     State(state): State<Arc<AppState>>,
     Json(req):    Json<CreateTransferRequest>,
-) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, Json<serde_json::Value>)> {
     let currency = Currency::from_code(&req.currency)
         .ok_or_else(|| err(StatusCode::BAD_REQUEST, format!("unknown currency: {}", req.currency)))?;
     if req.amount_minor <= 0 {
@@ -171,7 +181,7 @@ async fn create_transfer(
         amount      = transfer.amount_minor,
         "[SANDBOX] transfer created"
     );
-    Ok(Json(serde_json::to_value(&transfer).unwrap()))
+    Ok((StatusCode::CREATED, Json(serde_json::to_value(&transfer).unwrap())))
 }
 
 // ---------------------------------------------------------------------------

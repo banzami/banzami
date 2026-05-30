@@ -435,6 +435,10 @@ impl AppState {
         self.transfers.lock().unwrap().clone()
     }
 
+    pub fn get_transfer(&self, id: &str) -> Option<SandboxTransfer> {
+        self.transfers.lock().unwrap().iter().find(|t| t.id == id).cloned()
+    }
+
     // -----------------------------------------------------------------------
     // Payment requests
     // -----------------------------------------------------------------------
