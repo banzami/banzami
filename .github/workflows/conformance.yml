@@ -238,7 +238,7 @@ jobs:
 
       - name: Start sandbox operator
         run: |
-          ./reference/sandbox-operator/target/release/sandbox-operator &
+          ./reference/target/release/sandbox-operator &
           echo "OPERATOR_PID=$!" >> "$GITHUB_ENV"
           # Wait for health endpoint
           for i in $(seq 1 20); do
