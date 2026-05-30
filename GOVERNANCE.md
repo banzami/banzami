@@ -2,7 +2,9 @@
 
 ## Overview
 
-Banza is governed by Banzami (the organization) and maintained as an open-source ecosystem project. The governance model separates **protocol decisions** (which affect all implementations) from **implementation decisions** (which are internal to each SDK or plugin).
+BANZA is governed as an **open protocol** — its rules, contracts, and certification framework are defined by the RFC and ADR process, not by any single operator. The governance model separates **protocol decisions** (which affect all operator implementations) from **implementation decisions** (which are internal to each SDK or plugin).
+
+Banzami is the reference operator implementation of the BANZA protocol. It is not the protocol's governing body. No single operator governs the protocol. See [BANZA_REFERENCE.md](BANZA_REFERENCE.md) for the canonical ecosystem hierarchy.
 
 ---
 
@@ -95,7 +97,7 @@ Third-party SDK implementations that pass the certification suite are considered
 
 ## Ecosystem stewardship
 
-The Banza protocol is stewarded by Banzami (the organization). Protocol evolution decisions are made with the following priorities:
+The BANZA protocol is stewarded by its open governance process — RFCs, ADRs, and the certification framework. Protocol evolution decisions are made with the following priorities:
 
 1. **Backwards compatibility** — existing integrations must not break silently
 2. **Developer experience** — protocol changes should reduce, not increase, integration complexity
@@ -106,7 +108,7 @@ The Banza protocol is stewarded by Banzami (the organization). Protocol evolutio
 
 ## Maintainers
 
-The project is maintained by [Banza](https://banzami.org). External maintainers may be added for specific SDK languages based on demonstrated sustained contribution.
+The BANZA protocol is maintained by its core engineering team. External maintainers may be added for specific SDK languages based on demonstrated sustained contribution. Contact: see `docs/governance/` for the full governance framework.
 
 ---
 
