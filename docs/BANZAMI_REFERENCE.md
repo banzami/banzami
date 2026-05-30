@@ -2,12 +2,20 @@
 
 **Version:** 1.0  
 **Date:** 06/05/2026  
-**Status:** Official  
+**Status:** ⚠️ DEPRECATED — Pre-ADR-025 combined reference  
 **Author:** Banza
 
 ---
 
-> **Nota para contribuidores:** Este documento é a fonte canónica do ecossistema Banza — cobre tanto a infraestrutura open-source (Banza) como o primeiro produto comercial construído sobre ela (Banzami). O repositório público em `github.com/banzami/banzami` contém os SDKs, contratos e especificações de protocolo. O produto Banzami (apps, serviços, infra) é privado em `github.com/banzami/banza`.
+> **⚠️ Documento histórico.** Este ficheiro é um registo pré-ADR-025 que combinava o protocolo e o operador num único documento. Foi substituído pela arquitectura canónica de três documentos separados:
+>
+> - Protocolo: [BANZA_REFERENCE.md](../BANZA_REFERENCE.md)
+> - Protocol OS: [BanzAI](../../banzai/BANZAI_REFERENCE.md)
+> - Operador: [BANZAMI_REFERENCE.md](../../banzami/BANZAMI_REFERENCE.md)
+>
+> Os URLs GitHub abaixo reflectem a estrutura antiga (`github.com/banzami/`) — a estrutura actual é `github.com/banza-protocol/`. Preservado como arquivo histórico.
+
+---
 
 ---
 
