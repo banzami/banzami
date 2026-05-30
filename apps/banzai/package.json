@@ -1,7 +1,7 @@
 {
-  "name": "banzamia",
+  "name": "banzai",
   "version": "1.0.0",
-  "description": "BanzamIA — AI-native protocol agent for Banzami",
+  "description": "BanzAI — Protocol Operating System",
   "type": "module",
   "license": "UNLICENSED",
   "engines": { "node": ">=20" },

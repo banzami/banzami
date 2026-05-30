@@ -1,0 +1,56 @@
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: banzai-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__HTTP_PORT: 6333
+      QDRANT__SERVICE__GRPC_PORT: 6334
+
+  banzai:
+    build:
+      context: ../../apps/banzai
+      dockerfile: ../../docker/banzai/Dockerfile
+    container_name: banzai-api
+    restart: unless-stopped
+    ports:
+      - "4200:4200"
+    environment:
+      # Canonical env vars (BANZAI_*)
+      BANZAI_MODE: ${BANZAI_MODE:-live-api-no-model}
+      BANZAI_PORT: 4200
+      BANZAI_QDRANT_URL: http://qdrant:6333
+      BANZAI_COLLECTION: banzai_knowledge
+      BANZAI_EMBEDDING_PROVIDER: ${BANZAI_EMBEDDING_PROVIDER:-mock}
+      BANZAI_EMBEDDING_DIMS: ${BANZAI_EMBEDDING_DIMS:-1024}
+      BANZAI_EMBEDDING_MODEL: ${BANZAI_EMBEDDING_MODEL:-Xenova/bge-large-en-v1.5}
+      BANZAI_VLLM_URL: ${BANZAI_VLLM_URL:-}
+      BANZAI_MODEL_QWEN: ${BANZAI_MODEL_QWEN:-Qwen/Qwen2.5-7B-Instruct}
+      BANZAI_MODEL_QWEN_CODER: ${BANZAI_MODEL_QWEN_CODER:-Qwen/Qwen2.5-Coder-7B-Instruct}
+      BANZAI_MODEL_DEEPSEEK: ${BANZAI_MODEL_DEEPSEEK:-deepseek-ai/DeepSeek-R1-Distill-Qwen-7B}
+      BANZAI_DOCS_ROOT: /repo
+      # Deprecated aliases — passed through so existing servers using BANZAMIA_* still work
+      BANZAMIA_MODE: ${BANZAMIA_MODE:-}
+      BANZAMIA_PORT: ${BANZAMIA_PORT:-}
+      BANZAMIA_QDRANT_URL: ${BANZAMIA_QDRANT_URL:-}
+      BANZAMIA_COLLECTION: ${BANZAMIA_COLLECTION:-}
+      BANZAMIA_EMBEDDING_PROVIDER: ${BANZAMIA_EMBEDDING_PROVIDER:-}
+      BANZAMIA_EMBEDDING_DIMS: ${BANZAMIA_EMBEDDING_DIMS:-}
+      BANZAMIA_EMBEDDING_MODEL: ${BANZAMIA_EMBEDDING_MODEL:-}
+      BANZAMIA_VLLM_URL: ${BANZAMIA_VLLM_URL:-}
+      BANZAMIA_MODEL_QWEN: ${BANZAMIA_MODEL_QWEN:-}
+      BANZAMIA_MODEL_QWEN_CODER: ${BANZAMIA_MODEL_QWEN_CODER:-}
+      BANZAMIA_MODEL_DEEPSEEK: ${BANZAMIA_MODEL_DEEPSEEK:-}
+      BANZAMIA_DOCS_ROOT: ${BANZAMIA_DOCS_ROOT:-}
+    volumes:
+      - ../../:/repo:ro
+    depends_on:
+      - qdrant
+
+volumes:
+  qdrant_data:
