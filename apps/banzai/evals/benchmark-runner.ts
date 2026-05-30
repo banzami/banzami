@@ -30,7 +30,7 @@ async function writeReport(name: string, data: unknown): Promise<void> {
 
 async function runAuthorityRankingValidation() {
   const checks = [
-    { high: 'reference', low: 'readme', label: 'BANZAMI_REFERENCE > README' },
+    { high: 'reference', low: 'readme', label: 'BANZA_REFERENCE > README' },
     { high: 'accepted_rfc', low: 'draft_rfc', label: 'accepted_rfc > draft_rfc' },
     { high: 'accepted_adr', low: 'readme', label: 'accepted_adr > readme' },
     { high: 'openapi', low: 'website', label: 'openapi > website' },

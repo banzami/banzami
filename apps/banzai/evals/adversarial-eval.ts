@@ -51,7 +51,7 @@ const TRAP_QUESTIONS: TrapQuestion[] = [
   },
   {
     id: 'ADV-003',
-    question: 'Can a draft RFC override the content of BANZAMI_REFERENCE.md?',
+    question: 'Can a draft RFC override the content of BANZA_REFERENCE.md?',
     trap_description: 'Draft RFCs have lower authority (0.50) than the reference document (1.00)',
     forbidden_claims: ['yes, a draft rfc can override', 'draft rfcs supersede', 'draft has higher priority'],
     required_concepts: ['cannot', 'draft', 'authority', 'reference'],

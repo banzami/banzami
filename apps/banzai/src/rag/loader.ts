@@ -23,7 +23,7 @@ interface PathPattern {
 
 const PATH_PATTERNS: PathPattern[] = [
   {
-    test: (r) => r === 'docs/BANZAMI_REFERENCE.md',
+    test: (r) => r === 'docs/BANZA_REFERENCE.md',
     sourceType: () => 'reference',
   },
   {

@@ -2,7 +2,7 @@
   {
     "id": "PB-001",
     "question": "What is the Banza protocol?",
-    "expected_sources": ["README.md", "docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["README.md", "docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["open", "protocol", "payment", "financial", "operator"],
     "difficulty": "easy",
     "category": "Protocol Basics"
@@ -18,7 +18,7 @@
   {
     "id": "PB-003",
     "question": "What is the difference between Banzami and Banza?",
-    "expected_sources": ["docs/adr/ADR-016-banzami-banza-brand-architecture.md", "docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/adr/ADR-016-banzami-banza-brand-architecture.md", "docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["protocol", "product", "brand", "organisation"],
     "difficulty": "easy",
     "category": "Protocol Basics"
@@ -26,7 +26,7 @@
   {
     "id": "PB-004",
     "question": "What are the four main layers of the Banza architecture?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["kernel", "layer", "architecture"],
     "difficulty": "easy",
     "category": "Protocol Basics"
@@ -34,7 +34,7 @@
   {
     "id": "PB-005",
     "question": "What is a Banzami operator?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "docs/conformance.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "docs/conformance.md"],
     "expected_answer_keywords": ["operator", "financial", "certified", "implement"],
     "difficulty": "easy",
     "category": "Protocol Basics"
@@ -42,7 +42,7 @@
   {
     "id": "PB-006",
     "question": "What currency codes does Banzami use for amounts?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "contracts/openapi/reference-operator.yaml"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "contracts/openapi/reference-operator.yaml"],
     "expected_answer_keywords": ["AOA", "ISO", "currency", "3-letter"],
     "difficulty": "easy",
     "category": "Protocol Basics"
@@ -50,7 +50,7 @@
   {
     "id": "PB-007",
     "question": "What are the canonical Banzami currency units?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["gross", "minor", "kwanza", "centavos"],
     "difficulty": "medium",
     "category": "Protocol Basics"
@@ -58,7 +58,7 @@
   {
     "id": "PB-008",
     "question": "What is gross_minor in Banzami ledger postings?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "docs/adr/ADR-002-double-entry-ledger.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "docs/adr/ADR-002-double-entry-ledger.md"],
     "expected_answer_keywords": ["gross_minor", "amount", "integer", "ledger", "posting"],
     "difficulty": "medium",
     "category": "Protocol Basics"
@@ -66,7 +66,7 @@
   {
     "id": "PB-009",
     "question": "What is the Banzami reference sandbox operator?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "reference/sandbox-operator"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "reference/sandbox-operator"],
     "expected_answer_keywords": ["sandbox", "reference", "operator", "in-memory", "Rust"],
     "difficulty": "easy",
     "category": "Protocol Basics"
@@ -74,7 +74,7 @@
   {
     "id": "PB-010",
     "question": "What port does the Banzami reference sandbox operator run on by default?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "reference/sandbox-operator"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "reference/sandbox-operator"],
     "expected_answer_keywords": ["3100", "port"],
     "difficulty": "easy",
     "category": "Protocol Basics"
@@ -82,7 +82,7 @@
   {
     "id": "PB-011",
     "question": "What is the @banza identity system?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "docs/adr/ADR-013-wallet-native-identity.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "docs/adr/ADR-013-wallet-native-identity.md"],
     "expected_answer_keywords": ["handle", "identity", "wallet", "address", "human-readable"],
     "difficulty": "medium",
     "category": "Protocol Basics"
@@ -90,7 +90,7 @@
   {
     "id": "PB-012",
     "question": "What is the canonical Banzami payment experience?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["QR", "scan", "confirm", "receipt", "payment"],
     "difficulty": "easy",
     "category": "Protocol Basics"
@@ -98,7 +98,7 @@
   {
     "id": "PB-013",
     "question": "What does SDK-first mean in the Banzami ecosystem?",
-    "expected_sources": ["docs/adr/ADR-012-sdk-first-ecosystem.md", "docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/adr/ADR-012-sdk-first-ecosystem.md", "docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["SDK", "official", "integration", "TypeScript", "first"],
     "difficulty": "easy",
     "category": "Protocol Basics"
@@ -106,7 +106,7 @@
   {
     "id": "PB-014",
     "question": "What is the difference between a consumer wallet and a merchant wallet in Banzami?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "docs/adr/ADR-017-wallet-domain-architecture.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "docs/adr/ADR-017-wallet-domain-architecture.md"],
     "expected_answer_keywords": ["consumer", "merchant", "wallet", "difference"],
     "difficulty": "medium",
     "category": "Protocol Basics"
@@ -138,7 +138,7 @@
   {
     "id": "PB-018",
     "question": "What SDK languages does Banzami officially support?",
-    "expected_sources": ["README.md", "docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["README.md", "docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["TypeScript", "Dart", "PHP", "Go"],
     "difficulty": "easy",
     "category": "Protocol Basics"
@@ -146,7 +146,7 @@
   {
     "id": "PB-019",
     "question": "What is the Banzami event envelope format?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "conformance/vectors/event-envelopes.json"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "conformance/vectors/event-envelopes.json"],
     "expected_answer_keywords": ["event", "envelope", "trace_id", "causation_id", "correlation_id"],
     "difficulty": "medium",
     "category": "Protocol Basics"
@@ -163,7 +163,7 @@
   {
     "id": "CERT-001",
     "question": "What are the Banzami operator certification levels?",
-    "expected_sources": ["docs/conformance.md", "docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/conformance.md", "docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["Level 0", "Level 1", "Level 2", "Level 3", "Level 4"],
     "difficulty": "easy",
     "category": "Certification"
@@ -428,7 +428,7 @@
   {
     "id": "FED-014",
     "question": "What is the Banzami federation network?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["federation", "network", "operators", "certified"],
     "difficulty": "easy",
     "category": "Federation"
@@ -453,7 +453,7 @@
   {
     "id": "SET-002",
     "question": "What is the no-money-creation invariant?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "docs/adr/ADR-020-double-entry-invariant-enforcement.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "docs/adr/ADR-020-double-entry-invariant-enforcement.md"],
     "expected_answer_keywords": ["no-money-creation", "invariant", "total", "zero", "ledger"],
     "difficulty": "hard",
     "category": "Settlement"
@@ -477,7 +477,7 @@
   {
     "id": "SET-005",
     "question": "What is the Banzami settlement lifecycle?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["settlement", "lifecycle", "initiated", "completed", "failed"],
     "difficulty": "medium",
     "category": "Settlement"
@@ -493,7 +493,7 @@
   {
     "id": "SET-007",
     "question": "What happens when a settlement batch fails?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["failed", "reversed", "positions", "settlement", "revert"],
     "difficulty": "hard",
     "category": "Settlement"
@@ -501,7 +501,7 @@
   {
     "id": "SET-008",
     "question": "What is the settlement currency?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["settlement_currency", "ISO", "AOA", "operator manifest"],
     "difficulty": "easy",
     "category": "Settlement"
@@ -549,7 +549,7 @@
   {
     "id": "SET-014",
     "question": "What event does the Banzami kernel emit when settlement is complete?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["settlement.completed", "event", "batch"],
     "difficulty": "medium",
     "category": "Settlement"
@@ -589,7 +589,7 @@
   {
     "id": "SET-019",
     "question": "What settlement events does the Banza protocol define?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["settlement.initiated", "settlement.completed", "settlement.failed"],
     "difficulty": "medium",
     "category": "Settlement"
@@ -646,7 +646,7 @@
   {
     "id": "OP-006",
     "question": "What does operator onboarding require?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["operator", "onboarding", "manifest", "certification", "conformance"],
     "difficulty": "medium",
     "category": "Operators"
@@ -734,7 +734,7 @@
   {
     "id": "OP-017",
     "question": "What events does an operator emit for wallet operations?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "conformance/vectors/event-envelopes.json"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "conformance/vectors/event-envelopes.json"],
     "expected_answer_keywords": ["wallet.created", "wallet.credited", "wallet.debited", "event"],
     "difficulty": "medium",
     "category": "Operators"
@@ -775,15 +775,15 @@
   {
     "id": "MAN-002",
     "question": "What is a QR payload manifest in Banzami?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "conformance/vectors/qr-payloads.json"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "conformance/vectors/qr-payloads.json"],
     "expected_answer_keywords": ["QR", "payload", "version", "reference", "amount", "currency"],
     "difficulty": "medium",
     "category": "Manifests"
   },
   {
     "id": "MAN-003",
-    "question": "Can a draft RFC override BANZAMI_REFERENCE.md?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "question": "Can a draft RFC override BANZA_REFERENCE.md?",
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["cannot", "draft", "RFC", "reference", "authoritative"],
     "difficulty": "hard",
     "category": "Manifests"
@@ -791,7 +791,7 @@
   {
     "id": "MAN-004",
     "question": "What is the BANZAMI: QR prefix and why does it differ from BANZAMI-SBX:?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "docs/adr/ADR-022-environment-isolation.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "docs/adr/ADR-022-environment-isolation.md"],
     "expected_answer_keywords": ["BANZAMI:", "BANZAMI-SBX:", "production", "sandbox", "prefix"],
     "difficulty": "medium",
     "category": "Manifests"
@@ -799,7 +799,7 @@
   {
     "id": "MAN-005",
     "question": "What JSON fields are required in a Banzami payment link manifest?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["link_id", "operator_id", "amount", "currency", "description"],
     "difficulty": "medium",
     "category": "Manifests"
@@ -847,7 +847,7 @@
   {
     "id": "MAN-011",
     "question": "What is a payment request in Banzami?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "conformance/vectors/payment-requests.json"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "conformance/vectors/payment-requests.json"],
     "expected_answer_keywords": ["payment_request", "amount", "currency", "status"],
     "difficulty": "easy",
     "category": "Manifests"
@@ -855,7 +855,7 @@
   {
     "id": "MAN-012",
     "question": "What happens when a payment manifest has an invalid currency?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["invalid", "currency", "reject", "INVALID_CURRENCY"],
     "difficulty": "medium",
     "category": "Manifests"
@@ -936,7 +936,7 @@
   {
     "id": "CONF-007",
     "question": "What does the balance-never-negative invariant require?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "docs/adr/ADR-020-double-entry-invariant-enforcement.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "docs/adr/ADR-020-double-entry-invariant-enforcement.md"],
     "expected_answer_keywords": ["balance", "never", "negative", "invariant", "prevent"],
     "difficulty": "medium",
     "category": "Conformance"
@@ -1049,7 +1049,7 @@
   {
     "id": "TRC-001",
     "question": "What is a trace_id in Banzami?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["trace_id", "request", "event", "correlation", "distributed"],
     "difficulty": "easy",
     "category": "Traces"
@@ -1057,7 +1057,7 @@
   {
     "id": "TRC-002",
     "question": "What is causation_id in Banzami event envelopes?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "conformance/vectors/event-envelopes.json"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "conformance/vectors/event-envelopes.json"],
     "expected_answer_keywords": ["causation_id", "caused by", "event", "chain"],
     "difficulty": "medium",
     "category": "Traces"
@@ -1065,7 +1065,7 @@
   {
     "id": "TRC-003",
     "question": "What is correlation_id and how does it differ from trace_id?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["correlation_id", "trace_id", "differ", "request", "session"],
     "difficulty": "hard",
     "category": "Traces"
@@ -1081,7 +1081,7 @@
   {
     "id": "TRC-005",
     "question": "What is a causal chain in Banzami traces?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["causal chain", "causation_id", "event", "sequence"],
     "difficulty": "medium",
     "category": "Traces"
@@ -1097,7 +1097,7 @@
   {
     "id": "TRC-007",
     "question": "What are the event types Banzami defines for transfers?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["transfer.initiated", "transfer.completed", "transfer.failed", "transfer.reversed"],
     "difficulty": "medium",
     "category": "Traces"
@@ -1105,7 +1105,7 @@
   {
     "id": "TRC-008",
     "question": "What constitutes a broken causal chain in a trace?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["causation_id", "missing", "broken", "chain", "reference"],
     "difficulty": "hard",
     "category": "Traces"
@@ -1113,7 +1113,7 @@
   {
     "id": "TRC-009",
     "question": "What does an event envelope contain?",
-    "expected_sources": ["conformance/vectors/event-envelopes.json", "docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["conformance/vectors/event-envelopes.json", "docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["event_id", "event_type", "timestamp", "trace_id", "payload"],
     "difficulty": "easy",
     "category": "Traces"
@@ -1121,7 +1121,7 @@
   {
     "id": "TRC-010",
     "question": "What is a ledger.posting event?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["ledger.posting", "double-entry", "debit", "credit", "event"],
     "difficulty": "medium",
     "category": "Traces"
@@ -1137,7 +1137,7 @@
   {
     "id": "TRC-012",
     "question": "How should an operator handle out-of-order events?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["out-of-order", "timestamp", "event", "handle"],
     "difficulty": "hard",
     "category": "Traces"
@@ -1145,7 +1145,7 @@
   {
     "id": "TRC-013",
     "question": "What does a duplicate event_id indicate in a trace?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["duplicate", "event_id", "anomaly", "replayed", "idempotency"],
     "difficulty": "medium",
     "category": "Traces"
@@ -1153,7 +1153,7 @@
   {
     "id": "TRC-014",
     "question": "What are wallet event types in Banzami?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "conformance/vectors/event-envelopes.json"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "conformance/vectors/event-envelopes.json"],
     "expected_answer_keywords": ["wallet.created", "wallet.credited", "wallet.debited"],
     "difficulty": "easy",
     "category": "Traces"
@@ -1161,7 +1161,7 @@
   {
     "id": "TRC-015",
     "question": "How is an event trace structured from transfer.initiated to transfer.completed?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["transfer.initiated", "ledger.posting", "transfer.completed", "sequence", "state machine"],
     "difficulty": "hard",
     "category": "Traces"
@@ -1170,7 +1170,7 @@
   {
     "id": "INV-001",
     "question": "What is the Banzami balance-never-negative invariant?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "docs/adr/ADR-020-double-entry-invariant-enforcement.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "docs/adr/ADR-020-double-entry-invariant-enforcement.md"],
     "expected_answer_keywords": ["balance", "never", "negative", "invariant"],
     "difficulty": "easy",
     "category": "Invariants"
@@ -1226,7 +1226,7 @@
   {
     "id": "INV-008",
     "question": "What happens to the invariants when a transfer is reversed?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["reversed", "compensating", "posting", "invariant", "maintained"],
     "difficulty": "hard",
     "category": "Invariants"
@@ -1250,7 +1250,7 @@
   {
     "id": "INV-011",
     "question": "What is a compensating ledger posting?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["compensating", "posting", "reverse", "debit", "credit"],
     "difficulty": "hard",
     "category": "Invariants"
@@ -1266,7 +1266,7 @@
   {
     "id": "INV-013",
     "question": "How does Banzami represent monetary amounts to avoid floating point errors?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["integer", "gross_minor", "floating point", "avoid", "precision"],
     "difficulty": "hard",
     "category": "Invariants"
@@ -1290,7 +1290,7 @@
   {
     "id": "INV-016",
     "question": "Can a wallet balance go below zero in Banzami?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["cannot", "negative", "balance", "invariant", "prevent"],
     "difficulty": "medium",
     "category": "Invariants"
@@ -1298,7 +1298,7 @@
   {
     "id": "INV-017",
     "question": "What is the Banzami typing system for money?",
-    "expected_sources": ["README.md", "docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["README.md", "docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["Money", "Currency", "typed", "banzami-types", "safety"],
     "difficulty": "medium",
     "category": "Invariants"
@@ -1306,7 +1306,7 @@
   {
     "id": "INV-018",
     "question": "Why does Banzami use integer arithmetic for monetary values?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["integer", "precision", "floating point", "centavos", "rounding"],
     "difficulty": "hard",
     "category": "Invariants"
@@ -1322,7 +1322,7 @@
   {
     "id": "INV-020",
     "question": "How does Banzami handle a transfer that would violate the balance invariant?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["reject", "fail", "balance", "insufficient", "invariant"],
     "difficulty": "medium",
     "category": "Invariants"
@@ -1331,7 +1331,7 @@
   {
     "id": "SDK-001",
     "question": "How do I install the Banzami TypeScript SDK?",
-    "expected_sources": ["sdk/typescript/README.md", "docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["sdk/typescript/README.md", "docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["npm", "install", "@banza/sdk", "TypeScript"],
     "difficulty": "easy",
     "category": "SDK Integration"
@@ -1339,7 +1339,7 @@
   {
     "id": "SDK-002",
     "question": "How do I create a payment link using the Banzami TypeScript SDK?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["TypeScript", "SDK", "payment link", "create", "example"],
     "difficulty": "medium",
     "category": "SDK Integration"
@@ -1355,7 +1355,7 @@
   {
     "id": "SDK-004",
     "question": "How do I verify a webhook signature in the Banzami PHP SDK?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "sdk/php"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "sdk/php"],
     "expected_answer_keywords": ["PHP", "webhook", "signature", "verify"],
     "difficulty": "medium",
     "category": "SDK Integration"
@@ -1371,7 +1371,7 @@
   {
     "id": "SDK-006",
     "question": "How do I initiate a P2P transfer using the Banzami SDK?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["transfer", "P2P", "SDK", "sender", "receiver", "amount"],
     "difficulty": "medium",
     "category": "SDK Integration"
@@ -1395,7 +1395,7 @@
   {
     "id": "SDK-009",
     "question": "What is the correct way to parse a QR payload using the Banzami SDK?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "sdk/typescript"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "sdk/typescript"],
     "expected_answer_keywords": ["QR", "parse", "payload", "SDK", "BANZAMI:"],
     "difficulty": "medium",
     "category": "SDK Integration"
@@ -1403,7 +1403,7 @@
   {
     "id": "SDK-010",
     "question": "How do I subscribe to Banzami events via SSE in the SDK?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["SSE", "event", "stream", "subscribe", "SDK"],
     "difficulty": "medium",
     "category": "SDK Integration"
@@ -1419,7 +1419,7 @@
   {
     "id": "SDK-012",
     "question": "How does the Flutter Banzami SDK handle in-app payments?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["Flutter", "in-app", "payment", "Dart", "SDK"],
     "difficulty": "medium",
     "category": "SDK Integration"
@@ -1573,7 +1573,7 @@
   {
     "id": "BIA-001",
     "question": "What is BanzAI?",
-    "expected_sources": ["README.md", "docs/BANZAMI_REFERENCE.md"],
+    "expected_sources": ["README.md", "docs/BANZA_REFERENCE.md"],
     "expected_answer_keywords": ["BanzAI", "AI", "protocol", "operating-system", "protocol-os"],
     "difficulty": "easy",
     "category": "BanzAI"
@@ -1598,7 +1598,7 @@
     "id": "BIA-004",
     "question": "What is the BanzAI authority ranking system?",
     "expected_sources": ["README.md"],
-    "expected_answer_keywords": ["authority", "ranking", "source", "weight", "BANZAMI_REFERENCE"],
+    "expected_answer_keywords": ["authority", "ranking", "source", "weight", "BANZA_REFERENCE"],
     "difficulty": "medium",
     "category": "BanzAI"
   },
@@ -1645,7 +1645,7 @@
   {
     "id": "BIA-010",
     "question": "Why does BanzAI use RAG instead of fine-tuning?",
-    "expected_sources": ["docs/BANZAMI_REFERENCE.md", "README.md"],
+    "expected_sources": ["docs/BANZA_REFERENCE.md", "README.md"],
     "expected_answer_keywords": ["RAG", "fine-tuning", "stale", "evolves", "live"],
     "difficulty": "medium",
     "category": "BanzAI"

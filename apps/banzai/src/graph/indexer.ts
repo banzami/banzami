@@ -20,7 +20,7 @@ function nodeIdFromPath(path: string): string {
   if (adrMatch) return `adr:ADR-${adrMatch[1].padStart(3, '0')}`;
   if (path.startsWith('contracts/openapi/')) return `openapi:${name}`;
   if (path.startsWith('conformance/vectors/')) return `vector:${name}`;
-  if (path === 'docs/BANZAMI_REFERENCE.md') return 'reference:main';
+  if (path === 'docs/BANZA_REFERENCE.md') return 'reference:main';
   if (path === 'docs/conformance.md') return 'certification:conformance';
   if (path === 'docs/certification.md') return 'certification:rules';
   if (path === 'docs/glossary.md') return 'glossary:main';
