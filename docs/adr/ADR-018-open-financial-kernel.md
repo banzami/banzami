@@ -21,7 +21,7 @@ The problem: the infrastructure was entirely private, tightly coupled to one ope
 
 ## Decision
 
-Banza is restructured as an **open financial infrastructure kernel**: a collection of generic Rust crates that implement the financial primitives of instant payment networks, published under Apache 2.0 at `github.com/banzami/banzami`.
+Banza is restructured as an **open financial infrastructure kernel**: a collection of generic Rust crates that implement the financial primitives of instant payment networks, published under Apache 2.0 at `github.com/banza-protocol/banza`.
 
 The kernel is operator-neutral. It defines:
 - Financial state machines (transactions, wallets, settlement)

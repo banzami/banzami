@@ -43,7 +43,7 @@ No database. No cloud credentials. No external services.
 ## Step 1 — Clone
 
 ```bash
-git clone https://github.com/banzami/banzami
+git clone https://github.com/banza-protocol/banzami
 cd banzami
 ```
 

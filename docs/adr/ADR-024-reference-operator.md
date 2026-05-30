@@ -50,7 +50,7 @@ Create `reference/sandbox-operator/` — a minimal, fully local implementation o
 ### Target developer experience
 
 ```bash
-git clone https://github.com/banzami/banzami.git
+git clone https://github.com/banza-protocol/banzami.git
 cd banzami/reference
 docker compose up
 # → fully functional local Banzami environment
