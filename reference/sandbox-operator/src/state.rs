@@ -305,11 +305,13 @@ impl AppState {
     // -----------------------------------------------------------------------
 
     pub fn create_wallet(&self, label: String, currency: Currency, wallet_type: WalletType) -> SandboxWallet {
+        // Sandbox: seed every new wallet with 1,000,000 minor units (10,000 AOA)
+        // so developers can immediately test transfers without a separate fund step.
         let wallet = SandboxWallet {
             id:            format!("wallet-{}", Uuid::new_v4()),
             label:         label.clone(),
             currency,
-            balance_minor: 0,
+            balance_minor: 1_000_000,
             wallet_type,
             created_at:    chrono::Utc::now(),
         };
