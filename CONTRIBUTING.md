@@ -33,8 +33,8 @@ For anything beyond a trivial bug fix, open an issue to discuss the change befor
 ### 2. Fork and branch
 
 ```bash
-git clone https://github.com/banzami/banzami.git
-cd banzami
+git clone https://github.com/banza-protocol/banza.git
+cd banza
 git checkout -b feature/your-change
 ```
 

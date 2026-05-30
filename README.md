@@ -1,9 +1,13 @@
-# Banza
+# BANZA
 
-**The open financial infrastructure core for programmable instant payments in Angola.**
+> **BANZA** = open financial infrastructure protocol ← this repository  
+> **BanzAI** = Protocol Operating System · [github.com/banza-protocol/banzai](https://github.com/banza-protocol/banzai)  
+> **Banzami** = reference operator implementation · [github.com/banza-protocol/banzami](https://github.com/banza-protocol/banzami)
 
-> "O Banza constrói a infraestrutura. O Banzami é o primeiro produto construído sobre ela."  
-> "Banza builds the infrastructure. Banzami is the first product built on top of it."
+**The open financial infrastructure protocol for programmable instant payments in Angola.**
+
+> "BANZA is the protocol. Banzami is how Angola pays."  
+> "BANZA constrói o protocolo. Banzami é como Angola paga."
 
 ---
 
@@ -13,7 +17,7 @@ Before touching any crate, reading any ADR, or building any integration:
 **run the sandbox operator**.
 
 ```bash
-git clone https://github.com/banzami/banzami
+git clone https://github.com/banza-protocol/banzami
 cd banzami/reference
 cargo run --bin sandbox-operator
 ```
