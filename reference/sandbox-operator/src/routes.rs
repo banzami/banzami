@@ -107,11 +107,11 @@ async fn list_wallets(
 async fn create_wallet(
     State(state): State<Arc<AppState>>,
     Json(req):    Json<CreateWalletRequest>,
-) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, Json<serde_json::Value>)> {
     let currency = Currency::from_code(&req.currency)
         .ok_or_else(|| err(StatusCode::BAD_REQUEST, format!("unknown currency: {}", req.currency)))?;
     let wallet = state.create_wallet(req.label, currency, req.wallet_type);
-    Ok(Json(serde_json::to_value(&wallet).unwrap()))
+    Ok((StatusCode::CREATED, Json(serde_json::to_value(&wallet).unwrap())))
 }
 
 async fn get_wallet(
