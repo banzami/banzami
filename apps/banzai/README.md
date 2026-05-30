@@ -143,6 +143,6 @@ npm test                # Run test suite (107 tests)
 
 ## Trust Through Measurement
 
-BanzAI's quality metrics are public. Run `npm run rag:eval` to generate a benchmark report in `reports/`. The Quality Dashboard at `/banzamia` → **Quality Dashboard** shows live retrieval analytics.
+BanzAI's quality metrics are public. Run `npm run rag:eval` to generate a benchmark report in `reports/`. The Quality Dashboard at `/banzai` → **Quality Dashboard** shows live retrieval analytics.
 
 > Tools determine truth. AI explains truth.
