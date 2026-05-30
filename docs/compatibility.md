@@ -127,7 +127,7 @@ The canonical specification for each protocol component lives in `contracts/`:
 | `contracts/sdk-certification/` | Compliance test vectors | Experimental (additive) |
 
 Changes to stable contract files require an ADR and a minimum 7-day review
-period. See [GOVERNANCE.md](../GOVERNANCE.md).
+period. See [BANZA_GOVERNANCE.md](../BANZA_GOVERNANCE.md).
 
 ---
 

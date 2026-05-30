@@ -429,7 +429,7 @@ Every core crate enforces:
 
 ## Governance
 
-Protocol changes (contracts, QR spec, webhook schemas) require an Architecture Decision Record and a minimum 7-day review period. See [GOVERNANCE.md](GOVERNANCE.md).
+Protocol changes (contracts, QR spec, webhook schemas) require an Architecture Decision Record and a minimum 7-day review period. See [BANZA_GOVERNANCE.md](BANZA_GOVERNANCE.md).
 
 ---
 
@@ -451,7 +451,7 @@ and [`docs/contributor-journeys.md`](docs/contributor-journeys.md).
 
 ## Security
 
-Report vulnerabilities to [security@banzami.org](mailto:security@banzami.org). Do not open public issues. See [SECURITY.md](SECURITY.md).
+Report vulnerabilities to [security@banzami.org](mailto:security@banzami.org). Do not open public issues. See [BANZA_SECURITY.md](BANZA_SECURITY.md).
 
 ---
 

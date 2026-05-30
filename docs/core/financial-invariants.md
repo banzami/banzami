@@ -144,4 +144,4 @@ These invariants are enforced at multiple layers:
 
 If you discover a violation of any invariant — in the core crates, in documentation, or in a reference implementation — please open a GitHub issue tagged `financial-invariant`.
 
-Security-sensitive violations (e.g., a way to credit a wallet without a corresponding debit) should be reported via the security policy in [SECURITY.md](../../SECURITY.md).
+Security-sensitive violations (e.g., a way to credit a wallet without a corresponding debit) should be reported via the security policy in [BANZA_SECURITY.md](../../BANZA_SECURITY.md).

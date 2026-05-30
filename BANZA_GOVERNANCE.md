@@ -168,5 +168,5 @@ ADRs record decisions after they are made. RFCs propose changes before they are 
 
 - Protocol questions: open a GitHub Discussion
 - RFC proposals: open a PR to `docs/rfc/`
-- Security issues: security@banzami.org (see [SECURITY.md](SECURITY.md))
+- Security issues: security@banzami.org (see [BANZA_SECURITY.md](BANZA_SECURITY.md))
 - Code of conduct: conduct@banzami.org
