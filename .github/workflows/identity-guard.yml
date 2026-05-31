@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: ["**"]
 
-# Runs before any other workflow to fail fast on contamination
 concurrency:
   group: identity-guard-${{ github.ref }}
   cancel-in-progress: true
@@ -25,10 +24,16 @@ jobs:
           (curl -LO https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep_14.1.1-1_amd64.deb \
            && sudo dpkg -i ripgrep_14.1.1-1_amd64.deb)
 
+      - name: Build forbidden pattern (avoids self-contamination of this file)
+        run: |
+          # Build by joining parts — this file must not contain the literal pattern
+          P="banza"; S="mi"
+          echo "FORBIDDEN=${P}${S}|${P}${S}a" >> "$GITHUB_ENV"
+
       - name: Check file contents for operator brand
         run: |
-          echo "Checking for forbidden operator brand terms in file contents..."
-          HITS=$(rg -n -i "banzami|banzamia" . \
+          echo "Checking file contents..."
+          HITS=$(rg -n -i "$FORBIDDEN" . \
             -g '!node_modules/**' \
             -g '!target/**' \
             -g '!dist/**' \
@@ -36,6 +41,9 @@ jobs:
             -g '!.next/**' \
             -g '!coverage/**' \
             -g '!.git/**' \
+            -g '!scripts/check-operator-contamination.sh' \
+            -g '!.github/workflows/identity-guard.yml' \
+            -g '!docs/audit/identity/*REGRESSION_GUARD*' \
             2>/dev/null || true)
 
           if [ -n "$HITS" ]; then
@@ -43,15 +51,15 @@ jobs:
             echo ""
             echo "$HITS"
             echo ""
-            echo "Fix: replace operator-brand names with protocol-neutral terms:"
-            echo "  'certified operator', 'reference operator', 'operator implementation'"
+            echo "Fix: use 'certified operator', 'reference operator', or 'operator implementation'"
             exit 1
           fi
           echo "PASS: no forbidden operator brand in file contents"
 
       - name: Check filenames and directory names for operator brand
         run: |
-          echo "Checking for forbidden operator brand terms in filenames..."
+          echo "Checking filenames..."
+          P="banza"; S="mi"
           HITS=$(find . \
             -path "./.git" -prune -o \
             -path "./node_modules" -prune -o \
@@ -60,7 +68,7 @@ jobs:
             -path "./build" -prune -o \
             -path "./.next" -prune -o \
             -path "./coverage" -prune -o \
-            \( -iname "*banzami*" -o -iname "*banzamia*" \) \
+            \( -iname "*${P}${S}*" -o -iname "*${P}${S}a*" \) \
             -print 2>/dev/null || true)
 
           if [ -n "$HITS" ]; then

@@ -9,58 +9,38 @@
 #
 # Usage:
 #   scripts/check-operator-contamination.sh           # check everything
-#   scripts/check-operator-contamination.sh --staged  # check only staged files (pre-commit hook)
+#   scripts/check-operator-contamination.sh --staged  # check only staged files
 
 set -euo pipefail
-
-# ── Configuration ─────────────────────────────────────────────────────────────
 
 REPO_ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
-# Forbidden operator brand strings (case-insensitive search, but we list all
-# canonical forms so the denylist is readable)
-FORBIDDEN_PATTERN="banzami|banzamia|BanzamIA|BANZAMI|BANZAMIA"
+# Build the forbidden pattern at runtime by joining parts so this script does
+# not contain the banned strings as literals (which would trigger itself).
+_P="banza"; _S="mi"
+FORBIDDEN_PATTERN="${_P}${_S}|${_P}${_S}a"
+FORBIDDEN_GLOB_1="*${_P}${_S}*"
+FORBIDDEN_GLOB_2="*${_P}${_S}a*"
+unset _P _S
 
-# Directories to exclude from both content and filename searches
-EXCLUDE_DIRS=(
-  ".git"
-  "node_modules"
-  "target"
-  "dist"
-  "build"
-  ".next"
-  "coverage"
+# Guard artefacts are excluded — they necessarily reference the pattern
+# in documentation or code form.
+SELF_EXCLUDE=(
+  "-g" "!scripts/check-operator-contamination.sh"
+  "-g" "!.github/workflows/identity-guard.yml"
+  "-g" "!docs/audit/identity/*REGRESSION_GUARD*"
 )
-
-# ── Build exclusion flags ─────────────────────────────────────────────────────
-
-build_rg_excludes() {
-  for d in "${EXCLUDE_DIRS[@]}"; do printf -- "-g '!%s/**' " "$d"; done
-}
-
-build_find_prune() {
-  local prune_args=()
-  for d in "${EXCLUDE_DIRS[@]}"; do
-    prune_args+=(-path "./$d" -prune -o)
-  done
-  printf '%s ' "${prune_args[@]}"
-}
 
 # ── Mode ──────────────────────────────────────────────────────────────────────
 
 STAGED_ONLY=false
-if [[ "${1:-}" == "--staged" ]]; then
-  STAGED_ONLY=true
-fi
-
-# ── Checks ────────────────────────────────────────────────────────────────────
+[[ "${1:-}" == "--staged" ]] && STAGED_ONLY=true
 
 FAIL=0
 
 echo "──────────────────────────────────────────────────────────────────────"
 echo "BANZA Operator Contamination Guard"
-echo "Forbidden pattern: ${FORBIDDEN_PATTERN}"
 echo "──────────────────────────────────────────────────────────────────────"
 echo ""
 
@@ -69,7 +49,6 @@ echo ""
 echo "▶ Checking file contents..."
 
 if [[ "$STAGED_ONLY" == "true" ]]; then
-  # Check only git-staged files
   STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || true)
   if [[ -n "$STAGED_FILES" ]]; then
     CONTENT_HITS=$(echo "$STAGED_FILES" | xargs grep -rnI -E -i "$FORBIDDEN_PATTERN" 2>/dev/null || true)
@@ -77,15 +56,15 @@ if [[ "$STAGED_ONLY" == "true" ]]; then
     CONTENT_HITS=""
   fi
 else
-  # Check all tracked and untracked files, excluding configured dirs
-  CONTENT_HITS=$(eval rg -n -i '"'"$FORBIDDEN_PATTERN"'"' . \
-    -g '"'"'!node_modules/**'"'"' \
-    -g '"'"'!target/**'"'"' \
-    -g '"'"'!dist/**'"'"' \
-    -g '"'"'!build/**'"'"' \
-    -g '"'"'!.next/**'"'"' \
-    -g '"'"'!coverage/**'"'"' \
-    -g '"'"'!.git/**'"'"' \
+  CONTENT_HITS=$(rg -n -i "$FORBIDDEN_PATTERN" . \
+    -g '!node_modules/**' \
+    -g '!target/**' \
+    -g '!dist/**' \
+    -g '!build/**' \
+    -g '!.next/**' \
+    -g '!coverage/**' \
+    -g '!.git/**' \
+    "${SELF_EXCLUDE[@]}" \
     2>/dev/null || true)
 fi
 
@@ -96,7 +75,7 @@ if [[ -n "$CONTENT_HITS" ]]; then
   echo ""
   FAIL=1
 else
-  echo "  PASS: no forbidden terms in file contents"
+  echo "  PASS: no forbidden operator brand in file contents"
 fi
 
 echo ""
@@ -105,17 +84,15 @@ echo ""
 
 echo "▶ Checking filenames and directory names..."
 
-PRUNE_EXPR=""
-for d in "${EXCLUDE_DIRS[@]}"; do
-  PRUNE_EXPR="$PRUNE_EXPR -path \"./$d\" -prune -o"
-done
-
-FILENAME_HITS=$(eval find . \
-  $PRUNE_EXPR \
-  "\\(" \
-    -iname "'*banzami*'" \
-    -o -iname "'*banzamia*'" \
-  "\\)" \
+FILENAME_HITS=$(find . \
+  -path "./.git" -prune -o \
+  -path "./node_modules" -prune -o \
+  -path "./target" -prune -o \
+  -path "./dist" -prune -o \
+  -path "./build" -prune -o \
+  -path "./.next" -prune -o \
+  -path "./coverage" -prune -o \
+  \( -iname "$FORBIDDEN_GLOB_1" -o -iname "$FORBIDDEN_GLOB_2" \) \
   -print 2>/dev/null || true)
 
 if [[ -n "$FILENAME_HITS" ]]; then
@@ -125,7 +102,7 @@ if [[ -n "$FILENAME_HITS" ]]; then
   echo ""
   FAIL=1
 else
-  echo "  PASS: no forbidden terms in filenames or directory names"
+  echo "  PASS: no forbidden operator brand in filenames or directory names"
 fi
 
 echo ""
@@ -143,7 +120,5 @@ else
   echo ""
   echo "Fix: replace operator-brand names with protocol-neutral terms:"
   echo "  'certified operator', 'reference operator', 'operator implementation'"
-  echo ""
-  echo "Run this check again after fixing: scripts/check-operator-contamination.sh"
   exit 1
 fi
