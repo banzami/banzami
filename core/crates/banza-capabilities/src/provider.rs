@@ -1,6 +1,6 @@
 //! Provider capability declarations.
 //!
-//! Every provider in the Banzami ecosystem declares a `ProviderCapabilityDescriptor`
+//! Every provider in the BANZA ecosystem declares a `ProviderCapabilityDescriptor`
 //! that the kernel uses to:
 //!
 //! - Log what is active at startup.

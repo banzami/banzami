@@ -7,9 +7,9 @@ Banza operates two completely isolated environments:
 | | **Sandbox** | **Live** |
 |---|---|---|
 | API key prefix | `bz_test_…` | `bz_live_…` |
-| Base URL | `https://sandbox-api.banzami.com` | `https://api.banzami.com` |
-| Dashboard | `https://sandbox-dashboard.banzami.com` | `https://dashboard.banzami.com` |
-| Checkout | `https://sandbox-checkout.banzami.com` | `https://checkout.banzami.com` |
+| Base URL | `https://sandbox.banza.network` | `https://api.banza.network` |
+| Dashboard | `https://sandbox-dashboard.banza.network` | `https://dashboard.banza.network` |
+| Checkout | `https://sandbox-checkout.banza.network` | `https://checkout.banza.network` |
 | Money | Virtual — no real funds | Real Angolan Kwanza |
 | Database | Completely separate | Completely separate |
 | Redis | Completely separate | Completely separate |
@@ -187,8 +187,8 @@ Returns `403 SANDBOX_ONLY` if the public-api instance is not running with `ENVIR
 
 ```dart
 final client = ConsumerPublicClient(
-  baseUrl:     'https://sandbox-api.banzami.com',
-  environment: BanzamiEnvironment.sandbox,
+  baseUrl:     'https://sandbox.banza.network',
+  environment: BanzaEnvironment.sandbox,
 );
 
 await client.login(handle: 'joao', pin: '123456');
@@ -197,7 +197,7 @@ final result = await client.sandboxFund(amountMinor: 5000000); // 50 000 Kz
 print(result.newBalance); // 5000000
 ```
 
-**In-app panel:** When `BanzamiHomeScreen` is initialised with `environment: BanzamiEnvironment.sandbox`, a yellow **"Modo Sandbox — adicionar fundos"** panel appears below the balance card with four presets: 10.000 Kz, 50.000 Kz, 200.000 Kz, 1.000.000 Kz. Tapping a preset calls `sandboxFund()` and refreshes the balance automatically.
+**In-app panel:** When `the reference operatorHomeScreen` is initialised with `environment: BanzaEnvironment.sandbox`, a yellow **"Modo Sandbox — adicionar fundos"** panel appears below the balance card with four presets: 10.000 Kz, 50.000 Kz, 200.000 Kz, 1.000.000 Kz. Tapping a preset calls `sandboxFund()` and refreshes the balance automatically.
 
 ### Simulate a Payment
 
@@ -259,18 +259,18 @@ The SDK automatically routes to the correct base URL for the chosen environment.
 ### Flutter / Dart
 
 ```dart
-import 'package:banzami_sdk/banzami_sdk.dart';
+import 'package:banza_sdk/banza_sdk.dart';
 
 // Sandbox
 final client = BanzaClient(
   apiKey:      'bz_test_…',
-  environment: BanzamiEnvironment.sandbox,
+  environment: BanzaEnvironment.sandbox,
 );
 
 // Production
 final client = BanzaClient(
   apiKey:      'bz_live_…',
-  environment: BanzamiEnvironment.production,
+  environment: BanzaEnvironment.production,
 );
 
 print(client.isSandbox);    // true
@@ -280,16 +280,16 @@ print(client.isProduction); // false
 ### Python (example)
 
 ```python
-import banzami
+import banza
 
 # Sandbox
-client = banzami.Client(
+client = banza.Client(
     api_key    = "bz_test_…",
     environment = "sandbox",
 )
 
 # Production
-client = banzami.Client(
+client = banza.Client(
     api_key    = "bz_live_…",
     environment = "live",
 )
@@ -307,7 +307,7 @@ Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "url":    "https://your-app.example.com/webhooks/banzami",
+  "url":    "https://your-app.example.com/webhooks/banza",
   "events": ["transaction.captured", "payout.completed"]
 }
 ```
@@ -395,13 +395,13 @@ All mutating endpoints accept an `Idempotency-Key` header. Submitting the same k
 
 ```bash
 # First call — creates transaction
-curl -X POST https://sandbox-api.banzami.com/v1/transactions \
+curl -X POST https://sandbox.banza.network/v1/transactions \
   -H "Authorization: Bearer $TOKEN" \
   -H "Idempotency-Key: my-unique-key-001" \
   -d '{"amount_minor": 5000, "currency": "AOA", "idempotency_key": "my-unique-key-001"}'
 
 # Second call — returns the same response (idempotent)
-curl -X POST https://sandbox-api.banzami.com/v1/transactions \
+curl -X POST https://sandbox.banza.network/v1/transactions \
   -H "Authorization: Bearer $TOKEN" \
   -H "Idempotency-Key: my-unique-key-001" \
   -d '{"amount_minor": 5000, "currency": "AOA", "idempotency_key": "my-unique-key-001"}'
@@ -454,7 +454,7 @@ docker compose -f infra/docker/docker-compose.yml up -d
 Configure the sandbox api-gateway instance with:
 
 ```env
-DATABASE_URL=postgres://banzami:banzami_sandbox@localhost:5434/banzami_sandbox
+DATABASE_URL=postgres://banza:banza_sandbox@localhost:5434/banza_sandbox
 REDIS_URL=redis://localhost:6380
 JWT_SECRET=<sandbox-specific-secret>
 ENVIRONMENT=sandbox

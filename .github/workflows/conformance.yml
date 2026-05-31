@@ -132,7 +132,7 @@ jobs:
                   expected = case.get("expected")
                   if not expected:
                       continue
-                  for prefix in ["BANZA-SBX:", "BANZA:", "BANZAMI-SBX:", "BANZAMI:"]:  # legacy aliases accepted during transition
+                  for prefix in ["BANZA-SBX:", "BANZA:"]:
                       if inp.startswith(prefix):
                           raw = inp[len(prefix):]
                           # Pad base64 if needed

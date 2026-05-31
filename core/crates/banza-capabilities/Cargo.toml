@@ -1,6 +1,6 @@
 [package]
 name        = "banza-capabilities"
-description = "Operator and wallet capability declarations for the Banzami kernel"
+description = "Operator and wallet capability declarations for the BANZA kernel"
 version.workspace   = true
 edition.workspace   = true
 license.workspace   = true

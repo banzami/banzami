@@ -118,7 +118,7 @@ describe('classifyTask', () => {
   });
 
   it('defaults to docs for general questions', () => {
-    expect(classifyTask('What is Banzami?').task_type).toBe('docs');
+    expect(classifyTask('What is the reference operator?').task_type).toBe('docs');
     expect(classifyTask('Como funciona o protocolo?').task_type).toBe('docs');
   });
 });

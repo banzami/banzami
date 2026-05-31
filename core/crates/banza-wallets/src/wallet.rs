@@ -45,7 +45,7 @@ impl WalletStatus {
 /// | `available_account`  | Settled funds the merchant can withdraw          |
 /// | `reserved_account`   | Funds held for in-flight transaction confirmations |
 ///
-/// Both accounts are `LIABILITY` type — from Banzami's perspective, merchant funds
+/// Both accounts are `LIABILITY` type — from the reference operator's perspective, merchant funds
 /// are obligations the platform owes. A credit to a LIABILITY account increases the
 /// obligation (we owe more); a debit decreases it.
 #[derive(Debug, Clone)]
@@ -97,7 +97,7 @@ pub struct CreateWalletRequest {
 /// Double-entry:
 /// ```text
 /// system:transit [ASSET]        DR  amount   ← money arriving from network
-/// wallet:reserved [LIABILITY]   CR  amount   ← Banzami owes merchant (reserved)
+/// wallet:reserved [LIABILITY]   CR  amount   ← the reference operator owes merchant (reserved)
 /// ```
 pub struct ReserveRequest {
     pub idempotency_key: String,

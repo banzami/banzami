@@ -22,7 +22,7 @@ class WebhookControllerTest extends TestCase
 
     protected function getEnvironmentSetUp($app): void
     {
-        $app['config']->set('banzami.webhook_secret', 'test-secret');
+        $app['config']->set('banza.webhook_secret', 'test-secret');
     }
 
     // -------------------------------------------------------------------------
@@ -41,7 +41,7 @@ class WebhookControllerTest extends TestCase
     {
         return $this->call(
             'POST',
-            route('banzami.webhook'),
+            route('banza.webhook'),
             [],
             [],
             [],
@@ -149,7 +149,7 @@ class WebhookControllerTest extends TestCase
 
         $this->postWebhook($body, $sig)->assertStatus(200);
 
-        Event::assertDispatched('banzami.webhook');
+        Event::assertDispatched('banza.webhook');
         Event::assertNotDispatched(TransactionCompleted::class);
         Event::assertNotDispatched(TransactionFailed::class);
         Event::assertNotDispatched(PaymentLinkUsed::class);

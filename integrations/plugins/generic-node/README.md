@@ -24,8 +24,8 @@ npm install @banza/node
 import { BanzaClient } from '@banza/node';
 
 const client = new BanzaClient({
-  gatewayUrl: 'https://api.banzami.com',
-  apiKey:     process.env.BANZAMI_API_KEY!,
+  gatewayUrl: 'https://api.banza.network',
+  apiKey:     process.env.BANZA_API_KEY!,
 });
 
 // Create a payment link
@@ -38,7 +38,7 @@ const link = await client.createPaymentLink({
 });
 
 // Redirect the customer
-console.log(`https://pay.banzami.com/${link.slug}`);
+console.log(`https://pay.banza.network/${link.slug}`);
 ```
 
 ---
@@ -49,8 +49,8 @@ console.log(`https://pay.banzami.com/${link.slug}`);
 
 ```ts
 const client = new BanzaClient({
-  gatewayUrl: string;  // Base URL of the Banzami API
-  apiKey:     string;  // Secret API key from the Banzami dashboard
+  gatewayUrl: string;  // Base URL of the BANZA API
+  apiKey:     string;  // Secret API key from the operator dashboard
   timeout?:   number;  // Request timeout in ms (default: 30000)
 });
 ```

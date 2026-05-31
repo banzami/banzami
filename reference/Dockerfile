@@ -1,4 +1,4 @@
-# Banzami Reference Sandbox Operator
+# the reference operator Reference Sandbox Operator
 #
 # Multi-stage build — compiles the sandbox operator from the monorepo root.
 # The final image contains only the binary (no Rust toolchain).

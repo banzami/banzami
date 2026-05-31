@@ -113,7 +113,7 @@ const ROADMAP_STEPS: Array<{ from_level: number; to_level: number; steps: string
       'Publish /.well-known/banza/operator.json with all required fields (RFC-0006)',
       'Implement federation discovery endpoint',
       'Add cross-operator event exchange capability',
-      'Submit manifest for Banzami network review',
+      'Submit manifest for BANZA network review',
     ],
     estimated_effort: '3–6 weeks',
   },
@@ -209,7 +209,7 @@ export function analyzeCertificationReadiness(input: CopilotInput): CopilotResul
     ...missingForTarget.slice(0, 5).map(r => `Implement ${r.id}: ${r.description}${r.rfc ? ` (${r.rfc})` : ''}`),
   ];
   if (missingForTarget.length === 0 && blockingIssues.length === 0) {
-    nextActions.push('Submit operator manifest to Banzami network for Level 3+ review');
+    nextActions.push('Submit operator manifest to BANZA network for Level 3+ review');
     nextActions.push('Run full conformance suite against your production endpoint');
   }
 

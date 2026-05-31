@@ -1,5 +1,5 @@
 {
-  "_spec": "Banzami Settlement Conformance Suite v1.0",
+  "_spec": "the reference operator Settlement Conformance Suite v1.0",
   "_description": "Validates settlement batch creation, fee model, no-money-creation invariant, and idempotency.",
 
   "suite_id": "settlement",

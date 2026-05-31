@@ -1,5 +1,5 @@
 {
-  "_spec": "Banzami SDK Conformance Suite v1.0",
+  "_spec": "BANZA SDK Conformance Suite v1.0",
   "_description": "Validates that SDK implementations behave consistently with the canonical protocol.",
 
   "suite_id": "sdk",
@@ -16,8 +16,8 @@
       "cases": [
         {
           "id": "SDK-QR-001",
-          "title": "Parse sandbox QR payload — BANZAMI-SBX: prefix",
-          "input": "BANZAMI-SBX:eyJzYW5kYm94Ijp0cnVlLCJ2IjoxLCJxcl9pZCI6InFyLXRlc3QiLCJtZXJjaGFudF93YWxsZXRfaWQiOiJtZXJjaGFudC0xIiwiYW1vdW50X21pbm9yIjo1MDAwMCwiY3VycmVuY3kiOiJBT0EiLCJkZXNjcmlwdGlvbiI6IlRlc3QifQ==",
+          "title": "Parse sandbox QR payload — BANZA-SBX: prefix",
+          "input": "BANZA-SBX:eyJzYW5kYm94Ijp0cnVlLCJ2IjoxLCJxcl9pZCI6InFyLXRlc3QiLCJtZXJjaGFudF93YWxsZXRfaWQiOiJtZXJjaGFudC0xIiwiYW1vdW50X21pbm9yIjo1MDAwMCwiY3VycmVuY3kiOiJBT0EiLCJkZXNjcmlwdGlvbiI6IlRlc3QifQ==",
           "expected": {
             "sandbox": true,
             "v": 1,
@@ -37,13 +37,13 @@
         {
           "id": "SDK-QR-003",
           "title": "Reject malformed base64",
-          "input": "BANZAMI-SBX:not-valid-base64!!!",
+          "input": "BANZA-SBX:not-valid-base64!!!",
           "expected_error": "decode_error"
         },
         {
           "id": "SDK-QR-004",
-          "title": "Parse production QR payload — BANZAMI: prefix",
-          "input": "BANZAMI:eyJ2IjoxLCJxcl9pZCI6InFyLXByb2QiLCJtZXJjaGFudF93YWxsZXRfaWQiOiJtZXJjaGFudC0xIiwiYW1vdW50X21pbm9yIjo1MDAwMCwiY3VycmVuY3kiOiJBT0EifQ==",
+          "title": "Parse production QR payload — BANZA: prefix",
+          "input": "BANZA:eyJ2IjoxLCJxcl9pZCI6InFyLXByb2QiLCJtZXJjaGFudF93YWxsZXRfaWQiOiJtZXJjaGFudC0xIiwiYW1vdW50X21pbm9yIjo1MDAwMCwiY3VycmVuY3kiOiJBT0EifQ==",
           "expected": {
             "v": 1,
             "qr_id": "qr-prod",

@@ -22,11 +22,11 @@ Banza integration uses three secrets:
 
 | Secret | Variable | Where stored |
 |--------|----------|-------------|
-| API key | `BANZAMI_API_KEY` | Server-only environment — never in browser |
-| Webhook signing secret | `BANZAMI_WEBHOOK_SECRET` | Server-only environment — never in browser |
+| API key | `BANZA_API_KEY` | Server-only environment — never in browser |
+| Webhook signing secret | `BANZA_WEBHOOK_SECRET` | Server-only environment — never in browser |
 | Banza JWT | Ephemeral — not stored | In-memory per request, obtained fresh each call |
 
-**Server-only enforcement**: Both `lib/payments/providers/banzami.ts` and `app/api/donations/banzami-status/route.ts` begin with:
+**Server-only enforcement**: Both `lib/payments/providers/banza.ts` and `app/api/donations/banza-status/route.ts` begin with:
 
 ```typescript
 import 'server-only';
@@ -34,7 +34,7 @@ import 'server-only';
 
 This is a Next.js build-time compiler directive. Importing either file from a `'use client'` component causes the build to fail with an explicit error. Credentials in these modules are unreachable from the browser by construction — not just by convention.
 
-**What reaches the browser**: Only the pay URL (`https://pay.banzami.com/{slug}`) and link ID. The pay URL is the public interaction surface — it is intended to be shared with the donor.
+**What reaches the browser**: Only the pay URL (`https://pay.banza.network/{slug}`) and link ID. The pay URL is the public interaction surface — it is intended to be shared with the donor.
 
 ---
 
@@ -141,9 +141,9 @@ A `bz_test_` API key cannot be used against the live gateway, and vice versa. Th
 
 | Scenario | Outcome |
 |----------|---------|
-| `bz_test_` key → `api.banzami.com` | `403 SANDBOX_KEY_REJECTED` |
-| `bz_live_` key → `sandbox-api.banzami.com` | `403 LIVE_ONLY` |
-| Sandbox payment link in live Banzami app | Link marked as environment-incompatible |
+| `bz_test_` key → `api.banza.network` | `403 SANDBOX_KEY_REJECTED` |
+| `bz_live_` key → `sandbox-api.banza.network` | `403 LIVE_ONLY` |
+| Sandbox payment link in live operator app | Link marked as environment-incompatible |
 | Sandbox webhook → live endpoint | Banza filters at dispatch — never delivered |
 
 Doa's visual SANDBOX badge reinforces this — it makes environment mismatches immediately visible during development and QA. The badge is driven by the key prefix and disappears automatically when the live key is set.
@@ -164,7 +164,7 @@ For local development, use ngrok or cloudflared — both provide HTTPS tunnels. 
 
 ## Authorization
 
-The webhook route at `POST /api/webhooks/banzami` relies entirely on the HMAC signature for authorization. There is no additional API key check, no IP allowlist, and no session requirement.
+The webhook route at `POST /api/webhooks/banza` relies entirely on the HMAC signature for authorization. There is no additional API key check, no IP allowlist, and no session requirement.
 
 **Why no IP allowlist**: Banza does not publish a stable IP range for webhook delivery. Adding an allowlist would require manual maintenance and could cause outages during Banza infrastructure changes.
 
@@ -178,7 +178,7 @@ If the webhook secret is compromised:
 
 1. Register a new endpoint with Banza → receive a new `whsec_...`
 2. Deactivate the old endpoint via the Banza dashboard
-3. Update `BANZAMI_WEBHOOK_SECRET` in the server environment
+3. Update `BANZA_WEBHOOK_SECRET` in the server environment
 4. Restart the Doa server
 
 During the transition window between steps 2 and 4, webhooks may fail verification if delivered with the old secret. Since Banza retries, these events are not lost — they retry after the new secret is in place.
@@ -190,27 +190,27 @@ During the transition window between steps 2 and 4, webhooks may fail verificati
 ### Log at webhook receipt
 
 ```typescript
-console.log('banzami_webhook_received', { type: payload.type, event_id: payload.id });
+console.log('banza_webhook_received', { type: payload.type, event_id: payload.id });
 ```
 
 ### Log on success
 
 ```typescript
-console.log('banzami_webhook_ok', { intent_id, deduped: result.deduped });
+console.log('banza_webhook_ok', { intent_id, deduped: result.deduped });
 ```
 
 ### Log on verification failure
 
 ```typescript
-console.warn('banzami_webhook_rejected', { reason: verification.reason });
+console.warn('banza_webhook_rejected', { reason: verification.reason });
 ```
 
 ### What NOT to log
 
 | Data | Reason |
 |------|--------|
-| `BANZAMI_API_KEY` | Credential — never log |
-| `BANZAMI_WEBHOOK_SECRET` | Credential — never log |
+| `BANZA_API_KEY` | Credential — never log |
+| `BANZA_WEBHOOK_SECRET` | Credential — never log |
 | Full webhook payload body | May contain PII (phone numbers, wallet IDs) |
 | Bearer JWT | Ephemeral credential — never log |
 | Donor identity fields (name, phone, email) | PII — log intent_id only for correlation |
@@ -221,7 +221,7 @@ Log the minimum needed to diagnose issues: event type, event ID, intent ID, and 
 
 ## PCI-Conscious Practices
 
-Banzami QR payments do not involve card data. The Doa integration handles only:
+BANZA QR payments do not involve card data. The Doa integration handles only:
 - Payment amounts (integer centavos)
 - Banza payment link IDs
 - Donor intent IDs (Doa-internal UUIDs)

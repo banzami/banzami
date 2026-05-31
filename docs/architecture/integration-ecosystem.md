@@ -41,7 +41,7 @@ The integration layer is therefore not auxiliary tooling. It is the primary inte
                              │
          ┌───────────────────▼──────────────────────┐
          │          PUBLIC REST API + OPENAPI          │
-         │         api.banzami.com/v1/                 │
+         │         api.banza.network/v1/                 │
          └──────────────────────────────────────────┘
 ```
 
@@ -125,7 +125,7 @@ The Flutter SDK is not just a network client. It is the **Banza Mobile Runtime**
 
 ```dart
 final client = BanzaClient(
-  baseUrl: 'https://api.banzami.com',
+  baseUrl: 'https://api.banza.network',
   apiKey:  'bz_live_...',
   onRequest:  (method, path, attempt) => logger.debug('$method $path #$attempt'),
   onResponse: (method, path, status, ms) => metrics.record(path, ms),
@@ -148,7 +148,7 @@ The following widget layer is planned for v1.1. Designs must use the official Ba
 #### Design system compliance (Flutter)
 
 ```dart
-// Official Banzami theme token — never hardcode colors in widgets
+// Official the reference operator theme token — never hardcode colors in widgets
 class BanzaColors {
   static const primary    = Color(0xFF990011);  // Space Cherry
   static const wineRose   = Color(0xFFA63A50);
@@ -175,7 +175,7 @@ The TypeScript SDK is the **primary web developer SDK**. It is the reference for
 import { BanzaClient } from '@banza/sdk';
 
 const client = new BanzaClient({
-  baseUrl:  'https://api.banzami.com',
+  baseUrl:  'https://api.banza.network',
   apiKey:   process.env.BANZA_API_KEY!,
   hooks: {
     onRequest:  (method, path, attempt) => console.log(`→ ${method} ${path}`),
@@ -261,7 +261,7 @@ async with BanzaClient(api_key="bz_live_...") as client:
 
 ### WooCommerce Plugin
 
-**Location:** `plugins/woocommerce/banzami-payment/`  
+**Location:** `plugins/woocommerce/banza-payment/`  
 **Priority:** CRITICAL  
 **Market rationale:** WordPress + WooCommerce is the dominant commerce stack for Angolan SME websites. Shopify's pricing and market penetration do not justify v1 investment.
 
@@ -271,7 +271,7 @@ A merchant installs the plugin, enters their API key, and immediately accepts pa
 
 | Feature | Description |
 |---------|-------------|
-| QR checkout | WooCommerce checkout page shows Banzami QR code |
+| QR checkout | WooCommerce checkout page shows BANZA QR code |
 | Hosted checkout redirect | Redirect to `apps/checkout/` for the payment UX |
 | Order synchronization | Webhook listener updates WooCommerce order status automatically |
 | Payment confirmation | Order moves to "Processing" when payment is confirmed |
@@ -301,7 +301,7 @@ The following are on the roadmap but explicitly deferred past v1 stabilization:
 ## Layer 5 — Hosted Checkout
 
 **Location:** `apps/checkout/`  
-**URL:** `https://pay.banzami.com/{slug}`  
+**URL:** `https://pay.banza.network/{slug}`  
 **Priority:** CRITICAL  
 **Technology:** Next.js 14, App Router, port 3004
 
@@ -345,7 +345,7 @@ A slow or visually untrustworthy checkout page directly causes payment abandonme
 ### Design system (checkout)
 
 ```typescript
-// tailwind.config.ts — Banzami design tokens
+// tailwind.config.ts — the reference operator design tokens
 colors: {
   wine:     { DEFAULT: '#990011', rose: '#A63A50' },
   gold:     { DEFAULT: '#C89B3C' },
@@ -373,7 +373,7 @@ QR payment is a strategic pillar, not an optional feature. The reasoning:
 | QR decode | ✓ | ✓ | ✓ | — | — |
 | QR status polling | ✓ | ✓ | ✓ | ✓ | ✓ |
 | QR generation (image) | Flutter widget | Browser API | `qrcode` lib | PHP QR lib | Server-side |
-| Deep link (`banzami://pay/`) | ✓ | — | — | — | — |
+| Deep link (`banza://pay/`) | ✓ | — | — | — | — |
 
 ---
 

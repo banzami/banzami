@@ -48,16 +48,16 @@ No part of this integration is mocked, stubbed, or simplified for demo purposes.
 │  Server Components    API Routes         Client Components        │
 │  ─────────────────    ──────────────     ──────────────────────  │
 │  Campaign page        /api/donations/    DonateFlow               │
-│  Method picker        initiate-payment   BanzamiPanel (QR UI)    │
-│  listPublicMethods()  banzami-status     Polling loop (3 s)      │
+│  Method picker        initiate-payment   the reference operatorPanel (QR UI)    │
+│  listPublicMethods()  banza-status     Polling loop (3 s)      │
 │                       /api/webhooks/                              │
-│                       banzami           (HMAC-verified push)     │
+│                       banza           (HMAC-verified push)     │
 └──────────────┬───────────────────────────────┬───────────────────┘
                │  Bearer bz_live_/bz_test_      │  Banza-Signature
                ▼                                ▼
 ┌──────────────────────────┐      ┌─────────────────────────────┐
-│  Banzami API Gateway     │      │  Banzami Webhook Delivery   │
-│  api.banzami.com         │      │  (push on payment_link.paid)│
+│  BANZA API Gateway     │      │  the reference operator Webhook Delivery   │
+│  api.banza.network         │      │  (push on payment_link.paid)│
 │                          │      └─────────────────────────────┘
 │  POST /v1/payment-links  │
 │  GET  /v1/payment-links/ │
@@ -67,7 +67,7 @@ No part of this integration is mocked, stubbed, or simplified for demo purposes.
                ▼
 ┌──────────────────────────┐
 │  Banza Pay Page        │
-│  pay.banzami.com/{slug}  │
+│  pay.banza.network/{slug}  │
 │  (QR target — donor      │
 │   scans with Banza app)│
 └──────────────────────────┘
@@ -79,12 +79,12 @@ Two paths both converge on the same idempotent ledger write:
 
 ```
 Path A — Polling (active today)
-  Browser polls GET /api/donations/banzami-status every 3 s
-  → Doa fetches GET /v1/payment-links/{id} from Banzami
+  Browser polls GET /api/donations/banza-status every 3 s
+  → Doa fetches GET /v1/payment-links/{id} from the reference operator
   → status = USED → applyPaymentEvent() → receipt → redirect
 
-Path B — Webhook (active when BANZAMI_WEBHOOK_SECRET is set)
-  Banzami pushes POST /api/webhooks/banzami on payment_link.paid
+Path B — Webhook (active when BANZA_WEBHOOK_SECRET is set)
+  the reference operator pushes POST /api/webhooks/banza on payment_link.paid
   → Doa verifies Banza-Signature
   → applyPaymentEvent() → receipt → redirect
 
@@ -99,13 +99,13 @@ regardless of which path wins the race.
 
 ```
 1.  Donor selects amount and completes OTP verification
-2.  POST /api/donations/initiate-payment { provider_id: 'banzami' }
+2.  POST /api/donations/initiate-payment { provider_id: 'banza' }
 3.  Doa calls POST /v1/payment-links → gets { id, slug, status: 'ACTIVE' }
 4.  Doa stores link.id as provider_ref in donation_events (payment_initiated)
 5.  Doa returns { kind: 'inline', token: payUrl, provider_ref: linkId }
-6.  BanzamiPanel renders QR from payUrl, starts polling loop
+6.  the reference operatorPanel renders QR from payUrl, starts polling loop
 7.  Donor scans QR with Banza app and confirms payment
-8.  Banzami marks link as USED
+8.  the reference operator marks link as USED
 9.  Poll endpoint detects USED → applyPaymentEvent() → confirmed
 10. Receipt generated and delivered, campaign totals revalidated
 11. Browser redirects to /obrigado
@@ -116,7 +116,7 @@ regardless of which path wins the race.
 ## QR Flow Overview
 
 ```
-pay.banzami.com/{slug}  ← URL encoded in QR
+pay.banza.network/{slug}  ← URL encoded in QR
          │
          ▼
 Donor opens Banza app → taps "Pagar" → scans QR
@@ -139,21 +139,21 @@ Doa polling detects USED within 3 s
 ## Sandbox Flow Overview
 
 ```
-Set BANZAMI_API_KEY=bz_test_...
+Set BANZA_API_KEY=bz_test_...
          │
          ▼
-BanzamiProvider.sandbox = true
-display_name = "Banzami (Sandbox)"
+the reference operatorProvider.sandbox = true
+display_name = "the reference operator (Sandbox)"
          │
          ▼
-Doa routes to https://sandbox-api.banzami.com
+Doa routes to https://sandbox.banza.network
 Payment links are virtual — no real money
          │
          ▼
-BanzamiPanel shows SANDBOX badge
+the reference operatorPanel shows SANDBOX badge
          │
          ▼
-Simulate payment via Banzami sandbox dashboard
+Simulate payment via BANZA sandbox dashboard
 or POST /v1/sandbox/simulate/payment
 ```
 
@@ -164,12 +164,12 @@ or POST /v1/sandbox/simulate/payment
 ```
 Register endpoint:
   POST /v1/webhooks/endpoints
-  { url: 'https://doadoa.app/api/webhooks/banzami',
+  { url: 'https://doadoa.app/api/webhooks/banza',
     events: ['payment_link.paid'] }
-  → save returned secret as BANZAMI_WEBHOOK_SECRET
+  → save returned secret as BANZA_WEBHOOK_SECRET
 
 On payment:
-  Banzami → POST /api/webhooks/banzami
+  the reference operator → POST /api/webhooks/banza
   Headers: Banza-Signature: t=1716000000,v1=a1b2c3...
   Body: { id, type: 'payment_link.paid', data: { ...link } }
 
@@ -203,12 +203,12 @@ cp .env.example .env.local
 ### 2. Configure Banza sandbox credentials
 
 ```env
-BANZAMI_GATEWAY_URL=https://sandbox-api.banzami.com
-BANZAMI_API_KEY=bz_test_your_sandbox_key
-BANZAMI_MERCHANT_ID=your-test-merchant-uuid
-BANZAMI_WALLET_ID=your-test-wallet-uuid
-BANZAMI_PAY_BASE_URL=https://pay.banzami.com
-PAYMENT_PROVIDERS=stripe,bank-transfer,banzami
+BANZA_GATEWAY_URL=https://sandbox.banza.network
+BANZA_API_KEY=bz_test_your_sandbox_key
+BANZA_MERCHANT_ID=your-test-merchant-uuid
+BANZA_WALLET_ID=your-test-wallet-uuid
+BANZA_PAY_BASE_URL=https://pay.banza.network
+PAYMENT_PROVIDERS=stripe,bank-transfer,banza
 ```
 
 ### 3. Run
@@ -216,12 +216,12 @@ PAYMENT_PROVIDERS=stripe,bank-transfer,banzami
 ```bash
 npm run dev
 # Open http://localhost:3000/c/ajuda-maria-a3k9p2
-# Navigate to Apoiar → complete OTP → choose Banzami
+# Navigate to Apoiar → complete OTP → choose the reference operator
 ```
 
 ### 4. Simulate payment
 
-In the Banza sandbox dashboard (`https://sandbox-dashboard.banzami.com`), find the payment link and click **Simulate Payment**. The Doa UI confirms within 3 seconds.
+In the Banza sandbox dashboard (`https://sandbox-dashboard.banza.network`), find the payment link and click **Simulate Payment**. The Doa UI confirms within 3 seconds.
 
 ---
 
@@ -232,12 +232,12 @@ See [production-checklist.md](production-checklist.md) for the complete go-live 
 Key environment variables for production:
 
 ```env
-BANZAMI_GATEWAY_URL=https://api.banzami.com
-BANZAMI_API_KEY=bz_live_...
-BANZAMI_MERCHANT_ID=<uuid>
-BANZAMI_WALLET_ID=<uuid>
-BANZAMI_WEBHOOK_SECRET=whsec_...
-PAYMENT_PROVIDERS=stripe,bank-transfer,banzami
+BANZA_GATEWAY_URL=https://api.banza.network
+BANZA_API_KEY=bz_live_...
+BANZA_MERCHANT_ID=<uuid>
+BANZA_WALLET_ID=<uuid>
+BANZA_WEBHOOK_SECRET=whsec_...
+PAYMENT_PROVIDERS=stripe,bank-transfer,banza
 ```
 
 ---

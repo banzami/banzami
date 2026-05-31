@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Banzami Conformance Runner v1.0
+the reference operator Conformance Runner v1.0
 
-Connects to a running Banzami operator and executes conformance suites.
+Connects to a running a BANZA operator and executes conformance suites.
 Produces a JSON report and exits with a non-zero code if any required
 suite fails.
 
@@ -640,7 +640,7 @@ def build_report(
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="Banzami Conformance Runner")
+    parser = argparse.ArgumentParser(description="the reference operator Conformance Runner")
     parser.add_argument("--url", required=True, help="Base URL of the operator (e.g. http://localhost:3000)")
     parser.add_argument("--level", type=int, default=4, help="Maximum certification level to test (0–4, default 4)")
     parser.add_argument("--suite", help="Run a single suite by ID (health, wallets, transfers, traces, manifest)")
@@ -651,7 +651,7 @@ def main():
     base_url = args.url.rstrip("/")
     start_time = time.monotonic()
 
-    print(f"Banzami Conformance Runner {RUNNER_VERSION}")
+    print(f"the reference operator Conformance Runner {RUNNER_VERSION}")
     print(f"Operator: {base_url}")
     print(f"Level:    {args.level}")
     print()

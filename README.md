@@ -2,14 +2,14 @@
 
 > **BANZA** = open financial infrastructure protocol ← this repository  
 > **BanzAI** = Protocol Operating System · [github.com/banza-protocol/banzai](https://github.com/banza-protocol/banzai)  
-> **Banzami** = reference operator (independent commercial startup) · [github.com/banzami/banzami](https://github.com/banzami/banzami)
+> **the reference operator** = reference operator (independent commercial startup) · [github.com/banza-protocols/banza](https://github.com/banza-protocols/banza)
 
-> **Institutional note:** Banzami is an independent company and reference operator built on BANZA. It is not part of the BANZA protocol organization (`github.com/banza-protocol`). BANZA is an open protocol — Banzami is one operator that implements it.
+> **Institutional note:** An operator is an independent company and reference operator built on BANZA. It is not part of the BANZA protocol organization (`github.com/banza-protocol`). BANZA is an open protocol — the reference operator is one operator that implements it.
 
 **The open financial infrastructure protocol for programmable instant payments in Angola.**
 
-> "BANZA is the protocol. Banzami is how Angola pays."  
-> "BANZA constrói o protocolo. Banzami é como Angola paga."
+> "BANZA is the protocol. BANZA moves the money."  
+> "BANZA constrói o protocolo. O protocolo é como Angola paga."
 
 ---
 
@@ -19,8 +19,8 @@ Before touching any crate, reading any ADR, or building any integration:
 **run the sandbox operator**.
 
 ```bash
-git clone https://github.com/banzami/banzami
-cd banzami/reference
+git clone https://github.com/banza-protocols/banza
+cd banza/reference
 cargo run --bin sandbox-operator
 ```
 
@@ -48,7 +48,7 @@ OpenAPI spec: [`contracts/openapi/reference-operator.yaml`](contracts/openapi/re
 
 ## What is Banza?
 
-> **Naming note:** Before ADR-025, the ecosystem used a different naming model where the protocol and operator shared identity. ADR-025 (2026-05-29) established the current three-layer hierarchy: BANZA is the open protocol, BanzAI is the Protocol Operating System, and Banzami is the reference operator. See `docs/migration/` for the full migration record.
+> **Naming note:** Before ADR-025, the ecosystem used a different naming model where the protocol and operator shared identity. ADR-025 (2026-05-29) established the current three-layer hierarchy: BANZA is the open protocol, BanzAI is the Protocol Operating System, and The reference operator. See `docs/migration/` for the full migration record.
 
 Banza is the **open-source financial infrastructure kernel** that operators, developers, and fintech builders use to create instant, wallet-native payment networks.
 
@@ -65,13 +65,13 @@ Banza provides:
 
 ---
 
-## What is Banzami?
+## What is the reference operator?
 
-**Banzami is the first commercial operator and product built on Banza.**
+**A certified operator and product built on Banza.**
 
-Banzami is Angola's instant payment and wallet network — the consumer app, merchant dashboard, QR infrastructure, and payment experience. Banzami uses Banza core crates, conforms to Banza contracts, and implements Banza SDKs.
+the reference operator is Angola's instant payment and wallet network — the consumer app, merchant dashboard, QR infrastructure, and payment experience. The reference operator uses Banza core crates, conforms to Banza contracts, and implements Banza SDKs.
 
-Banzami is to Banza what:
+the reference operator is to Banza what:
 - Ubuntu is to the Linux kernel
 - Google Kubernetes Engine is to Kubernetes
 - Samsung One UI is to Android AOSP
@@ -79,7 +79,7 @@ Banzami is to Banza what:
 
 The public/private split is **not** language-based. It is:
 
-| Public — Banza | Private — Banzami |
+| Public — Banza | Private — the reference operator |
 |---|---|
 | Generic financial infrastructure | Operator-specific business logic |
 | Ledger, wallets, routing, QR engine | EMIS/Multicaixa provider adapters |
@@ -115,7 +115,7 @@ The public/private split is **not** language-based. It is:
         ┌───────────┘                         ┌──────────────┘
         ▼                                     ▼
 ┌──────────────────────┐        ┌──────────────────────────────┐
-│       Banzami        │        │           BanzAI             │
+│       the reference operator        │        │           BanzAI             │
 │  Reference Operator  │        │  Protocol Operating System   │
 │                      │        │                              │
 │  Consumer app        │        │  16 modules · 3 layers       │
@@ -123,7 +123,7 @@ The public/private split is **not** language-based. It is:
 │  EMIS/Multicaixa     │        │  6 operational verbs         │
 │  QR infrastructure   │        │  Compreender · Explicar      │
 │  Production infra    │        │  Validar · Simular           │
-│  L2 Certified        │        │  banzami.com/banzai          │
+│  L2 Certified        │        │  banza.network/banzai          │
 └──────────────────────┘        └──────────────────────────────┘
 ```
 
@@ -131,7 +131,7 @@ The public/private split is **not** language-based. It is:
 
 ## BanzAI — Protocol Operating System
 
-**BanzAI** is the Protocol Operating System of BANZA — publicly available at `banzami.com/banzai`.
+**BanzAI** is the Protocol Operating System of BANZA — publicly available at `banza.network/banzai`.
 
 BanzAI is not a chatbot. It is an orchestrated AI system that combines multiple language models, live protocol knowledge retrieval, deterministic validation tools, and certification logic into a single interface.
 
@@ -195,15 +195,15 @@ BanzAI is read-only. It must never:
 - Expose private operator data or secrets
 - Make financial decisions without tool-verified outputs
 
-Access: `banzami.com/banzai`  
-Documentation: `banzami.com/sobre-o-banzai`
+Access: `banza.network/banzai`  
+Documentation: `banza.network/sobre-o-banzai`
 
 ---
 
 ## Repository structure
 
 ```
-banzami/
+banza/
 ├── core/                   Open-source Rust financial infrastructure
 │   ├── Cargo.toml          Workspace root
 │   ├── crates/
@@ -231,7 +231,7 @@ banzami/
 │   ├── qr/                 QR payload format specification
 │   ├── events/             Event schemas
 │   └── sdk-certification/  SDK compliance test vectors
-├── sdk/                    Official Banzami SDKs
+├── sdk/                    Official BANZA SDKs
 │   ├── typescript/         @banza/sdk
 │   ├── python/             banza-python
 │   ├── php/                banza/sdk-php
@@ -453,7 +453,7 @@ and [`docs/contributor-journeys.md`](docs/contributor-journeys.md).
 
 ## Security
 
-Report vulnerabilities to [security@banzami.com](mailto:security@banzami.com). Do not open public issues. See [BANZA_SECURITY.md](BANZA_SECURITY.md).
+Report vulnerabilities to [security@banza.network](mailto:security@banza.network). Do not open public issues. See [BANZA_SECURITY.md](BANZA_SECURITY.md).
 
 ---
 
@@ -468,5 +468,5 @@ Report vulnerabilities to [security@banzami.com](mailto:security@banzami.com). D
 
 ## Related
 
-- **Banzami** — reference operator implementation · [github.com/banzami/banzami](https://github.com/banzami/banzami)
-- **banzami.com** — public documentation and ecosystem reference
+- **the reference operator** — reference operator implementation · [github.com/banza-protocols/banza](https://github.com/banza-protocols/banza)
+- **banza.network** — public documentation and ecosystem reference

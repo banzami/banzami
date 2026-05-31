@@ -19,7 +19,7 @@ BanzAI is the Protocol Operating System of Banza — a Fastify 5 API backend tha
 ## Architecture
 
 ```
-apps/banzamia/
+apps/banzaa/
 ├── src/
 │   ├── agent/
 │   │   └── researcher.ts       # Multi-step research agent (plan → retrieve → graph → synthesise)
@@ -68,7 +68,7 @@ apps/banzamia/
 ## Setup
 
 ```bash
-cd apps/banzamia
+cd apps/banzaa
 cp .env.example .env       # configure QDRANT_URL, VLLM_URL if live mode
 npm install
 npm run dev

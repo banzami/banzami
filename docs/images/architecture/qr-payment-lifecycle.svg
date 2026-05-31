@@ -19,7 +19,7 @@
   <rect x="318" y="66" width="410" height="80" rx="4" fill="#141414" stroke="#2a2a2a"/>
   <text x="360" y="86" fill="#e8d5b7" font-size="9" font-weight="bold" letter-spacing="0.6">QR CREATED  (status: active)</text>
   <text x="360" y="102" fill="#aaa" font-size="9">id: qr-xxx · trace_id: tr-abc (new root)</text>
-  <text x="360" y="116" fill="#555" font-size="9">payload: BANZAMI-SBX:{base64}</text>
+  <text x="360" y="116" fill="#555" font-size="9">payload: BANZA-SBX:{base64}</text>
   <text x="360" y="130" fill="#4caf50" font-size="9">emit → qr.generated</text>
 
   <!-- Consumer -->

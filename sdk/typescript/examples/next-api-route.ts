@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { BanzaClient }             from '@banza/sdk';
 
 const banzaClient = new BanzaClient({
-  baseUrl: process.env.BANZAMI_GATEWAY_URL!,
+  baseUrl: process.env.BANZA_GATEWAY_URL!,
   apiKey:  process.env.BANZA_API_KEY!,
 });
 
@@ -16,15 +16,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   };
 
   const link = await banzaClient.createPaymentLink({
-    merchantId:  process.env.BANZAMI_MERCHANT_ID!,
-    walletId:    process.env.BANZAMI_WALLET_ID!,
+    merchantId:  process.env.BANZA_MERCHANT_ID!,
+    walletId:    process.env.BANZA_WALLET_ID!,
     amountMinor,
     currency:    'AOA',
     description,
   });
 
   return NextResponse.json({
-    checkoutUrl: `https://pay.banzami.com/${link.slug}`,
+    checkoutUrl: `https://pay.banza.network/${link.slug}`,
     linkId:      link.id,
   });
 }

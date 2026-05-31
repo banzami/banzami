@@ -86,7 +86,7 @@ CR  transit_account   (LIABILITY decreases — in-flight cleared)
 
 ```
 DR  merchant_wallet   (LIABILITY decreases — merchant's balance consumed)
-CR  bank_account      (ASSET decreases — funds leave Banzami)
+CR  bank_account      (ASSET decreases — funds leave the reference operator)
 ```
 
 ### Payout reversal (failed or returned)

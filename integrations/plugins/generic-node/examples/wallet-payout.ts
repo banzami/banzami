@@ -3,10 +3,10 @@
 import { BanzaClient } from '../src/client';
 
 const client   = new BanzaClient({
-  gatewayUrl: process.env.BANZAMI_GATEWAY_URL!,
-  apiKey:     process.env.BANZAMI_API_KEY!,
+  gatewayUrl: process.env.BANZA_GATEWAY_URL!,
+  apiKey:     process.env.BANZA_API_KEY!,
 });
-const walletId = process.env.BANZAMI_WALLET_ID!;
+const walletId = process.env.BANZA_WALLET_ID!;
 
 const balance = await client.getWalletBalance(walletId);
 console.log('Available:', BanzaClient.formatAmount(balance.available_minor, balance.currency));

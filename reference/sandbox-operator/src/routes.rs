@@ -29,8 +29,6 @@ pub fn build_router() -> Router {
         // Health & manifest
         .route("/health",      get(health))
         .route("/.well-known/banza/operator.json", get(operator_manifest))
-        // Legacy compatibility alias — will be removed after 90-day deprecation (MIGRATE-001)
-        .route("/.well-known/banzami/operator.json", get(operator_manifest))
         // Wallets
         .route("/wallets",     get(list_wallets).post(create_wallet))
         .route("/wallets/:id", get(get_wallet))

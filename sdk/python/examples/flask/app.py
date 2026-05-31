@@ -1,7 +1,7 @@
 """Flask example — payment and webhook integration.
 
 Run:
-    pip install flask banzami
+    pip install flask banza
     BANZA_API_KEY=bz_live_... flask --app examples.flask.app run
 """
 
@@ -41,7 +41,7 @@ def create_payment():
     return jsonify({"transaction_id": tx.id, "status": tx.status})
 
 
-@app.post("/webhooks/banzami")
+@app.post("/webhooks/banza")
 def handle_webhook():
     raw = request.get_data()
     sig = request.headers.get("Banza-Signature", "")
@@ -52,5 +52,5 @@ def handle_webhook():
     except BanzaWebhookSignatureError:
         return jsonify({"error": "bad signature"}), 400
 
-    print(f"[banzami] Event received: {event.type}")
+    print(f"[banza] Event received: {event.type}")
     return jsonify({"received": True})

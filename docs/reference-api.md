@@ -23,7 +23,7 @@ Returns the operator's health status and environment metadata.
 {
   "status": "ok",
   "environment": "sandbox",
-  "operator": "banzami-sandbox",
+  "operator": "banza-sandbox",
   "simulated": true,
   "production_allowed": false,
   "note": "This is a local development sandbox — not a production system."
@@ -50,7 +50,7 @@ what a Banza operator supports.
 
 ```json
 {
-  "operator_id": "banzami-sandbox",
+  "operator_id": "banza-sandbox",
   "environment": "sandbox",
   "simulated": true,
   "production_allowed": false,
@@ -476,7 +476,7 @@ curl -X POST http://localhost:3100/payment-requests/pr-a1b2c3d4/pay \
 ### `POST /qr`
 
 Generate a QR payment code for a merchant. Returns the QR payload in the
-canonical `BANZAMI-SBX:{base64json}` format.
+canonical `BANZA-SBX:{base64json}` format.
 
 **Request body**
 
@@ -502,7 +502,7 @@ canonical `BANZAMI-SBX:{base64json}` format.
 {
   "id":           "qr-a1b2c3d4",
   "status":       "active",
-  "payload_data": "BANZAMI-SBX:eyJzYW5kYm94Ijp0cnVlLCJxcl9pZCI6InFyLWExYjJjM2Q0IiwibWVyY2hhbnRfd2FsbGV0X2lkIjoic2FuZGJveC1tZXJjaGFudC0xIiwiYW1vdW50X21pbm9yIjozMDAwMCwiY3VycmVuY3kiOiJBT0EifQ==",
+  "payload_data": "BANZA-SBX:eyJzYW5kYm94Ijp0cnVlLCJxcl9pZCI6InFyLWExYjJjM2Q0IiwibWVyY2hhbnRfd2FsbGV0X2lkIjoic2FuZGJveC1tZXJjaGFudC0xIiwiYW1vdW50X21pbm9yIjozMDAwMCwiY3VycmVuY3kiOiJBT0EifQ==",
   "merchant_wallet_id": "sandbox-merchant-1",
   "amount_minor": 30000,
   "currency":     "AOA",
@@ -523,7 +523,7 @@ The `payload_data` value decodes to:
 ```
 
 In production, this string is encoded into an actual QR image. The consumer's
-app decodes the QR, reads the prefix (`BANZAMI:` in production), and initiates
+app decodes the QR, reads the prefix (`BANZA:` in production), and initiates
 payment. See [`contracts/qr/`](../contracts/qr/) for the production format.
 
 **curl**

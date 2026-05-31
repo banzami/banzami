@@ -6,7 +6,7 @@ export interface WebhookEvent {
 }
 
 /**
- * Express/Fastify middleware helper for Banzami webhooks.
+ * Express/Fastify middleware helper for BANZA webhooks.
  *
  * Express usage (requires express.raw() body parser for this route):
  * ```ts

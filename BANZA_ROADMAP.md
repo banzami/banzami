@@ -1,7 +1,7 @@
 # BANZA — Protocol Roadmap
 
 > This document describes: **BANZA** — the open financial infrastructure protocol.
-> For other layers: [BanzAI](../banzai/BANZAI_ROADMAP.md) · [Banzami](../banzami/BANZAMI_ROADMAP.md)
+> For other layers: [BanzAI](../banzai/BANZAI_ROADMAP.md) · [the reference operator](../banza/BANZA_ROADMAP.md)
 
 **Version:** 1.0  
 **Date:** 2026-05-30  
@@ -10,7 +10,7 @@
 
 ---
 
-This is the roadmap for the **BANZA protocol** — certification, conformance, federation, and open governance. It does not contain Banzami product roadmap items (see [BANZAMI_ROADMAP.md](../banzami/BANZAMI_ROADMAP.md)) or BanzAI capability roadmap items (see [BANZAI_ROADMAP.md](../banzai/BANZAI_ROADMAP.md)).
+This is the roadmap for the **BANZA protocol** — certification, conformance, federation, and open governance. It does not contain the reference operator product roadmap items (see [BANZA_ROADMAP.md](../banza/BANZA_ROADMAP.md)) or BanzAI capability roadmap items (see [BANZAI_ROADMAP.md](../banzai/BANZAI_ROADMAP.md)).
 
 ---
 
@@ -60,7 +60,7 @@ This is the roadmap for the **BANZA protocol** — certification, conformance, f
 
 Este documento descreve apenas o roadmap do **protocolo** — regras, certificação, conformidade, e federação.
 
-- Funcionalidades do produto Banzami → [BANZAMI_ROADMAP.md](../banzami/BANZAMI_ROADMAP.md)
+- Funcionalidades do produto operador → [BANZA_ROADMAP.md](../banza/BANZA_ROADMAP.md)
 - Capacidades do BanzAI → [BANZAI_ROADMAP.md](../banzai/BANZAI_ROADMAP.md)
 
 ---

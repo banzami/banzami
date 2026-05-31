@@ -41,9 +41,9 @@ These surfaces are safe to depend on. Breaking changes require:
 
 ### QR payload format — `banza-qr`, `contracts/qr/`
 
-- `BANZAMI:{base64json}` payload structure and field names
+- `BANZA:{base64json}` payload structure and field names
 - QR code lifecycle: `active → paid | expired`
-- Sandbox variant uses `BANZAMI-SBX:` prefix
+- Sandbox variant uses `BANZA-SBX:` prefix
 
 ### Event types — `contracts/events/`
 

@@ -6,19 +6,19 @@ require_once __DIR__ . '/../vendor/autoload.php';
 // runs without requiring the real HTTP client to be installed or reachable.
 // These stubs replicate only the interface that the Laravel package depends on.
 
-if (!class_exists(\Banzami\BanzamiException::class)) {
-    class_alias(\RuntimeException::class, \Banzami\BanzamiException::class);
+if (!class_exists(\the reference operator\the reference operatorException::class)) {
+    class_alias(\RuntimeException::class, \the reference operator\the reference operatorException::class);
 }
 
-if (!class_exists(\Banzami\BanzamiClient::class)) {
-    class BanzamiClientStub
+if (!class_exists(\the reference operator\the reference operatorClient::class)) {
+    class the reference operatorClientStub
     {
         public function __construct(string $gatewayUrl, string $apiKey) {}
     }
-    class_alias(BanzamiClientStub::class, \Banzami\BanzamiClient::class);
+    class_alias(the reference operatorClientStub::class, \the reference operator\the reference operatorClient::class);
 }
 
-if (!class_exists(\Banzami\WebhookHandler::class)) {
+if (!class_exists(\the reference operator\WebhookHandler::class)) {
     class WebhookHandlerStub
     {
         public function __construct(private readonly string $secret) {}
@@ -28,11 +28,11 @@ if (!class_exists(\Banzami\WebhookHandler::class)) {
             $expected = 'sha256=' . hash_hmac('sha256', $body, $this->secret);
 
             if (!hash_equals($expected, $signature)) {
-                throw new \Banzami\BanzamiException('Invalid webhook signature');
+                throw new \the reference operator\the reference operatorException('Invalid webhook signature');
             }
 
             return json_decode($body, true);
         }
     }
-    class_alias(WebhookHandlerStub::class, \Banzami\WebhookHandler::class);
+    class_alias(WebhookHandlerStub::class, \the reference operator\WebhookHandler::class);
 }

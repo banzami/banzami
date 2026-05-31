@@ -28,13 +28,13 @@ Both patterns must coexist. Choosing one exclusively degrades the other use case
 - Generated once per wallet owner; idempotent (`create_static_qr` always returns the same record for a given `owner_id`).
 - No amount embedded — the scanning client collects the amount from the user.
 - No expiry — persists indefinitely unless the owner is deactivated.
-- Payload: `banzami://pay/{owner_id}?type=static`
+- Payload: `banza://pay/{owner_id}?type=static`
 
 **Dynamic QR:**
 - Generated per-request with `amount_minor`, optional `reference`, and mandatory `expires_at`.
 - Single-use: marked `USED` atomically with the transfer creation.
 - Expires automatically via a background worker polling `expires_at <= now()`.
-- Payload: `banzami://pay/{qr_code_id}?type=dynamic`
+- Payload: `banza://pay/{qr_code_id}?type=dynamic`
 
 **Expiry worker:**
 A `tokio::spawn` loop in `core-api` runs at a configurable interval (`QR_EXPIRY_INTERVAL_SECS`, default 60 s) and issues a single `UPDATE qr_codes SET status = 'EXPIRED' WHERE status = 'ACTIVE' AND expires_at IS NOT NULL AND expires_at <= now()`. `MissedTickBehavior::Skip` prevents burst replays after slow DB cycles.

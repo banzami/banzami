@@ -91,7 +91,7 @@ double-entry postings visually.
 curl -X POST http://localhost:3100/qr \
   -H 'Content-Type: application/json' \
   -d '{"merchant_wallet_id":"sandbox-merchant-1","amount_minor":30000,"currency":"AOA"}'
-# → {"id":"qr-abc","payload_data":"BANZAMI-SBX:eyJ..."}
+# → {"id":"qr-abc","payload_data":"BANZA-SBX:eyJ..."}
 
 # The payload_data decodes to:
 # {"sandbox":true,"qr_id":"qr-abc","merchant_wallet_id":"sandbox-merchant-1","amount_minor":30000,"currency":"AOA"}
@@ -107,7 +107,7 @@ curl http://localhost:3100/events/history | jq '.events[] | select(.event_type |
 ```
 
 In production, the `payload_data` string encodes into a real QR image.
-The consumer app decodes the QR, reads the `BANZAMI:` prefix, parses the JSON,
+The consumer app decodes the QR, reads the `BANZA:` prefix, parses the JSON,
 and calls the operator's payment endpoint.
 
 ### Relevant design docs

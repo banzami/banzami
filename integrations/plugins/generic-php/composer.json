@@ -1,6 +1,6 @@
 {
     "name": "banza/banza-php",
-    "description": "Banzami payment integration library for PHP — payment links, webhooks, and signature verification",
+    "description": "the reference operator payment integration library for PHP — payment links, webhooks, and signature verification",
     "license": "UNLICENSED",
     "type": "library",
     "require": {
@@ -8,12 +8,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Banzami\\": "src/"
+            "the reference operator\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Banzami\\Tests\\": "tests/"
+            "the reference operator\\Tests\\": "tests/"
         }
     },
     "require-dev": {

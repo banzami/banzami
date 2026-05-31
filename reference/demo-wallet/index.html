@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Banzami Demo Wallet — Kernel Protocol Playground</title>
+  <title>the reference operator Demo Wallet — Kernel Protocol Playground</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -166,7 +166,7 @@
 
 <header>
   <div class="header-title">
-    <h1>Banzami Demo Wallet</h1>
+    <h1>the reference operator Demo Wallet</h1>
     <div class="header-sub">kernel protocol playground &nbsp;·&nbsp; local sandbox &nbsp;·&nbsp; all data simulated</div>
   </div>
   <span class="tag sim">SIMULATED</span>
@@ -291,7 +291,7 @@
   <div class="grid2">
     <div class="card">
       <h2>Generate QR</h2>
-      <div class="card-note">Generates a <strong>BANZAMI-SBX:{base64}</strong> payload. In production, encode this string into a real QR image using any QR library. See <code>contracts/qr/</code> for the production format.</div>
+      <div class="card-note">Generates a <strong>BANZA-SBX:{base64}</strong> payload. In production, encode this string into a real QR image using any QR library. See <code>contracts/qr/</code> for the production format.</div>
       <label>Merchant Wallet ID</label>
       <input id="qr-merchant" placeholder="sandbox-merchant-1">
       <label>Amount (minor units — leave blank for open QR)</label>
@@ -601,7 +601,7 @@ async function generateQr() {
       msgEl.className = 'msg ok';
       msgEl.innerHTML = `Generated: <strong>${data.id}</strong> ${badgeHtml(data.status)} · ${amtLabel}
         <div class="qr-payload">
-          <em>BANZAMI-SBX payload — encode into a QR image with any QR library:</em><br>
+          <em>BANZA-SBX payload — encode into a QR image with any QR library:</em><br>
           ${data.payload_data}
         </div>`;
     } else showMsg(msgEl, data.error ?? 'Error', false);

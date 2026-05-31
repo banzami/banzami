@@ -11,7 +11,7 @@
  */
 
 import { createServer, IncomingMessage, ServerResponse } from 'node:http';
-import { BanzaClient, BanzamiWebhookSignatureError, SIGNATURE_HEADER } from '../src/index.js';
+import { BanzaClient, BanzaWebhookSignatureError, SIGNATURE_HEADER } from '../src/index.js';
 import type { WebhookEvent } from '../src/index.js';
 
 const banzaClient = new BanzaClient({
@@ -37,7 +37,7 @@ createServer((req: IncomingMessage, res: ServerResponse) => {
     try {
       event = banzaClient.webhooks.constructEvent(rawBody, signatureHeader);
     } catch (err) {
-      if (err instanceof BanzamiWebhookSignatureError) {
+      if (err instanceof BanzaWebhookSignatureError) {
         console.error('Webhook verification failed:', err.message);
         res.writeHead(401).end('Unauthorized');
       } else {

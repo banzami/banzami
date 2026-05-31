@@ -3,7 +3,7 @@
 **Version:** 1.0  
 **Date:** 2026-05-30  
 **Authority:** ADR-025 (Ecosystem Naming Inversion, 2026-05-29)  
-**Applies to:** ~/banza · ~/banzai · ~/banzami
+**Applies to:** ~/banza · ~/banzai · ~/banza
 
 This document contains rules shared across all repositories in the `banza-protocol` ecosystem. Every repository-specific CLAUDE.md must be read in conjunction with this base.
 
@@ -21,9 +21,9 @@ BanzAI
 = Protocol Operating System
 = Intelligence and conformance layer for the protocol
 = Serves the BANZA ecosystem — not an independent product
-= NOT a Banzami product
+= NOT a the reference operator product
 
-Banzami
+the reference operator
 = Reference operator
 = First commercial implementation built on BANZA
 = One operator among many possible operators
@@ -38,14 +38,14 @@ The following are architectural errors. Never generate content that implies them
 
 | Assumption | Why it is wrong |
 |---|---|
-| "Banzami is the protocol" | Banzami is one operator. BANZA is the protocol. |
-| "Banzami infrastructure" | Infrastructure belongs to BANZA. |
-| "Banzami ecosystem" | The ecosystem is BANZA's. Banzami participates in it. |
-| "Banzami kernel" | The kernel is BANZA. Banzami runs on top of it. |
-| "BanzAI belongs to Banzami" | BanzAI is the Protocol OS. It serves BANZA, not Banzami. |
+| "the reference operator is the protocol" | the reference operator is one operator. BANZA is the protocol. |
+| "BANZA infrastructure" | Infrastructure belongs to BANZA. |
+| "BANZA ecosystem" | The ecosystem is BANZA's. the reference operator participates in it. |
+| "BANZA kernel" | The kernel is BANZA. the reference operator runs on top of it. |
+| "BanzAI belongs to operador" | BanzAI is the Protocol OS. It serves BANZA, not the reference operator. |
 | "BANZA is a product" | BANZA is a protocol specification and kernel. |
 | "BANZA is a company" | BANZA is an open infrastructure. No single entity controls it. |
-| "The protocol dies with Banzami" | The protocol exists independently of any operator. |
+| "The protocol dies with BANZA" | The protocol exists independently of any operator. |
 
 ---
 
@@ -61,20 +61,20 @@ The following are architectural errors. Never generate content that implies them
 - The SDK ecosystem (SDKs are protocol-level, not operator-level)
 - "Built on BANZA" / "powered by the BANZA protocol"
 
-### "Banzami" — use when referring to:
+### "the reference operator" — use when referring to:
 - The reference operator product
-- Consumer wallets and the Banzami app
+- Consumer wallets and the operator app
 - The merchant dashboard and QR infrastructure
-- `banzami.com` and all operator-facing services
+- `banza.network` and all operator-facing services
 - The commercial entity behind the reference implementation
-- "Banzami is built on BANZA"
+- "the reference operator is built on BANZA"
 
 ### "BanzAI" — use when referring to:
 - The Protocol Operating System
 - Conformance and certification tooling
 - RAG-based protocol intelligence
 - ADR navigation and operator onboarding tools
-- Lives at `banzami.com/banzai`
+- Lives at `banza.network/banzai`
 
 ### SDK naming (protocol-level, Banza-prefixed)
 - `@banza/sdk` (TypeScript), `banza/sdk-php`, `banza-go`, `banza-python`, `banza_flutter`
@@ -84,10 +84,10 @@ The following are architectural errors. Never generate content that implies them
 
 ### Protected names (ADR-025 — do not rename yet)
 - `@banza` — identity namespace, permanent
-- `banzami.com` — domain, deferred
-- `contact@banzami.com`, `security@banzami.com` — emails, deferred
-- `github.com/banzami` — old org, deferred
-- Rust crate names `banza-types`, `banza-ledger`, etc. — renamed from `banzami-*` in BANZA-FULL-DECONTAMINATION-AND-IDENTITY-ALIGNMENT-001; now canonical
+- `banza.network` — domain, deferred
+- `contact@banza.network`, `security@banza.network` — emails, deferred
+- `github.com/banza` — old org, deferred
+- Rust crate names `banza-types`, `banza-ledger`, etc. — renamed from `banza-*` in BANZA-FULL-DECONTAMINATION-AND-IDENTITY-ALIGNMENT-001; now canonical
 
 ---
 
@@ -171,9 +171,9 @@ Floating-point arithmetic is FORBIDDEN for money. Use integer minor units.
 | Term | Meaning |
 |---|---|
 | Protocol kernel | The BANZA Rust core (ledger, wallets, settlement) |
-| Operator | Any entity that builds a product on BANZA (Banzami is the reference operator) |
+| Operator | Any entity that builds a product on BANZA (The reference operator) |
 | Certified operator | An operator that has passed the BanzAI conformance suite |
-| Reference operator | Banzami — the first and canonical operator implementation |
+| Reference operator | the canonical reference operator implementation |
 | Federation | Multiple operators sharing the same protocol settlement layer |
 | Conformance | BanzAI's certification process for verifying operator compliance |
 | Invariant | A financial rule that must hold in all states (INV-LEDGER-*, INV-WALLET-*, etc.) |
@@ -185,8 +185,8 @@ Floating-point arithmetic is FORBIDDEN for money. Use integer minor units.
 
 When auditing naming, content, or code for ADR-025 compliance, classify findings as:
 
-- **FALSE** — factually incorrect under ADR-025 (e.g., "Banzami is the protocol")
-- **MISLEADING** — creates wrong impression (e.g., "Banzami ecosystem")
+- **FALSE** — factually incorrect under ADR-025 (e.g., "the reference operator is the protocol")
+- **MISLEADING** — creates wrong impression (e.g., "BANZA ecosystem")
 - **OUTDATED** — was correct pre-ADR-025, not yet updated
 - **CONTEXTUAL** — ambiguous, depends on interpretation
 - **CORRECT** — correctly applied

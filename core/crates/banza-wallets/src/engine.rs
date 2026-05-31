@@ -159,7 +159,7 @@ impl<L: LedgerEngine + 'static, R: WalletRepository> WalletEngine
             req.idempotency_key,
         )
         .debit(req.from_account_id, req.amount)        // ASSET ↑ money arriving
-        .credit(wallet.reserved_account_id, req.amount) // LIABILITY ↑ Banzami owes merchant
+        .credit(wallet.reserved_account_id, req.amount) // LIABILITY ↑ the reference operator owes merchant
         .build()
         .map_err(|e| WalletError::Posting(e.to_string()))?;
 

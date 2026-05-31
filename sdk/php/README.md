@@ -1,4 +1,4 @@
-# banzami/sdk-php
+# banza/sdk-php
 
 Official PHP SDK for the Banza payment platform — Angola's QR-native instant payment network.
 
@@ -20,13 +20,13 @@ Banza is a wallet-native payment network. Every payment is a wallet-to-wallet tr
 ## Installation
 
 ```bash
-composer require banzami/sdk-php
+composer require banza/sdk-php
 ```
 
 With a PSR-18 HTTP client (recommended for production):
 
 ```bash
-composer require banzami/sdk-php guzzlehttp/guzzle php-http/guzzle7-adapter
+composer require banza/sdk-php guzzlehttp/guzzle php-http/guzzle7-adapter
 ```
 
 ---
@@ -55,7 +55,7 @@ QR is the canonical payment surface for Angolan merchants. A merchant displays a
 ```php
 // Static QR — merchant prints once, consumers scan to pay any amount
 $qr = $client->createStaticQr($consumerId);
-echo $qr['payload'];       // banzami://pay/...
+echo $qr['payload'];       // banza://pay/...
 echo $qr['qr_code']['type']; // "STATIC"
 ```
 
@@ -88,7 +88,7 @@ $link = $client->createPaymentLink([
 ]);
 
 echo $link['slug'];   // e.g. "abc123"
-// Share: https://pay.banzami.com/abc123
+// Share: https://pay.banza.network/abc123
 
 // Open-amount link (consumer sets the amount)
 $link = $client->createPaymentLink([
@@ -222,13 +222,13 @@ use Banza\Exceptions\WebhookSignatureException;
 
 // In your webhook handler (raw request body required — do not parse first):
 $rawBody  = file_get_contents('php://input');
-$sigHeader = $_SERVER['HTTP_BANZAMI_SIGNATURE'] ?? '';
+$sigHeader = $_SERVER['HTTP_BANZA_SIGNATURE'] ?? '';
 
 try {
     $event = Webhooks::constructEvent(
         rawBody:   $rawBody,
         signature: $sigHeader,
-        secret:    $_ENV['BANZAMI_WEBHOOK_SECRET'],
+        secret:    $_ENV['BANZA_WEBHOOK_SECRET'],
     );
 } catch (WebhookSignatureException $e) {
     http_response_code(400);
@@ -299,9 +299,9 @@ php artisan vendor:publish --provider="Banza\Laravel\BanzaServiceProvider"
 
 ```php
 return [
-    'api_key'        => env('BANZAMI_API_KEY'),
-    'environment'    => env('BANZAMI_ENVIRONMENT', 'sandbox'),
-    'webhook_secret' => env('BANZAMI_WEBHOOK_SECRET'),
+    'api_key'        => env('BANZA_API_KEY'),
+    'environment'    => env('BANZA_ENVIRONMENT', 'sandbox'),
+    'webhook_secret' => env('BANZA_WEBHOOK_SECRET'),
 ];
 ```
 
@@ -322,7 +322,7 @@ $link = Banza::createPaymentLink([
 $event = Banza::webhooks()->constructEvent(
     rawBody:   $rawBody,
     signature: $sigHeader,
-    secret:    config('banzami.webhook_secret'),
+    secret:    config('banza.webhook_secret'),
 );
 ```
 

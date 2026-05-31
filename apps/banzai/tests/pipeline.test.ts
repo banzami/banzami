@@ -20,7 +20,7 @@ describe('MockModelProvider', () => {
   it('streams tokens in generateStream', async () => {
     const tokens: string[] = [];
     const response = await provider.generateStream(
-      [{ role: 'user', content: 'What is Banzami?' }],
+      [{ role: 'user', content: 'What is the reference operator?' }],
       'docs',
       (token) => tokens.push(token),
     );

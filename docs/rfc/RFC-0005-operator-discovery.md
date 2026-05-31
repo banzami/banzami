@@ -45,7 +45,7 @@ describing its identity and capabilities:
 {
   "operator_id": "banza-prod",
   "operator_version": "1.2.0",
-  "banzami_kernel_version": "0.1.x",
+  "banza_kernel_version": "0.1.x",
   "endpoint": "https://interop.banza.ao",
   "supported_protocols": ["qr-v1", "qr-v2", "transfer-v1"],
   "settlement_modes": ["bilateral-netting", "rtgs"],

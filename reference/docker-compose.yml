@@ -1,6 +1,6 @@
 version: "3.9"
 
-# Banzami Reference Environment
+# the reference operator Reference Environment
 #
 # Starts the sandbox operator locally — no database, no cloud services required.
 # All state is in-memory and resets on container restart.

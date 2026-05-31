@@ -24,7 +24,7 @@ import pytest
 sdk_root = Path(__file__).parent.parent.parent / "sdk" / "python"
 sys.path.insert(0, str(sdk_root))
 
-from banzami.signature import verify_signature, generate_test_signature  # noqa: E402
+from banza.signature import verify_signature, generate_test_signature  # noqa: E402
 
 VECTORS_FILE = Path(__file__).parent.parent / "vectors" / "webhook_signatures.json"
 

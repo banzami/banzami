@@ -15,7 +15,7 @@ edition  = "2021"
 license  = "Apache-2.0"
 
 [workspace.dependencies]
-# Banzami kernel crates (path deps — no crates.io publish yet)
+# BANZA kernel crates (path deps — no crates.io publish yet)
 banza-types           = { path = "../core/crates/banza-types" }
 banza-ledger          = { path = "../core/crates/banza-ledger" }
 banza-wallets         = { path = "../core/crates/banza-wallets" }

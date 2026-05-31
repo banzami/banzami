@@ -17,8 +17,8 @@ Thank you for your interest in contributing to Banza — open financial infrastr
 
 ## What is out of scope here
 
-- The Banzami commercial product (apps, backend services, production infrastructure)
-- Banzami design system and branded UI components
+- The the reference operator commercial product (apps, backend services, production infrastructure)
+- the reference operator design system and branded UI components
 - Production deployment and operational tooling
 - Operator-specific provider implementations (e.g., EMIS, specific bank adapters)
 

@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\Event;
 /**
  * Handles incoming Banza webhook events.
  *
- * Register in config/banzami.php and publish routes via the service provider.
- * The route is automatically registered at POST /banzami/webhook.
+ * Register in config/banza.php and publish routes via the service provider.
+ * The route is automatically registered at POST /banza/webhook.
  *
  * Dispatches a Laravel event for each received type:
  *   - \Banza\Laravel\Events\TransactionCompleted
@@ -25,13 +25,13 @@ use Illuminate\Support\Facades\Event;
  *   - \Banza\Laravel\Events\PayoutRequested
  *
  * Or listen for the raw event type string via:
- *   Event::listen('banzami.webhook', function ($event) { ... });
+ *   Event::listen('banza.webhook', function ($event) { ... });
  */
 class WebhookController extends Controller
 {
     public function handle(Request $request): Response
     {
-        $secret = config('banzami.webhook_secret', '');
+        $secret = config('banza.webhook_secret', '');
 
         $handler = new WebhookHandler($secret);
 
@@ -45,7 +45,7 @@ class WebhookController extends Controller
         }
 
         // Fire a generic event for any listener
-        Event::dispatch('banzami.webhook', [$event]);
+        Event::dispatch('banza.webhook', [$event]);
 
         // Fire typed events for specific handlers
         $typed = self::typedEventClass($event['type'] ?? '');

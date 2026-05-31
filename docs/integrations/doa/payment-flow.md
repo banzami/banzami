@@ -26,13 +26,13 @@ The `donation_intent` at this point has:
 ## Full Sequence
 
 ```
-Donor browser                    Doa server                     Banzami API
+Donor browser                    Doa server                     BANZA API
     │                                │                               │
     │  POST /api/donations/           │                               │
     │    initiate-payment            │                               │
     │  {                             │                               │
     │    intent_id: UUID,            │                               │
-    │    provider_id: 'banzami',     │                               │
+    │    provider_id: 'banza',     │                               │
     │    return_url: '...',          │                               │
     │    cancel_url: '...'           │                               │
     │  }                             │                               │
@@ -43,7 +43,7 @@ Donor browser                    Doa server                     Banzami API
     │                                │                               │
     │                                │  [check donation_events for   │
     │                                │   existing payment_initiated  │
-    │                                │   with provider=banzami →     │
+    │                                │   with provider=banza →     │
     │                                │   return replay if found]     │
     │                                │                               │
     │                                │  POST /v1/payment-links       │
@@ -78,7 +78,7 @@ Donor browser                    Doa server                     Banzami API
     │                                │    intent_id: UUID,           │
     │                                │    event_type: 'payment_init..│
     │                                │    payload: {                 │
-    │                                │      provider: 'banzami',     │
+    │                                │      provider: 'banza',     │
     │                                │      provider_ref: 'lnk_01...'│
     │                                │      initiate: {              │
     │                                │        kind: 'inline',        │
@@ -98,15 +98,15 @@ Donor browser                    Doa server                     Banzami API
     │  }                             │                               │
     │ ◀──────────────────────────────│                               │
     │                                │                               │
-    │  [stage → 'banzami']           │                               │
-    │  [BanzamiPanel mounts]         │                               │
+    │  [stage → 'banza']           │                               │
+    │  [the reference operatorPanel mounts]         │                               │
     │  [QR generated from token]     │                               │
     │  [poll loop starts]            │                               │
     │                                │                               │
     │  ┌─────────────── every 3 s ─────────────────────────────────┐ │
     │  │                             │                               │ │
     │  │  GET /api/donations/        │                               │ │
-    │  │    banzami-status           │                               │ │
+    │  │    banza-status           │                               │ │
     │  │    ?intent_id=UUID          │                               │ │
     │  │    &link_id=lnk_01...      │                               │ │
     │  │ ───────────────────────────▶│                               │ │
@@ -127,7 +127,7 @@ Donor browser                    Doa server                     Banzami API
     │                                │               link → USED     │
     │                                │                               │
     │  GET /api/donations/           │                               │
-    │    banzami-status              │                               │
+    │    banza-status              │                               │
     │ ───────────────────────────────▶│                               │
     │                                │  GET /v1/payment-links/       │
     │                                │    lnk_01...                 │
@@ -179,10 +179,10 @@ Creates a payment link the donor will pay via QR.
 **Request**
 
 ```
-POST https://api.banzami.com/v1/payment-links
+POST https://api.banza.network/v1/payment-links
 Authorization: Bearer <JWT>
 Content-Type: application/json
-Idempotency-Key: banzami:<intent_id>
+Idempotency-Key: banza:<intent_id>
 
 {
   "merchant_id":  "mer_01jqx...",
@@ -227,7 +227,7 @@ Idempotency-Key: banzami:<intent_id>
 | Field | Usage in Doa |
 |-------|-------------|
 | `id` | Stored as `provider_ref` in `donation_events.payment_initiated`; used for all subsequent status checks |
-| `slug` | Appended to `BANZAMI_PAY_BASE_URL` to form the QR target URL |
+| `slug` | Appended to `BANZA_PAY_BASE_URL` to form the QR target URL |
 | `status` | `ACTIVE` → link is payable; `USED` → paid; `CANCELLED` → voided; `EXPIRED` → TTL elapsed |
 
 ---
@@ -239,7 +239,7 @@ Fetches current link state. Called on every poll tick.
 **Request**
 
 ```
-GET https://api.banzami.com/v1/payment-links/lnk_01jqxyzabc123
+GET https://api.banza.network/v1/payment-links/lnk_01jqxyzabc123
 Authorization: Bearer <JWT>
 ```
 
@@ -279,7 +279,7 @@ Authorization: Bearer <JWT>
 
 **Cause**: Network error, invalid credentials, Banza API outage.
 
-**Doa behavior**: `BanzamiProvider.initiate()` throws `banzami_api_error:{status}`. `initiatePayment()` returns `{ ok: false, code: 'provider_failed' }`. The API route returns a 500 with `humanError()` converting this to a Portuguese user-facing message. No `donation_events` entry is written.
+**Doa behavior**: `the reference operatorProvider.initiate()` throws `banza_api_error:{status}`. `initiatePayment()` returns `{ ok: false, code: 'provider_failed' }`. The API route returns a 500 with `humanError()` converting this to a Portuguese user-facing message. No `donation_events` entry is written.
 
 **Retry**: The donor can retry the payment — idempotency check in `initiatePayment()` will find no existing `payment_initiated` event and try again.
 
@@ -297,11 +297,11 @@ Authorization: Bearer <JWT>
 
 ### Donor pays and browser is closed
 
-**Cause**: Donor pays in the Banzami app but closes the Doa tab before the poll fires.
+**Cause**: Donor pays in the operator app but closes the Doa tab before the poll fires.
 
-**Doa behavior**: The poll never runs. If `BANZAMI_WEBHOOK_SECRET` is configured, the webhook fires independently and records `payment_confirmed`. If not, the payment is confirmed in Banza's system but Doa's ledger has no record.
+**Doa behavior**: The poll never runs. If `BANZA_WEBHOOK_SECRET` is configured, the webhook fires independently and records `payment_confirmed`. If not, the payment is confirmed in Banza's system but Doa's ledger has no record.
 
-**Mitigation**: Always configure `BANZAMI_WEBHOOK_SECRET`. The donor can also reload the thank-you page (`/c/{slug}/doar/obrigado?intent={intentId}`) which checks the intent status server-side.
+**Mitigation**: Always configure `BANZA_WEBHOOK_SECRET`. The donor can also reload the thank-you page (`/c/{slug}/doar/obrigado?intent={intentId}`) which checks the intent status server-side.
 
 ---
 
@@ -309,7 +309,7 @@ Authorization: Bearer <JWT>
 
 ### Payment initiation idempotency
 
-Before calling Banza's API, `initiatePayment()` queries `donation_events` for an existing `payment_initiated` event with `provider = 'banzami'`:
+Before calling Banza's API, `initiatePayment()` queries `donation_events` for an existing `payment_initiated` event with `provider = 'banza'`:
 
 ```typescript
 const { data: prior } = await supabase

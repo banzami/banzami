@@ -37,7 +37,7 @@ This keeps `banza-reconciliation` independent of `banza-settlement` — the engi
 
 **`SettlementView`** — an internal settlement as seen by the reconciliation engine:
 ```
-settlement_id    — the Banzami-internal ID
+settlement_id    — the the reference operator-internal ID
 net_amount_minor — the amount expected to appear on the bank statement
 currency         — the currency
 ```

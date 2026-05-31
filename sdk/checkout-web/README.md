@@ -1,18 +1,18 @@
-# @banzami/checkout
+# @banza/checkout
 
 Embeddable payment checkout for any website. Opens a QR + deep-link modal that lets customers pay via the Banza mobile app.
 
 ## Quick start (NPM)
 
 ```bash
-npm install @banzami/checkout
+npm install @banza/checkout
 ```
 
 ```ts
-import { BanzamiCheckout } from '@banzami/checkout';
+import { BanzaCheckout } from '@banza/checkout';
 
-const checkout = new BanzamiCheckout({
-  gatewayUrl: 'https://api.banzami.com',
+const checkout = new BanzaCheckout({
+  gatewayUrl: 'https://api.banza.network',
   apiKey:     'bz_live_...',
   merchantId: 'your-merchant-id',
   walletId:   'your-wallet-id',
@@ -33,10 +33,10 @@ document.getElementById('pay-btn').addEventListener('click', () => {
 ## Script tag (CDN)
 
 ```html
-<script src="https://cdn.banzami.com/checkout/0.1.0/checkout.iife.js"></script>
+<script src="https://cdn.banza.network/checkout/0.1.0/checkout.iife.js"></script>
 <script>
-  const checkout = new BanzamiCheckout({
-    gatewayUrl: 'https://api.banzami.com',
+  const checkout = new BanzaCheckout({
+    gatewayUrl: 'https://api.banza.network',
     apiKey:     'bz_live_...',
     merchantId: '...',
     walletId:   '...',
@@ -56,7 +56,7 @@ checkout.open({ currency: 'AOA', description: 'Donativo' });
 
 ## API
 
-### `new BanzamiCheckout(config)`
+### `new BanzaCheckout(config)`
 
 | Field        | Type     | Description                        |
 |--------------|----------|------------------------------------|

@@ -1,6 +1,6 @@
 [package]
 name        = "sandbox-operator"
-description = "Banzami reference operator — local development sandbox, no external infra required"
+description = "the reference operator reference operator — local development sandbox, no external infra required"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -14,7 +14,7 @@ name = "sandbox-operator"
 path = "src/main.rs"
 
 [dependencies]
-# Banzami kernel
+# BANZA kernel
 banza-types        = { workspace = true }
 banza-capabilities = { workspace = true }
 

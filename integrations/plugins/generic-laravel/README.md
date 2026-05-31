@@ -32,7 +32,7 @@ php artisan vendor:publish --tag=banza-config
 This creates `config/banza.php`. Set your credentials in `.env`:
 
 ```env
-BANZA_GATEWAY_URL=https://api.banzami.com
+BANZA_GATEWAY_URL=https://api.banza.network
 BANZA_API_KEY=your_api_key_here
 BANZA_WEBHOOK_SECRET=your_webhook_secret_here
 BANZA_MERCHANT_ID=your_merchant_id
@@ -41,7 +41,7 @@ BANZA_WALLET_ID=your_default_wallet_id
 
 | Variable | Description |
 |---|---|
-| `BANZA_GATEWAY_URL` | Banza API base URL (default: `https://api.banzami.com`) |
+| `BANZA_GATEWAY_URL` | Banza API base URL (default: `https://api.banza.network`) |
 | `BANZA_API_KEY` | Your merchant API key |
 | `BANZA_WEBHOOK_SECRET` | HMAC secret for webhook signature verification |
 | `BANZA_MERCHANT_ID` | Default merchant ID (optional, can be passed per-request) |

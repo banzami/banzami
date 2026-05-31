@@ -1,4 +1,4 @@
-//! Banzami Sandbox Operator — local development runtime.
+//! the reference operator Sandbox Operator — local development runtime.
 //!
 //! NOT a production financial system. All providers are simulated.
 //!
@@ -20,18 +20,18 @@ async fn main() -> anyhow::Result<()> {
         )
         .init();
 
-    // Safety check: refuse to start if BANZAMI_ALLOW_PRODUCTION is set.
+    // Safety check: refuse to start if BANZA_ALLOW_PRODUCTION is set.
     // This variable would indicate someone is trying to run the sandbox in a
     // production context — which is explicitly not supported.
-    if std::env::var("BANZAMI_ALLOW_PRODUCTION").is_ok() {
+    if std::env::var("BANZA_ALLOW_PRODUCTION").is_ok() {
         anyhow::bail!(
-            "BANZAMI_ALLOW_PRODUCTION is set. The sandbox operator cannot run in production. \
+            "BANZA_ALLOW_PRODUCTION is set. The sandbox operator cannot run in production. \
              Use a real operator implementation with production providers."
         );
     }
 
     tracing::info!("╔══════════════════════════════════════════════════╗");
-    tracing::info!("║  Banzami Sandbox Operator                        ║");
+    tracing::info!("║  the reference operator Sandbox Operator                        ║");
     tracing::info!("║  Local development environment — NOT production  ║");
     tracing::info!("║  simulated=true  production_allowed=false        ║");
     tracing::info!("╚══════════════════════════════════════════════════╝");

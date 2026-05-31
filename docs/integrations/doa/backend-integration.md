@@ -12,17 +12,17 @@ lib/payments/
 ├── registry.ts              ← Provider registry + listPublicMethods()
 ├── bootstrap.ts             ← Side-effect imports to register all providers
 └── providers/
-    └── banzami.ts           ← BanzamiProvider implementation (server-only)
+    └── banza.ts           ← the reference operatorProvider implementation (server-only)
 
 app/api/
 ├── donations/
 │   ├── initiate-payment/
 │   │   └── route.ts         ← POST /api/donations/initiate-payment
-│   └── banzami-status/
-│       └── route.ts         ← GET  /api/donations/banzami-status
+│   └── banza-status/
+│       └── route.ts         ← GET  /api/donations/banza-status
 └── webhooks/
-    └── banzami/
-        └── route.ts         ← POST /api/webhooks/banzami
+    └── banza/
+        └── route.ts         ← POST /api/webhooks/banza
 ```
 
 All files under `lib/payments/providers/` and the two donations API routes include `import 'server-only'` — the Next.js compiler enforces this at build time, preventing Banza credentials from reaching the browser.
@@ -47,26 +47,26 @@ export interface PaymentProvider {
 }
 ```
 
-`verify_webhook` and `parse_webhook` are optional — only webhook-capable providers implement them. The webhook route (`/api/webhooks/banzami`) calls these directly rather than through the registry, since it handles only Banza webhooks.
+`verify_webhook` and `parse_webhook` are optional — only webhook-capable providers implement them. The webhook route (`/api/webhooks/banza`) calls these directly rather than through the registry, since it handles only Banza webhooks.
 
 ---
 
 ## BanzaProvider Implementation
 
 ```typescript
-// lib/payments/providers/banzami.ts
+// lib/payments/providers/banza.ts
 import 'server-only';
 
-const GATEWAY_URL   = process.env.BANZAMI_GATEWAY_URL ?? '';
-const API_KEY       = process.env.BANZAMI_API_KEY    ?? '';
-const MERCHANT_ID   = process.env.BANZAMI_MERCHANT_ID ?? '';
-const WALLET_ID     = process.env.BANZAMI_WALLET_ID  ?? '';
-const PAY_BASE_URL  = process.env.BANZAMI_PAY_BASE_URL ?? '';
+const GATEWAY_URL   = process.env.BANZA_GATEWAY_URL ?? '';
+const API_KEY       = process.env.BANZA_API_KEY    ?? '';
+const MERCHANT_ID   = process.env.BANZA_MERCHANT_ID ?? '';
+const WALLET_ID     = process.env.BANZA_WALLET_ID  ?? '';
+const PAY_BASE_URL  = process.env.BANZA_PAY_BASE_URL ?? '';
 const IS_SANDBOX    = API_KEY.startsWith('bz_test_');
 
-class BanzamiProvider implements PaymentProvider {
-  readonly id           = 'banzami';
-  readonly display_name = IS_SANDBOX ? 'Banzami (Sandbox)' : 'Banzami';
+class the reference operatorProvider implements PaymentProvider {
+  readonly id           = 'banza';
+  readonly display_name = IS_SANDBOX ? 'the reference operator (Sandbox)' : 'the reference operator';
   readonly available    = !!(GATEWAY_URL && API_KEY && MERCHANT_ID && WALLET_ID);
   readonly sandbox      = IS_SANDBOX;
 
@@ -77,7 +77,7 @@ class BanzamiProvider implements PaymentProvider {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ api_key: API_KEY }),
     });
-    if (!tokenRes.ok) throw new Error(`banzami_auth_error:${tokenRes.status}`);
+    if (!tokenRes.ok) throw new Error(`banza_auth_error:${tokenRes.status}`);
     const { token: jwt } = await tokenRes.json() as { token: string };
 
     // 2. Create payment link
@@ -86,7 +86,7 @@ class BanzamiProvider implements PaymentProvider {
       headers: {
         'Authorization':   `Bearer ${jwt}`,
         'Content-Type':    'application/json',
-        'Idempotency-Key': `banzami:${input.intent_id}`,
+        'Idempotency-Key': `banza:${input.intent_id}`,
       },
       body: JSON.stringify({
         merchant_id:  MERCHANT_ID,
@@ -96,7 +96,7 @@ class BanzamiProvider implements PaymentProvider {
         description:  `DOA-${input.intent_id.slice(0, 8).toUpperCase()}`,
       }),
     });
-    if (!linkRes.ok) throw new Error(`banzami_api_error:${linkRes.status}`);
+    if (!linkRes.ok) throw new Error(`banza_api_error:${linkRes.status}`);
     const link = await linkRes.json() as BanzaPaymentLink;
 
     const payUrl = `${PAY_BASE_URL}/${link.slug}`;
@@ -114,7 +114,7 @@ class BanzamiProvider implements PaymentProvider {
 
 **Description prefix**: `DOA-{8-char-prefix}` embeds a reconciliation key visible in the Banza dashboard. The prefix is the first 8 characters of the intent UUID, uppercased. This allows merchant operations to cross-reference Doa donations in the Banza dashboard without the full UUID.
 
-**Idempotency-Key**: `banzami:{intent_id}` is sent to Banza's API. This is a second layer of idempotency beyond Doa's own dedup check — if the Doa server crashes after calling Banza but before writing `donation_events`, a retry with the same intent_id will get the same payment link from Banza rather than creating a second one.
+**Idempotency-Key**: `banza:{intent_id}` is sent to Banza's API. This is a second layer of idempotency beyond Doa's own dedup check — if the Doa server crashes after calling Banza but before writing `donation_events`, a retry with the same intent_id will get the same payment link from Banza rather than creating a second one.
 
 ---
 
@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
 
   const result = await initiatePayment({
     intent_id:   body.intent_id,
-    provider_id: 'banzami',
+    provider_id: 'banza',
     return_url:  body.return_url,
     cancel_url:  body.cancel_url,
   });
@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
 `initiatePayment()` (in `lib/payments/`) performs the dedup check before calling the provider:
 
 ```typescript
-// Check for existing payment_initiated event with provider=banzami
+// Check for existing payment_initiated event with provider=banza
 const { data: prior } = await supabase
   .from('donation_events')
   .select('payload')
@@ -159,7 +159,7 @@ const { data: prior } = await supabase
 
 const replayPayload = (prior ?? []).find((row) => {
   const p = row.payload as { provider?: string; initiate?: PaymentInitiateResult } | null;
-  return p?.provider === 'banzami' && p?.initiate;
+  return p?.provider === 'banza' && p?.initiate;
 });
 
 if (replayPayload) {
@@ -173,10 +173,10 @@ If a prior initiation exists, the same pay URL and link ID are returned — the 
 
 ## Status Check Route
 
-`GET /api/donations/banzami-status` is polled by `BanzamiPanel` every 3 seconds:
+`GET /api/donations/banza-status` is polled by `the reference operatorPanel` every 3 seconds:
 
 ```typescript
-// app/api/donations/banzami-status/route.ts
+// app/api/donations/banza-status/route.ts
 import 'server-only';
 
 export async function GET(req: NextRequest) {
@@ -188,9 +188,9 @@ export async function GET(req: NextRequest) {
   // ...
 
   // Get fresh JWT
-  const jwt = await getBanzamiToken();
+  const jwt = await getthe reference operatorToken();
 
-  // Fetch link status from Banzami
+  // Fetch link status from the reference operator
   const res = await fetch(`${GATEWAY_URL}/v1/payment-links/${link_id}`, {
     headers: { 'Authorization': `Bearer ${jwt}` },
     cache: 'no-store',
@@ -223,10 +223,10 @@ export async function GET(req: NextRequest) {
 
 ## Webhook Handler
 
-`POST /api/webhooks/banzami` receives push events from Banza:
+`POST /api/webhooks/banza` receives push events from Banza:
 
 ```typescript
-// app/api/webhooks/banzami/route.ts
+// app/api/webhooks/banza/route.ts
 export const runtime = 'nodejs';  // Required for crypto module access
 ```
 
@@ -235,7 +235,7 @@ export const runtime = 'nodejs';  // Required for crypto module access
 Processing sequence:
 
 ```
-1. Check BANZAMI_WEBHOOK_SECRET is configured
+1. Check BANZA_WEBHOOK_SECRET is configured
 2. Read raw body: const raw = await req.text()
 3. Parse Banza-Signature header
 4. Verify HMAC-SHA256 signature
@@ -265,11 +265,11 @@ Written by `initiatePayment()` after a successful Banza API call:
   "intent_id":  "di_01jqx...",
   "event_type": "payment_initiated",
   "payload": {
-    "provider":     "banzami",
+    "provider":     "banza",
     "provider_ref": "lnk_01jqxyzabc123",
     "initiate": {
       "kind":         "inline",
-      "token":        "https://pay.banzami.com/abc123def",
+      "token":        "https://pay.banza.network/abc123def",
       "provider_ref": "lnk_01jqxyzabc123"
     }
   }
@@ -303,7 +303,7 @@ Three independent idempotency layers:
 
 | Layer | Key | Implementation |
 |-------|-----|----------------|
-| Payment link creation | `banzami:{intent_id}` | Pre-check in `donation_events` before calling API; if found, return cached result |
+| Payment link creation | `banza:{intent_id}` | Pre-check in `donation_events` before calling API; if found, return cached result |
 | Confirmation recording | `(intent_id, payment_confirmed, provider_ref)` | Dedup query in `applyPaymentEvent()` before INSERT |
 | Receipt delivery | `intent_id` | Idempotency key passed to `generateAndDeliverReceipt()` |
 
@@ -333,28 +333,28 @@ The poll loop can fire 50 times against a `USED` link — only the first call wr
 All Banza backend behavior is controlled by environment variables:
 
 ```env
-# Banzami API
-BANZAMI_GATEWAY_URL=https://api.banzami.com
-BANZAMI_API_KEY=bz_live_your_key_here
+# BANZA API
+BANZA_GATEWAY_URL=https://api.banza.network
+BANZA_API_KEY=bz_live_your_key_here
 
 # Merchant identity
-BANZAMI_MERCHANT_ID=mer_01jqx...
-BANZAMI_WALLET_ID=wlt_01jqx...
+BANZA_MERCHANT_ID=mer_01jqx...
+BANZA_WALLET_ID=wlt_01jqx...
 
 # Pay page base URL (used to construct QR target URL)
-BANZAMI_PAY_BASE_URL=https://pay.banzami.com
+BANZA_PAY_BASE_URL=https://pay.banza.network
 
 # Webhook verification (optional — enables push confirmation path)
-BANZAMI_WEBHOOK_SECRET=whsec_...
+BANZA_WEBHOOK_SECRET=whsec_...
 ```
 
-`BANZAMI_WEBHOOK_SECRET` is optional. Without it:
+`BANZA_WEBHOOK_SECRET` is optional. Without it:
 
 - The webhook route rejects all incoming requests with `500 { error: 'webhook secret not configured' }`
 - Banza retries indefinitely — effectively a misconfiguration alarm
 - Payment confirmation falls back to the poll-only path (up to 3 s lag)
 
-**Correct behaviour without webhooks**: Omit `BANZAMI_WEBHOOK_SECRET` entirely. The poll path works without it. Only add it when you have registered a webhook endpoint and stored the returned secret.
+**Correct behaviour without webhooks**: Omit `BANZA_WEBHOOK_SECRET` entirely. The poll path works without it. Only add it when you have registered a webhook endpoint and stored the returned secret.
 
 ---
 
@@ -365,16 +365,16 @@ Providers are registered by side-effect import in `lib/payments/bootstrap.ts`:
 ```typescript
 import './providers/stripe';
 import './providers/bank-transfer';
-import './providers/banzami';
+import './providers/banza';
 ```
 
-`bootstrap.ts` is imported at application startup (e.g., in `layout.tsx` or the first API route that touches payments). Each provider module calls `registerProvider(new BanzamiProvider())` at module load time. `PAYMENT_PROVIDERS` environment variable controls which registered providers appear in `listPublicMethods()`:
+`bootstrap.ts` is imported at application startup (e.g., in `layout.tsx` or the first API route that touches payments). Each provider module calls `registerProvider(new the reference operatorProvider())` at module load time. `PAYMENT_PROVIDERS` environment variable controls which registered providers appear in `listPublicMethods()`:
 
 ```env
-PAYMENT_PROVIDERS=stripe,bank-transfer,banzami
+PAYMENT_PROVIDERS=stripe,bank-transfer,banza
 ```
 
-Removing `banzami` from this list disables the method for donors without changing any code.
+Removing `banza` from this list disables the method for donors without changing any code.
 
 ---
 
@@ -386,8 +386,8 @@ Current (transitional) API calls are direct `fetch()` from two server-only files
 
 | File | Banza endpoint | Purpose |
 |------|-----------------|---------|
-| `lib/payments/providers/banzami.ts` | `POST /v1/auth/token`, `POST /v1/payment-links` | Payment initiation |
-| `app/api/donations/banzami-status/route.ts` | `POST /v1/auth/token`, `GET /v1/payment-links/{id}` | Status polling |
+| `lib/payments/providers/banza.ts` | `POST /v1/auth/token`, `POST /v1/payment-links` | Payment initiation |
+| `app/api/donations/banza-status/route.ts` | `POST /v1/auth/token`, `GET /v1/payment-links/{id}` | Status polling |
 
 Both obtain a fresh JWT per request. Both use `import 'server-only'` — the Next.js build fails if either is imported from a client component.
 
@@ -397,17 +397,17 @@ After migration to `@banza/sdk`, the initiation path collapses to:
 
 ```typescript
 import 'server-only';
-import Banzami from '@banza/sdk';
+import the reference operator from '@banza/sdk';
 
-const banzami = new Banzami({ apiKey: process.env.BANZAMI_API_KEY });
+const banza = new the reference operator({ apiKey: process.env.BANZA_API_KEY });
 
 // initiate():
-const link = await banzami.paymentLinks.create({
+const link = await banza.paymentLinks.create({
   merchantId:     MERCHANT_ID,
   walletId:       WALLET_ID,
   amount:         { minor: Number(input.amount), currency: 'AOA' },
   description:    `DOA-${input.intent_id.slice(0, 8).toUpperCase()}`,
-  idempotencyKey: `banzami:${input.intent_id}`,
+  idempotencyKey: `banza:${input.intent_id}`,
 });
 // SDK handles: auth token exchange, retries, idempotency, typed response
 ```
@@ -415,18 +415,18 @@ const link = await banzami.paymentLinks.create({
 The status check route:
 
 ```typescript
-const link = await banzami.paymentLinks.retrieve(linkId);
+const link = await banza.paymentLinks.retrieve(linkId);
 // link.status: 'ACTIVE' | 'USED' | 'CANCELLED' | 'EXPIRED'
 ```
 
 The webhook route's `verifySignature()`:
 
 ```typescript
-const event = await banzami.webhooks.constructEvent(rawBody, sigHeader);
+const event = await banza.webhooks.constructEvent(rawBody, sigHeader);
 // throws on invalid signature or expired timestamp — no manual timingSafeEqual needed
 ```
 
-`banzami.isSandbox` replaces the `API_KEY.startsWith('bz_test_')` detection. The SDK automatically routes to sandbox or live gateway based on the key prefix.
+`banza.isSandbox` replaces the `API_KEY.startsWith('bz_test_')` detection. The SDK automatically routes to sandbox or live gateway based on the key prefix.
 
 ---
 
@@ -434,10 +434,10 @@ const event = await banzami.webhooks.constructEvent(rawBody, sigHeader);
 
 | Error | Behavior |
 |-------|----------|
-| `BanzamiProvider.initiate()` throws | `initiatePayment()` returns `{ ok: false, code: 'provider_failed' }` → API returns 500 → UI shows Portuguese error |
+| `the reference operatorProvider.initiate()` throws | `initiatePayment()` returns `{ ok: false, code: 'provider_failed' }` → API returns 500 → UI shows Portuguese error |
 | Banza API returns 4xx on link creation | `initiatePayment()` throws → same error path |
-| Poll `fetch()` throws | Silent catch in `BanzamiPanel` → next tick retries |
+| Poll `fetch()` throws | Silent catch in `the reference operatorPanel` → next tick retries |
 | Banza API returns non-200 on status check | Route returns `{ confirmed: false }` → poll continues |
 | `applyPaymentEvent()` throws (DB error) | Webhook route returns 500 → Banza retries |
 | `applyPaymentEvent()` returns `{ deduped: true }` | Normal → route returns 200 |
-| Missing `BANZAMI_WEBHOOK_SECRET` | Webhook route returns 500 → Banza retries |
+| Missing `BANZA_WEBHOOK_SECRET` | Webhook route returns 500 → Banza retries |

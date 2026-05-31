@@ -5,7 +5,7 @@ defined( 'ABSPATH' ) || exit;
  * Handles incoming Banza webhooks.
  *
  * Register your webhook endpoint in the operator dashboard as:
- *   https://your-store.com/wc-api/banzami
+ *   https://your-store.com/wc-api/banza
  *
  * Supported events:
  *   transaction.completed  → mark WC order as processing/complete
@@ -14,8 +14,8 @@ defined( 'ABSPATH' ) || exit;
 class Banza_Webhook_Handler {
 
     public static function init(): void {
-        add_action( 'woocommerce_api_banzami',        [ self::class, 'handle' ] );
-        add_action( 'woocommerce_api_banzami_status', [ self::class, 'handle_status' ] );
+        add_action( 'woocommerce_api_banza',        [ self::class, 'handle' ] );
+        add_action( 'woocommerce_api_banza_status', [ self::class, 'handle_status' ] );
     }
 
     /**
@@ -43,8 +43,8 @@ class Banza_Webhook_Handler {
         $gateway = self::get_gateway();
         if ( $gateway ) {
             $secret    = $gateway->get_webhook_secret();
-            $signature = isset( $_SERVER['HTTP_X_BANZAMI_SIGNATURE'] )
-                ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_BANZAMI_SIGNATURE'] ) )
+            $signature = isset( $_SERVER['HTTP_X_BANZA_SIGNATURE'] )
+                ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_BANZA_SIGNATURE'] ) )
                 : '';
 
             if ( $secret && ! self::verify_signature( $raw_body, $signature, $secret ) ) {

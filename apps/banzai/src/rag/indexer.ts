@@ -8,7 +8,7 @@ import { chunkDocument } from './chunker.js';
 import { ensureCollection, deleteByDocumentId, upsertChunks } from '../store/qdrant.js';
 import type { ChunkPayload } from './types.js';
 
-const INDEX_STATE_FILE = '.banzamia-index-state.json';
+const INDEX_STATE_FILE = '.banzai-index-state.json';
 
 interface IndexState {
   last_indexed_at: string;

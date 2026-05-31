@@ -1,7 +1,7 @@
 import { BanzaApiError } from './errors.js';
 import { WebhooksClient } from './webhooks.js';
 import type {
-  BanzamiEnvironment,
+  BanzaEnvironment,
   Consumer,
   ConsumerWallet,
   WalletBalance,
@@ -28,12 +28,12 @@ import type {
   ListPaymentRequestsParams,
 } from './types.js';
 
-const DEFAULT_BASE_URLS: Record<BanzamiEnvironment, string> = {
-  live:    'https://api.banzami.com',
-  sandbox: 'https://sandbox-api.banzami.com',
+const DEFAULT_BASE_URLS: Record<BanzaEnvironment, string> = {
+  live:    'https://api.banza.network',
+  sandbox: 'https://sandbox.banza.network',
 };
 
-export interface BanzamiHooks {
+export interface BanzaHooks {
   /** Called before every HTTP attempt, including retries. */
   onRequest?:  (method: string, path: string, attempt: number) => void;
   /** Called after every successful HTTP response. */
@@ -48,7 +48,7 @@ export interface BanzaClientOptions {
    *  - `bz_test_…` → sandbox (virtual funds) */
   apiKey:         string;
   /** Which data universe to operate in. Defaults to 'live'. */
-  environment?:   BanzamiEnvironment;
+  environment?:   BanzaEnvironment;
   /** Override the API base URL. Defaults to the canonical URL for the chosen environment. */
   baseUrl?:       string;
   /** Maximum number of retry attempts after the initial request. Default: 3. */
@@ -56,7 +56,7 @@ export interface BanzaClientOptions {
   /** Base delay in milliseconds for exponential backoff. Default: 500. */
   retryDelay?:    number;
   /** Optional hooks for logging, tracing, and monitoring. */
-  hooks?:         BanzamiHooks;
+  hooks?:         BanzaHooks;
   /**
    * Webhook secret for this client (obtained when registering a webhook endpoint).
    * Required to call `banzaClient.webhooks.constructEvent()`.
@@ -68,10 +68,10 @@ export interface BanzaClientOptions {
 export class BanzaClient {
   private readonly base:        string;
   private readonly apiKey:      string;
-  readonly environment:         BanzamiEnvironment;
+  readonly environment:         BanzaEnvironment;
   private readonly maxRetries:  number;
   private readonly retryDelay:  number;
-  private readonly hooks:       BanzamiHooks;
+  private readonly hooks:       BanzaHooks;
 
   /**
    * Webhook verification and test-helper methods.

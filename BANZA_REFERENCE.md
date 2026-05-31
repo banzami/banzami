@@ -12,7 +12,7 @@
 ```
 BANZA    = open financial infrastructure protocol        ← THIS DOCUMENT
 BanzAI   = Protocol Operating System
-Banzami  = reference operator implementation
+the reference operator  = reference operator implementation
 ```
 
 ## Scope
@@ -21,7 +21,7 @@ This document defines only: **the BANZA open financial infrastructure protocol**
 
 Anything outside this scope is defined in:
 - [BANZAI_REFERENCE.md](../banzai/BANZAI_REFERENCE.md) — The BanzAI Protocol OS
-- [BANZAMI_REFERENCE.md](../banzami/BANZAMI_REFERENCE.md) — The Banzami reference operator
+- [BANZA_REFERENCE.md](../banza/BANZA_REFERENCE.md) — The the reference operator reference operator
 
 ---
 
@@ -111,7 +111,7 @@ A India Payments Corporation seguiu o mesmo modelo com o UPI em 2016. Em 2024, o
 | **Quem pode participar** | Entidades com acordo com o operador | Qualquer entidade certificada | Qualquer entidade certificada |
 | **Pode um terceiro tornar-se operador independente?** | Não | Sim | Sim |
 
-### O que acontece se o Banzami desaparecer?
+### O que acontece se um operador desaparecer?
 
 Este é o teste definitivo.
 
@@ -121,7 +121,7 @@ No modelo aberto: se um operador desaparece, os outros continuam. O Pix não per
 
 **O BANZA segue o modelo aberto.**
 
-As regras do protocolo BANZA são públicas. O Banzami é o primeiro operador certificado e a implementação de referência — mas não é o dono do protocolo. Se o Banzami desaparecesse amanhã: as regras do protocolo BANZA continuariam a existir. Os outros operadores certificados continuariam a operar. A infraestrutura permaneceria.
+As regras do protocolo BANZA são públicas. O operador é o primeiro operador certificado e a implementação de referência — mas não é o dono do protocolo. Se o operador desaparecesse amanhã: as regras do protocolo BANZA continuariam a existir. Os outros operadores certificados continuariam a operar. A infraestrutura permaneceria.
 
 Isto não é uma propriedade acidental. É uma decisão de arquitectura deliberada.
 
@@ -145,11 +145,11 @@ BANZA
 │   Não é um chatbot. É infraestrutura cognitiva do protocolo.
 │   Ver: BANZAI_REFERENCE.md
 │
-└── Banzami
+└── the reference operator
     A implementação de referência.
     O primeiro operador certificado BANZA.
     Um operador entre futuros muitos — não o dono do protocolo.
-    Ver: BANZAMI_REFERENCE.md
+    Ver: BANZA_REFERENCE.md
 ```
 
 Esta arquitectura está definida no ADR-025 (2026-05-29), que supersede o ADR-016.
@@ -171,11 +171,11 @@ Esta arquitectura está definida no ADR-025 (2026-05-29), que supersede o ADR-01
 | **Um banco** | O BANZA define regras que operadores seguem. Não detém dinheiro de ninguém. |
 | **Um produto fintech** | Um produto pertence ao seu operador. O protocolo pertence à infraestrutura. |
 | **Uma API fechada** | A especificação do BANZA é pública. Nenhum operador pode alterá-la unilateralmente. |
-| **O Banzami** | O Banzami é um operador — o primeiro e a implementação de referência. Não é o protocolo. |
+| **O operador** | O operador é um operador — o primeiro e a implementação de referência. Não é o protocolo. |
 
 ### Os quatro princípios do protocolo
 
-Qualquer operador certificado BANZA implementa estes quatro princípios. Não são funcionalidades do Banzami. São invariantes do protocolo — propriedades que qualquer implementação deve garantir para ser certificada.
+Qualquer operador certificado BANZA implementa estes quatro princípios. Não são funcionalidades do operador. São invariantes do protocolo — propriedades que qualquer implementação deve garantir para ser certificada.
 
 | Princípio | O que o protocolo garante |
 |---|---|
@@ -194,7 +194,7 @@ A relação é exactamente a que existe entre o Pix e o Nubank. O Nubank é o ma
 
 ### O nome
 
-**Banza** e **Banzami** são palavras enraizadas nas tradições linguísticas bantu de Angola, especialmente no universo Kikongo, onde *mbanza* designa um lugar de encontro — um centro de vida comunitária. Nomes distintamente angolanos — não palavras emprestadas de outro continente.
+**Banza** e **the reference operator** são palavras enraizadas nas tradições linguísticas bantu de Angola, especialmente no universo Kikongo, onde *mbanza* designa um lugar de encontro — um centro de vida comunitária. Nomes distintamente angolanos — não palavras emprestadas de outro continente.
 
 ---
 
@@ -206,7 +206,7 @@ Cada decisão de engenharia é avaliada contra: "Isto preserva a correcção fin
 
 ### O protocolo é o produto
 
-O Banzami (o produto de consumo) é a implementação de referência do protocolo BANZA. O protocolo é o que escala. O Banzami é o que prova que funciona.
+O operador (o produto de consumo) é a implementação de referência do protocolo BANZA. O protocolo é o que escala. O operador é o que prova que funciona.
 
 ### Os operadores implementam política. O Kernel implementa o protocolo.
 
@@ -252,7 +252,7 @@ Um Operador é qualquer entidade que implementa o protocolo BANZA para processar
 - Operam dentro do framework de invariantes
 - Estão sujeitos a verificação de certificação periódica
 
-**Operador de Referência:** O Banzami é a implementação de referência do protocolo completo. Ver [BANZAMI_REFERENCE.md](../banzami/BANZAMI_REFERENCE.md).
+**Operador de Referência:** The reference operator do protocolo completo. Ver [BANZA_REFERENCE.md](../banza/BANZA_REFERENCE.md).
 
 **Operadores Certificados:** Qualquer entidade que obtenha certificação BANZA pode implementar o protocolo. Operadores certificados são o resultado intencional do protocolo — não um conceito futuro.
 
@@ -418,11 +418,11 @@ Os RFCs são numerados sequencialmente e imutáveis após aceitação.
 
 Os ADRs governam decisões de implementação: escolhas tecnológicas, fronteiras de serviços, arquitectura de SDK, arquitectura de marca, modelo de identidade.
 
-ADR-025 é o ADR canónico que define a hierarquia de três níveis (BANZA / BanzAI / Banzami). ADR-016 foi supersedido por ADR-025.
+ADR-025 é o ADR canónico que define a hierarquia de três níveis (BANZA / BanzAI / the reference operator). ADR-016 foi supersedido por ADR-025.
 
 ### Validation Matrix
 
-O `docs/validation/BANZAMI_IMPLEMENTATION_MATRIX.json` é a fonte de verdade para o progresso de implementação do operador de referência. Alterações à matrix requerem frases de governança com verificação de fingerprint.
+O `docs/validation/BANZA_IMPLEMENTATION_MATRIX.json` é a fonte de verdade para o progresso de implementação do operador de referência. Alterações à matrix requerem frases de governança com verificação de fingerprint.
 
 ### Domínios de Validação
 
@@ -499,7 +499,7 @@ A federação é uma camada de primeira classe na arquitectura BANZA. Define com
 
 ### Estado Actual
 
-A federação encontra-se na fase de desenho. Todos os pagamentos são actualmente processados pelo operador de referência Banzami. O kernel foi desenhado com os primitivos necessários:
+A federação encontra-se na fase de desenho. Todos os pagamentos são actualmente processados pelo operador de referência the reference operator. O kernel foi desenhado com os primitivos necessários:
 - Propagação de `trace_id` através de fronteiras de serviço
 - Declaração de manifesto de operador com capacidades de encaminhamento
 - Arquitectura de encaminhamento baseada em capacidades
@@ -566,7 +566,7 @@ O ecossistema tem sucesso quando:
 
 Os operadores mudam. Os produtos evoluem. O que o BANZA garante é que as regras permaneçam abertas, a certificação permaneça acessível, e a infraestrutura permaneça de Angola.
 
-> **BANZA é o protocolo. Banzami é como Angola paga. O protocolo existe independentemente de qualquer operador.**
+> **BANZA é o protocolo. BANZA move o dinheiro. O protocolo existe independentemente de qualquer operador.**
 
 ---
 
@@ -584,4 +584,4 @@ Os operadores mudam. Os produtos evoluem. O que o BANZA garante é que as regras
 
 Ver também:
 - [BANZAI_REFERENCE.md](../banzai/BANZAI_REFERENCE.md) — Protocol Operating System
-- [BANZAMI_REFERENCE.md](../banzami/BANZAMI_REFERENCE.md) — Reference operator implementation
+- [BANZA_REFERENCE.md](../banza/BANZA_REFERENCE.md) — Reference operator implementation

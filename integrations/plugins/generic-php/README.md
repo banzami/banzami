@@ -18,9 +18,9 @@ composer require banza/banza-php
 
 ```php
 use Banza\BanzaClient;
-use Banza\BanzamiException;
+use Banza\the reference operatorException;
 
-$client = new BanzaClient('https://api.banzami.com', 'bz_live_YOUR_KEY');
+$client = new BanzaClient('https://api.banza.network', 'bz_live_YOUR_KEY');
 
 // 1. Create a payment link
 $link = $client->createPaymentLink([
@@ -32,21 +32,21 @@ $link = $client->createPaymentLink([
 ]);
 
 // 2. Redirect the customer
-header('Location: https://pay.banzami.com/' . $link['slug']);
+header('Location: https://pay.banza.network/' . $link['slug']);
 exit;
 
 // 3. Handle the webhook (in your webhook endpoint)
-$handler = new \Banzami\WebhookHandler('your-webhook-secret');
+$handler = new \the reference operator\WebhookHandler('your-webhook-secret');
 try {
     $event = $handler->parse(
         file_get_contents('php://input'),
-        $_SERVER['HTTP_X_BANZAMI_SIGNATURE'] ?? ''
+        $_SERVER['HTTP_X_BANZA_SIGNATURE'] ?? ''
     );
     if ($event['type'] === 'transaction.completed') {
         // mark order as paid in your database
     }
     http_response_code(200);
-} catch (BanzamiException $e) {
+} catch (the reference operatorException $e) {
     http_response_code(401);
     exit('Invalid signature');
 }
@@ -60,7 +60,7 @@ try {
 
 ```php
 $client = new BanzaClient(
-    string $baseUrl,          // e.g. 'https://api.banzami.com'
+    string $baseUrl,          // e.g. 'https://api.banza.network'
     string $apiKey,           // e.g. 'bz_live_...'
     int    $timeout = 30,     // cURL timeout in seconds
     ?callable $httpHandler = null  // test seam only — never pass in production
@@ -85,7 +85,7 @@ $link = $client->createPaymentLink([
     'expires_at'   => '2026-12-31T23:59:59Z',    // optional ISO-8601
 ]);
 
-// $link['slug'] — share as https://pay.banzami.com/{slug}
+// $link['slug'] — share as https://pay.banza.network/{slug}
 // $link['id']   — use for cancellation or status queries
 ```
 
@@ -244,16 +244,16 @@ Banza signs every webhook payload with HMAC-SHA256. Always verify the signature 
 
 ```php
 use Banza\WebhookHandler;
-use Banza\BanzamiException;
+use Banza\the reference operatorException;
 
-$handler = new WebhookHandler(getenv('BANZAMI_WEBHOOK_SECRET'));
+$handler = new WebhookHandler(getenv('BANZA_WEBHOOK_SECRET'));
 
 $rawBody  = file_get_contents('php://input');
-$sigHeader = $_SERVER['HTTP_X_BANZAMI_SIGNATURE'] ?? '';
+$sigHeader = $_SERVER['HTTP_X_BANZA_SIGNATURE'] ?? '';
 
 try {
     $event = $handler->parse($rawBody, $sigHeader);
-} catch (BanzamiException $e) {
+} catch (the reference operatorException $e) {
     http_response_code(401);
     exit;
 }
@@ -286,8 +286,8 @@ http_response_code(200);
 ```php
 $valid = BanzaClient::verifyWebhookSignature(
     $rawBody,
-    $_SERVER['HTTP_X_BANZAMI_SIGNATURE'] ?? '',
-    getenv('BANZAMI_WEBHOOK_SECRET')
+    $_SERVER['HTTP_X_BANZA_SIGNATURE'] ?? '',
+    getenv('BANZA_WEBHOOK_SECRET')
 );
 
 if (!$valid) {
@@ -330,14 +330,14 @@ BanzaClient::toMinorUnits(1499.5, 'AOA'); // 1500 (rounded)
 
 ### Error Handling
 
-All API errors throw `Banzami\BanzamiException`, which extends `\RuntimeException`.
+All API errors throw `the reference operator\the reference operatorException`, which extends `\RuntimeException`.
 
 ```php
-use Banza\BanzamiException;
+use Banza\the reference operatorException;
 
 try {
     $link = $client->getPaymentLink('pl_missing');
-} catch (BanzamiException $e) {
+} catch (the reference operatorException $e) {
     echo $e->getMessage();      // "NOT_FOUND: payment link not found"
     echo $e->getHttpStatus();   // 404
     $e->isNotFound();           // true
@@ -399,7 +399,7 @@ $handler = function (string $method, string $url, array $headers, ?string $body)
     ];
 };
 
-$client = new BanzaClient('https://api.banzami.com', 'bz_test_key', 30, $handler);
+$client = new BanzaClient('https://api.banza.network', 'bz_test_key', 30, $handler);
 ```
 
 Never pass `$httpHandler` in production code.

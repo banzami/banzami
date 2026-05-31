@@ -1,12 +1,12 @@
 {
-    "name": "banzami/banzami-laravel",
-    "description": "Banzami payment gateway for Laravel — service provider, facade, and webhook middleware",
+    "name": "banza/banza-laravel",
+    "description": "BANZA payment gateway for Laravel — service provider, facade, and webhook middleware",
     "license": "UNLICENSED",
     "type": "library",
     "require": {
         "php": ">=8.1",
         "laravel/framework": "^10|^11",
-        "banzami/banzami-php": "^0.1"
+        "banza/banza-php": "^0.1"
     },
     "require-dev": {
         "orchestra/testbench": "^8|^9",
@@ -14,18 +14,18 @@
     },
     "autoload": {
         "psr-4": {
-            "Banzami\\Laravel\\": "src/"
+            "the reference operator\\Laravel\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Banzami\\Laravel\\Tests\\": "tests/"
+            "the reference operator\\Laravel\\Tests\\": "tests/"
         }
     },
     "extra": {
         "laravel": {
-            "providers": ["Banzami\\Laravel\\BanzamiServiceProvider"],
-            "aliases":   {"Banzami": "Banzami\\Laravel\\Facades\\Banzami"}
+            "providers": ["the reference operator\\Laravel\\the reference operatorServiceProvider"],
+            "aliases":   {"the reference operator": "the reference operator\\Laravel\\Facades\\the reference operator"}
         }
     }
 }

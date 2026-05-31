@@ -7,8 +7,8 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use Banza\BanzaClient;
 
-$client   = new BanzaClient(getenv('BANZAMI_GATEWAY_URL'), getenv('BANZAMI_API_KEY'));
-$walletId = getenv('BANZAMI_WALLET_ID');
+$client   = new BanzaClient(getenv('BANZA_GATEWAY_URL'), getenv('BANZA_API_KEY'));
+$walletId = getenv('BANZA_WALLET_ID');
 
 $balance = $client->getWalletBalance($walletId);
 echo 'Available: ' . BanzaClient::formatAmount($balance['available_minor'], $balance['currency']) . PHP_EOL;

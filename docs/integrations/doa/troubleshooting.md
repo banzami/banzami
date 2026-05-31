@@ -6,13 +6,13 @@ Diagnostic guide for common integration problems. Each section describes symptom
 
 ## Webhook Issues
 
-### `banzami_webhook_rejected: signature mismatch`
+### `banza_webhook_rejected: signature mismatch`
 
-**Symptom**: Webhook requests arrive but all return 401. Banza dashboard shows deliveries with `failed` status. Doa logs contain `banzami_webhook_rejected { reason: 'signature mismatch' }`.
+**Symptom**: Webhook requests arrive but all return 401. Banza dashboard shows deliveries with `failed` status. Doa logs contain `banza_webhook_rejected { reason: 'signature mismatch' }`.
 
 **Root causes**:
 
-1. **Wrong secret**: `BANZAMI_WEBHOOK_SECRET` does not match the secret returned when the endpoint was registered. The secret is returned only once — if lost, a new endpoint must be registered.
+1. **Wrong secret**: `BANZA_WEBHOOK_SECRET` does not match the secret returned when the endpoint was registered. The secret is returned only once — if lost, a new endpoint must be registered.
 
 2. **Parsed body instead of raw body**: The webhook handler is reading `req.json()` before verification rather than `req.text()`. JSON parsing changes the byte sequence.
 
@@ -22,20 +22,20 @@ Diagnostic guide for common integration problems. Each section describes symptom
 
 ```bash
 # Verify secret is set in the production environment
-echo $BANZAMI_WEBHOOK_SECRET  # should start with whsec_
+echo $BANZA_WEBHOOK_SECRET  # should start with whsec_
 
 # If secret is wrong or lost, register a new endpoint
-curl -X POST https://api.banzami.com/v1/webhooks/endpoints \
-  -H "Authorization: Bearer $BANZAMI_JWT" \
-  -d '{ "url": "https://doadoa.app/api/webhooks/banzami", "events": ["payment_link.paid"] }'
-# Deactivate old endpoint in Banzami dashboard
-# Update BANZAMI_WEBHOOK_SECRET with new value
+curl -X POST https://api.banza.network/v1/webhooks/endpoints \
+  -H "Authorization: Bearer $BANZA_JWT" \
+  -d '{ "url": "https://doadoa.app/api/webhooks/banza", "events": ["payment_link.paid"] }'
+# Deactivate old endpoint in operator dashboard
+# Update BANZA_WEBHOOK_SECRET with new value
 # Redeploy
 ```
 
 ---
 
-### `banzami_webhook_rejected: timestamp outside tolerance window`
+### `banza_webhook_rejected: timestamp outside tolerance window`
 
 **Symptom**: Some webhooks fail with `reason: 'timestamp outside tolerance window'`. Doa logs show `age` > 300 seconds.
 
@@ -62,23 +62,23 @@ For Vercel or hosted environments, clock sync is managed by the platform — con
 
 ---
 
-### `banzami_webhook_rejected: secret not configured`
+### `banza_webhook_rejected: secret not configured`
 
-**Symptom**: All webhook requests return 500. Doa logs contain `banzami_webhook_rejected { reason: 'secret not configured' }`. Banza treats 500 as a failed delivery and retries.
+**Symptom**: All webhook requests return 500. Doa logs contain `banza_webhook_rejected { reason: 'secret not configured' }`. Banza treats 500 as a failed delivery and retries.
 
-**Root cause**: `BANZAMI_WEBHOOK_SECRET` is not set in the server environment, or the environment variable was not loaded after being added.
+**Root cause**: `BANZA_WEBHOOK_SECRET` is not set in the server environment, or the environment variable was not loaded after being added.
 
 **Resolution**:
 
-1. Set `BANZAMI_WEBHOOK_SECRET=whsec_...` in the environment
+1. Set `BANZA_WEBHOOK_SECRET=whsec_...` in the environment
 2. Restart or redeploy the server
 3. Verify with a test delivery from the Banza dashboard
 
 ---
 
-### Webhooks arrive but intent is not resolved (`banzami_webhook_ignored`)
+### Webhooks arrive but intent is not resolved (`banza_webhook_ignored`)
 
-**Symptom**: Webhook processing succeeds (returns 200) but logs show `banzami_webhook_ignored`. No `payment_confirmed` event in `donation_events`.
+**Symptom**: Webhook processing succeeds (returns 200) but logs show `banza_webhook_ignored`. No `payment_confirmed` event in `donation_events`.
 
 **Root cause**: The `donation_events` table has no `payment_initiated` row where `payload->>'provider_ref' = link.id`. The webhook is for a payment link not created through the Doa donation flow.
 
@@ -109,7 +109,7 @@ WHERE id = 'di_01jqx...';
 
 **Root cause**: `applyPaymentEvent()` threw an error after webhook verification. Doa returned 500, causing Banza to show the delivery as failed — but if you see `success`, the handler returned 200 without writing the event.
 
-**Diagnosis**: Check Doa logs for `banzami_webhook_error` with a stack trace. Common cause: database connection error or constraint violation.
+**Diagnosis**: Check Doa logs for `banza_webhook_error` with a stack trace. Common cause: database connection error or constraint violation.
 
 **Resolution**: Fix the underlying error. If the delivery is already marked `success` by Banza, trigger a manual status check via the poll endpoint or use the Banza dashboard to re-deliver the event (if available).
 
@@ -119,7 +119,7 @@ WHERE id = 'di_01jqx...';
 
 ### QR code doesn't appear (infinite spinner)
 
-**Symptom**: `BanzamiPanel` renders but the QR image never appears — only the spinner.
+**Symptom**: `the reference operatorPanel` renders but the QR image never appears — only the spinner.
 
 **Root causes**:
 
@@ -134,10 +134,10 @@ WHERE id = 'di_01jqx...';
 ```typescript
 // Check browser console for errors
 // Check that payUrl is set correctly:
-console.log('payUrl:', payUrl);  // should be https://pay.banzami.com/{slug}
+console.log('payUrl:', payUrl);  // should be https://pay.banza.network/{slug}
 ```
 
-**Resolution**: Verify `BANZAMI_PAY_BASE_URL` and that the payment link response includes a `slug`. The external link ("Ou abre o link de pagamento") is always present as a fallback — donors can complete payment even without the QR.
+**Resolution**: Verify `BANZA_PAY_BASE_URL` and that the payment link response includes a `slug`. The external link ("Ou abre o link de pagamento") is always present as a fallback — donors can complete payment even without the QR.
 
 ---
 
@@ -145,7 +145,7 @@ console.log('payUrl:', payUrl);  // should be https://pay.banzami.com/{slug}
 
 **Symptom**: The amber "SANDBOX" badge appears on the Banza panel in the production environment.
 
-**Root cause**: `BANZAMI_API_KEY` starts with `bz_test_` in the production environment.
+**Root cause**: `BANZA_API_KEY` starts with `bz_test_` in the production environment.
 
 **Resolution**:
 
@@ -163,7 +163,7 @@ No payments made with a `bz_test_` key in production are real — they go to san
 
 **Root causes**:
 
-1. **Webhooks not configured**: Without `BANZAMI_WEBHOOK_SECRET`, the push confirmation path is inactive. The poll path should still work — if it doesn't, check the poll endpoint.
+1. **Webhooks not configured**: Without `BANZA_WEBHOOK_SECRET`, the push confirmation path is inactive. The poll path should still work — if it doesn't, check the poll endpoint.
 
 2. **Poll endpoint returning errors**: The status check route is returning non-200, causing the browser to silently skip ticks.
 
@@ -173,19 +173,19 @@ No payments made with a `bz_test_` key in production are real — they go to san
 
 ```bash
 # Test the poll endpoint manually
-curl "https://doadoa.app/api/donations/banzami-status?intent_id=di_01jqx...&link_id=lnk_01jqx..."
+curl "https://doadoa.app/api/donations/banza-status?intent_id=di_01jqx...&link_id=lnk_01jqx..."
 # Expected after payment: { "confirmed": true }
 # Expected before payment: { "confirmed": false }
 ```
 
 ```bash
-# Verify the link status in Banzami directly
-curl "https://api.banzami.com/v1/payment-links/lnk_01jqx..." \
-  -H "Authorization: Bearer $BANZAMI_JWT"
+# Verify the link status in the reference operator directly
+curl "https://api.banza.network/v1/payment-links/lnk_01jqx..." \
+  -H "Authorization: Bearer $BANZA_JWT"
 # Look for: "status": "USED"
 ```
 
-**Resolution**: If the link is `USED` in Banza but the poll returns `{ confirmed: false }`, the status check route is likely broken. Check logs for errors in `banzami-status/route.ts`.
+**Resolution**: If the link is `USED` in Banza but the poll returns `{ confirmed: false }`, the status check route is likely broken. Check logs for errors in `banza-status/route.ts`.
 
 ---
 
@@ -213,7 +213,7 @@ If multiple rows exist with the same `payload->>'provider_ref'`, the dedup logic
 
 ### Payment initiation fails with `provider_failed`
 
-**Symptom**: Donor selects Banza, clicks pay, gets an error message. `initiate-payment` route returns 500. Doa logs show `banzami_initiate_error`.
+**Symptom**: Donor selects Banza, clicks pay, gets an error message. `initiate-payment` route returns 500. Doa logs show `banza_initiate_error`.
 
 **Common causes**:
 
@@ -223,21 +223,21 @@ If multiple rows exist with the same `payload->>'provider_ref'`, the dedup logic
 | `403 SANDBOX_KEY_REJECTED` | `bz_test_` key used against live gateway |
 | `403 LIVE_ONLY` | `bz_live_` key used against sandbox gateway |
 | `422 Unprocessable` | Invalid `merchant_id`, `wallet_id`, or `amount_minor` |
-| `Network error` | `BANZAMI_GATEWAY_URL` is not set or unreachable |
+| `Network error` | `BANZA_GATEWAY_URL` is not set or unreachable |
 
 **Diagnosis**:
 
 ```bash
 # Verify environment variables are set
-echo $BANZAMI_GATEWAY_URL
-echo $BANZAMI_MERCHANT_ID
-echo $BANZAMI_WALLET_ID
-# Do NOT echo BANZAMI_API_KEY in logs — just check it exists
+echo $BANZA_GATEWAY_URL
+echo $BANZA_MERCHANT_ID
+echo $BANZA_WALLET_ID
+# Do NOT echo BANZA_API_KEY in logs — just check it exists
 
 # Test authentication manually
-curl -X POST $BANZAMI_GATEWAY_URL/v1/auth/token \
+curl -X POST $BANZA_GATEWAY_URL/v1/auth/token \
   -H "Content-Type: application/json" \
-  -d "{\"api_key\": \"$BANZAMI_API_KEY\"}"
+  -d "{\"api_key\": \"$BANZA_API_KEY\"}"
 ```
 
 ---
@@ -248,9 +248,9 @@ curl -X POST $BANZAMI_GATEWAY_URL/v1/auth/token \
 
 **Root causes**:
 
-1. `banzami` not in `PAYMENT_PROVIDERS` environment variable
-2. `BanzamiProvider.available` is `false` — one or more required env vars is missing
-3. `BANZAMI_API_KEY` is empty or unset
+1. `banza` not in `PAYMENT_PROVIDERS` environment variable
+2. `the reference operatorProvider.available` is `false` — one or more required env vars is missing
+3. `BANZA_API_KEY` is empty or unset
 
 **Diagnosis**: `available` is `false` when any of `GATEWAY_URL`, `API_KEY`, `MERCHANT_ID`, or `WALLET_ID` is missing. Check all four variables are set.
 
@@ -258,15 +258,15 @@ curl -X POST $BANZAMI_GATEWAY_URL/v1/auth/token \
 
 ## Sandbox/Live Environment Mismatch
 
-### Banzami app shows payment but Doa doesn't confirm
+### operator app shows payment but Doa doesn't confirm
 
 **Symptom**: The Banza consumer app shows the payment was completed. Doa's polling loop never advances. The link appears as `ACTIVE` in Banza's API.
 
-**Root cause**: The donor paid with a Banzami app connected to the live network, but the QR encodes a sandbox pay URL, or vice versa. Environment-isolated links can only be paid from the matching environment.
+**Root cause**: The donor paid with a operator app connected to the live network, but the QR encodes a sandbox pay URL, or vice versa. Environment-isolated links can only be paid from the matching environment.
 
-**Resolution**: Ensure the Banzami app environment matches the API key:
-- `bz_test_` key → only sandbox Banzami apps can pay the link
-- `bz_live_` key → only live Banzami apps can pay the link
+**Resolution**: Ensure the operator app environment matches the API key:
+- `bz_test_` key → only sandbox operator apps can pay the link
+- `bz_live_` key → only live operator apps can pay the link
 
 This should never happen in production (all keys are live). It's common during development when testing with a live Banza account against sandbox links.
 
@@ -277,7 +277,7 @@ This should never happen in production (all keys are live). It's common during d
 For integration issues not covered here:
 
 1. **Check Banza dashboard** → Webhooks → Events for delivery status and response codes
-2. **Check Doa server logs** for structured log events with `action: 'banzami_*'`
+2. **Check Doa server logs** for structured log events with `action: 'banza_*'`
 3. **Query `donation_events`** directly to inspect the event sequence for an intent
 4. **Verify environment variables** match the expected prefix (`bz_test_` vs `bz_live_`)
 

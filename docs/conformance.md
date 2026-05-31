@@ -6,7 +6,7 @@ The Banza conformance system lets any operator, SDK, or integration verify that 
 
 - **Operators** — HTTP servers that implement wallets, transfers, QR, payment requests, events, settlement, and traces
 - **SDKs** — Client libraries that parse QR payloads, event envelopes, and webhook signatures
-- **QR runtimes** — Code that generates or scans `BANZAMI-SBX:` and `BANZAMI:` payloads
+- **QR runtimes** — Code that generates or scans `BANZA-SBX:` and `BANZA:` payloads
 - **Event emitters** — Services that emit conformant event envelopes with trace fields
 - **Ledger implementations** — Storage that satisfies double-entry and immutability invariants
 - **Settlement providers** — Implementations that satisfy the no-money-creation invariant
@@ -28,13 +28,13 @@ The reference sandbox operator is certified at **Level 2**.
 Start your operator, then:
 
 ```bash
-python3 tools/banzami-conformance/run.py \
+python3 tools/banza-conformance/run.py \
   --url http://localhost:3000 \
   --level 2 \
   --output report.json
 ```
 
-See `tools/banzami-conformance/README.md` for full options.
+See `tools/banza-conformance/README.md` for full options.
 
 ## Conformance vectors
 
@@ -94,10 +94,10 @@ Reports follow `conformance/report-schema.json`. Each run produces:
 Include a badge in your operator's README to declare the certification level:
 
 ```markdown
-![Protocol Compatible](https://raw.githubusercontent.com/banzami/banzami/main/conformance/badges/protocol-compatible.svg)
-![Trace Compatible](https://raw.githubusercontent.com/banzami/banzami/main/conformance/badges/trace-compatible.svg)
-![Federation Ready](https://raw.githubusercontent.com/banzami/banzami/main/conformance/badges/federation-ready.svg)
-![Settlement Compatible](https://raw.githubusercontent.com/banzami/banzami/main/conformance/badges/settlement-compatible.svg)
+![Protocol Compatible](https://raw.githubusercontent.com/banza/banza/main/conformance/badges/protocol-compatible.svg)
+![Trace Compatible](https://raw.githubusercontent.com/banza/banza/main/conformance/badges/trace-compatible.svg)
+![Federation Ready](https://raw.githubusercontent.com/banza/banza/main/conformance/badges/federation-ready.svg)
+![Settlement Compatible](https://raw.githubusercontent.com/banza/banza/main/conformance/badges/settlement-compatible.svg)
 ```
 
 ## Operator manifest
@@ -133,7 +133,7 @@ The manifest schema is validated by `conformance/manifests/schema.json`.
 2. Add the vector to the appropriate file in `conformance/vectors/`
 3. Set `"stability": "experimental"` until it passes the reference operator
 4. Reference the vector from the relevant suite's `vectors` array
-5. Implement the test case in `tools/banzami-conformance/run.py`
+5. Implement the test case in `tools/banza-conformance/run.py`
 
 Deprecated vectors get `"deprecated": true` rather than being removed — this preserves history.
 

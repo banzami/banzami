@@ -277,7 +277,7 @@ async fn qr_payment_flow() {
     let qr = body_json(res.into_body()).await;
     assert_eq!(qr["status"], "active");
     let qr_id = qr["id"].as_str().unwrap().to_string();
-    assert!(qr["payload_data"].as_str().unwrap().starts_with("BANZAMI-SBX:"));
+    assert!(qr["payload_data"].as_str().unwrap().starts_with("BANZA-SBX:"));
 
     // Consumer pays QR.
     let res = app.clone().oneshot(post_json(

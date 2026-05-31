@@ -491,7 +491,7 @@ impl<L: LedgerEngine + 'static> FundingEngine for PostgresFundingEngine<L> {
         .ok_or(FundingError::WalletNotActive(session.wallet_id))?;
 
         // Build the balanced double-entry posting:
-        //   DR transit account     (ASSET — external funds received by Banzami)
+        //   DR transit account     (ASSET — external funds received by the reference operator)
         //   CR consumer available  (LIABILITY — we now owe the consumer)
         let idem_key = format!("funding-settle-{}", session.id);
         let posting  = banza_ledger::PostingBuilder::new(

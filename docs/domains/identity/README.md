@@ -44,7 +44,7 @@ Consumers never see raw UUIDs in any user-facing flow.
 - Only lowercase letters (`a-z`), digits (`0-9`), and underscores
 - Cannot start or end with `_`
 - No consecutive underscores (`__`)
-- Reserved keywords blocked: `admin`, `banzami`, `support`, etc.
+- Reserved keywords blocked: `admin`, `banza`, `support`, etc.
 
 Handles are **normalized before storage**: leading `@` stripped, lowercased, trimmed.
 

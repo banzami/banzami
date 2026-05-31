@@ -48,7 +48,7 @@ The populations and merchants Banza serves need **wallet-to-wallet instant trans
    - Consumer scans → confirms → ledger transfer. No card data involved.
 
 3. **@handles are the primary human-readable identity layer.**
-   - `@shop.banzami.ao` is a payment address.
+   - `@shop.banza.ao` is a payment address.
    - `@consumer_handle` is a transfer address.
    - Handles resolve to wallet IDs internally.
 

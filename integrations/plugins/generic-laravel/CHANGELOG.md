@@ -10,10 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] — 2026-05-15
 
 ### Added
-- `BanzamiServiceProvider` with Laravel auto-discovery — no manual registration required
-- `Banzami` facade proxying all calls to the underlying `BanzaClient`
+- `the reference operatorServiceProvider` with Laravel auto-discovery — no manual registration required
+- `the reference operator` facade proxying all calls to the underlying `BanzaClient`
 - Config file `config/banza.php` publishable via `php artisan vendor:publish --tag=banza-config`
-- Environment variable support: `BANZAMI_GATEWAY_URL`, `BANZAMI_API_KEY`, `BANZAMI_WEBHOOK_SECRET`, `BANZAMI_MERCHANT_ID`, `BANZAMI_WALLET_ID`
+- Environment variable support: `BANZA_GATEWAY_URL`, `BANZA_API_KEY`, `BANZA_WEBHOOK_SECRET`, `BANZA_MERCHANT_ID`, `BANZA_WALLET_ID`
 - Facade methods: `createPaymentLink`, `getPaymentLink`, `listPaymentLinks`, `cancelPaymentLink`
 - Facade methods: `createTransaction`, `getTransaction`, `listTransactions`
 - Facade methods: `provisionWallet`, `getWallet`, `getWalletBalance`

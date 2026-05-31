@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Detects forbidden terminology across Banzami ecosystem repos.
+# Detects forbidden terminology across BANZA ecosystem repos.
 # Run from: apps/banza/
 # Usage: bash scripts/audit-terminology.sh [repo-root-or-path]
 
@@ -23,13 +23,13 @@ check() {
   fi
 }
 
-echo "🔍 BanzamIA Terminology Audit"
+echo "🔍 BanzAI Terminology Audit"
 echo "=============================="
 echo ""
 
-check "Protocol Intelligence" '"Protocol Intelligence" as canonical BanzamIA title'
-check "banzami-core[^-]" '"banzami-core" as package name (container names like banzami-core-api are OK)'
-check "fm65/BanzamIA" '"fm65/BanzamIA" old repo path'
+check "Protocol Intelligence" '"Protocol Intelligence" as canonical BanzAI title'
+check "banza-core[^-]" '"banza-core" as package name (container names like banza-core-api are OK)'
+check "fm65/BanzAI" '"fm65/BanzAI" old repo path'
 check "Future Third-Party Operators" '"Future Third-Party Operators" (use "Certified Operators")'
 check "Reference-compatible" '"Reference-compatible" (use "Sandbox Operator")'
 check "Protocol-compatible" '"Protocol-compatible" (use "Payment Operator")'

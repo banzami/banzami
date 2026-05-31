@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name:  Banza Payment Gateway
- * Plugin URI:   https://banzami.ao
+ * Plugin URI:   https://banza.network
  * Description:  Accept payments via the Banza payment gateway in WooCommerce.
  * Version:      1.0.0
  * Author:       BANZA Protocol Contributors
- * Author URI:   https://banzami.ao
+ * Author URI:   https://banza.network
  * License:      UNLICENSED
  * Text Domain:  banza-payment
  * Requires PHP: 7.4
@@ -53,7 +53,7 @@ add_action( 'before_woocommerce_init', function (): void {
     }
 } );
 
-register_uninstall_hook( __FILE__, 'banzami_uninstall' );
-function banzami_uninstall(): void {
-    delete_option( 'woocommerce_banzami_settings' );
+register_uninstall_hook( __FILE__, 'banza_uninstall' );
+function banza_uninstall(): void {
+    delete_option( 'woocommerce_banza_settings' );
 }

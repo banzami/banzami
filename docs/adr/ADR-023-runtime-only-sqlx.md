@@ -2,7 +2,7 @@
 
 **Status:** Accepted  
 **Date:** 2026-05-28  
-**Author:** Banzami Organisation  
+**Author:** the reference operator Organisation  
 **Deciders:** Fidel Monteiro (Founder)  
 **Supersedes:** None
 
@@ -16,7 +16,7 @@ sqlx provides two modes for database queries:
 
 **Runtime queries** (`sqlx::query()`, `sqlx::query_as::<_, T>()`): SQL is parsed at runtime. No database required to build. Type mapping is done via `#[derive(sqlx::FromRow)]` struct field names.
 
-The Banza kernel was initially written with compile-time macros (inherited from the private Banzami codebase). This meant that any developer who cloned the public repository could not run `cargo build` without a PostgreSQL database and the `DATABASE_URL` environment variable set.
+The Banza kernel was initially written with compile-time macros (inherited from the private the reference operator codebase). This meant that any developer who cloned the public repository could not run `cargo build` without a PostgreSQL database and the `DATABASE_URL` environment variable set.
 
 This directly violated the contributor experience goal: `git clone → cargo build`.
 
@@ -38,11 +38,11 @@ The migration was applied in commit `3920912` to acquiring, compliance, reconcil
 
 **Retained:** Compile-time type safety via `FromRow` derive. The struct field types must be compatible with the database column types, caught at runtime during the first query.
 
-**Mitigated by:** Integration tests in the private Banzami operator (which uses a live database) catch SQL errors before production deployment.
+**Mitigated by:** Integration tests in the private a BANZA operator (which uses a live database) catch SQL errors before production deployment.
 
-## Private Banzami operator
+## Private a BANZA operator
 
-The private Banzami codebase may continue using compile-time sqlx macros (it has a live database available in CI). The kernel's decision to use runtime queries does not impose this choice on operators. Operators can use whatever sqlx mode suits their build environment.
+The private the reference operator codebase may continue using compile-time sqlx macros (it has a live database available in CI). The kernel's decision to use runtime queries does not impose this choice on operators. Operators can use whatever sqlx mode suits their build environment.
 
 ## Consequences
 

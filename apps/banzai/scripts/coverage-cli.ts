@@ -7,7 +7,7 @@ import { qdrantHealthy } from '../src/store/qdrant.js';
 const REPORTS_DIR = new URL('../reports/', import.meta.url).pathname;
 
 console.log('');
-console.log('BanzamIA — Knowledge Coverage Analysis');
+console.log('BanzAI — Knowledge Coverage Analysis');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
 const alive = await qdrantHealthy(config);

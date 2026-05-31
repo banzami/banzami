@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Banzami Conformance Runner — shell wrapper
+# the reference operator Conformance Runner — shell wrapper
 # Usage: ./run.sh [--url URL] [--level N] [--suite SUITE] [--output FILE]
 set -euo pipefail
 

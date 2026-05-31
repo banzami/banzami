@@ -43,8 +43,8 @@ No database. No cloud credentials. No external services.
 ## Step 1 — Clone
 
 ```bash
-git clone https://github.com/banzami/banzami
-cd banzami
+git clone https://github.com/banza-protocols/banza
+cd banza
 ```
 
 ---
@@ -63,7 +63,7 @@ in under a second. You will see:
 
 ```
 ╔══════════════════════════════════════════════════╗
-║  Banzami Sandbox Operator                        ║
+║  the reference operator Sandbox Operator                        ║
 ║  Local development environment — NOT production  ║
 ║  simulated=true  production_allowed=false        ║
 ╚══════════════════════════════════════════════════╝
@@ -263,7 +263,7 @@ emulates the full generate / scan / pay loop.
    - Merchant Wallet: `sandbox-merchant-1`
    - Amount: `30000` (300.00 AOA)
    - Description: `Table 4`
-3. Click **Generate QR** — the QR ID fills automatically and the `BANZAMI-SBX:` payload is shown
+3. Click **Generate QR** — the QR ID fills automatically and the `BANZA-SBX:` payload is shown
 4. Under "Pay QR":
    - QR Code ID is pre-filled from the generation step
    - Consumer Wallet: `sandbox-consumer-1`
@@ -287,7 +287,7 @@ curl -X POST http://localhost:3100/qr \
 {
   "id":           "qr-abc123",
   "status":       "active",
-  "payload_data": "BANZAMI-SBX:eyJzYW5kYm94Ijp0cnVlLCJxcl9pZCI6InFyLWFiYzEyMyIsIm1lcmNoYW50X3dhbGxldF9pZCI6InNhbmRib3gtbWVyY2hhbnQtMSIsImFtb3VudF9taW5vciI6MzAwMDAsImN1cnJlbmN5IjoiQU9BIn0="
+  "payload_data": "BANZA-SBX:eyJzYW5kYm94Ijp0cnVlLCJxcl9pZCI6InFyLWFiYzEyMyIsIm1lcmNoYW50X3dhbGxldF9pZCI6InNhbmRib3gtbWVyY2hhbnQtMSIsImFtb3VudF9taW5vciI6MzAwMDAsImN1cnJlbmN5IjoiQU9BIn0="
 }
 ```
 
@@ -302,7 +302,7 @@ curl -X POST http://localhost:3100/qr/qr-abc123/pay \
 { "status": "paid", "transfer_id": "txfr-xyz" }
 ```
 
-**The `payload_data` field** (`BANZAMI-SBX:{base64}`) is the canonical sandbox QR
+**The `payload_data` field** (`BANZA-SBX:{base64}`) is the canonical sandbox QR
 payload. In production, this string would be encoded into an actual QR image via any
 QR library. The consumer's app decodes the QR, extracts the payload, verifies the
 prefix, and initiates payment. See [`contracts/qr/`](../contracts/qr/) for the

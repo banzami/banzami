@@ -59,7 +59,7 @@ class WC_Banza_Gateway extends WC_Payment_Gateway {
                 'title'       => 'Gateway URL',
                 'type'        => 'text',
                 'description' => 'URL of the Banza API gateway.',
-                'default'     => 'https://api.banzami.ao',
+                'default'     => 'https://api.banza.ao',
                 'desc_tip'    => true,
             ],
             'api_key' => [
@@ -158,7 +158,7 @@ class WC_Banza_Gateway extends WC_Payment_Gateway {
 
     public function get_api(): Banza_API {
         return new Banza_API(
-            $this->get_option( 'gateway_url', 'https://api.banzami.ao' ),
+            $this->get_option( 'gateway_url', 'https://api.banza.ao' ),
             $this->get_option( 'api_key', '' )
         );
     }

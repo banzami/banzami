@@ -2,7 +2,7 @@
 
 **Status:** Accepted  
 **Date:** 2026-05-28  
-**Author:** Banzami Organisation  
+**Author:** the reference operator Organisation  
 **Deciders:** Fidel Monteiro (Founder)  
 **Supersedes:** None  
 **See also:** ADR-018, ADR-019, ADR-021, ADR-022
@@ -15,7 +15,7 @@ After the kernel extraction (ADR-018), the Banza public repository contained fin
 
 The contributor experience was: `git clone → ??? → ???`.
 
-The problem is structural: the only working deployment of Banza was the private Banzami operator, which requires production infrastructure, EMIS credentials, Firebase, and internal secrets. There was no path from "open-source contributor" to "running the system".
+The problem is structural: the only working deployment of Banza was the private a BANZA operator, which requires production infrastructure, EMIS credentials, Firebase, and internal secrets. There was no path from "open-source contributor" to "running the system".
 
 ## Decision
 
@@ -50,10 +50,10 @@ Create `reference/sandbox-operator/` — a minimal, fully local implementation o
 ### Target developer experience
 
 ```bash
-git clone https://github.com/banzami/banzami.git
-cd banzami/reference
+git clone https://github.com/banza-protocols/banza.git
+cd banza/reference
 docker compose up
-# → fully functional local Banzami environment
+# → fully functional local the reference operator environment
 ```
 
 Or without Docker:
@@ -69,7 +69,7 @@ The reference operator must never:
 - Connect to real payment rails
 - Store production credentials
 - Be used as a production deployment template
-- Be confused with the Banzami commercial product
+- Be confused with the the reference operator commercial product
 
 ### Documentation requirement
 
@@ -79,9 +79,9 @@ The reference operator must never:
 
 **Positive:**
 - Contributors can run the full system without any private infrastructure
-- Kernel changes can be validated end-to-end without Banzami access
+- Kernel changes can be validated end-to-end without the reference operator access
 - The operator/kernel boundary becomes visible through working code, not just documentation
-- Banza no longer mentally depends on Banzami for local development
+- Banza no longer mentally depends on the reference operator for local development
 
 **Negative:**
 - Reference implementations require maintenance as the kernel evolves
@@ -90,7 +90,7 @@ The reference operator must never:
 
 ## Alternatives considered
 
-**Docker image with Banzami behind a public API:** Rejected. Requires maintaining a public deployment of private infrastructure.
+**Docker image with BANZA behind a public API:** Rejected. Requires maintaining a public deployment of private infrastructure.
 
 **Embedded test fixtures in existing crates:** Rejected. Doesn't provide the end-to-end runtime experience; contributors still can't run a working system.
 

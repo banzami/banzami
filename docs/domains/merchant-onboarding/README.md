@@ -2,7 +2,7 @@
 
 ## Business Purpose
 
-Merchant onboarding is the process by which a business joins the Banzami network and becomes capable of accepting instant Kwanza payments.
+Merchant onboarding is the process by which a business joins the BANZA network and becomes capable of accepting instant Kwanza payments.
 
 The onboarding domain is Banza's first impression on Angolan merchants. It must be:
 - fast (merchants should be accepting payments within minutes, not days),
@@ -82,7 +82,7 @@ Onboarding is only considered complete for SDK merchants when a successful sandb
 
 ## Merchant Profile
 
-Each merchant has a `merchant_profile` record that controls the public-facing presentation on `pay.banzami.com/profiles/{handle}`.
+Each merchant has a `merchant_profile` record that controls the public-facing presentation on `pay.banza.network/profiles/{handle}`.
 
 Fields:
 - `handle` — unique, @handle-addressable (e.g. `@cantina.luanda`)
@@ -104,13 +104,13 @@ The profile page is the consumer-facing entry point for payment links and direct
 The `@handle` is the payment identity. It is:
 - permanent once set (cannot be changed without support ticket),
 - lowercased, alphanumeric with periods and underscores allowed,
-- globally unique across the Banzami network,
+- globally unique across the BANZA network,
 - the primary address for P2P and merchant payments.
 
 Handle format: `[a-z0-9][a-z0-9._]{2,29}`
 
 Prohibited:
-- reserved system handles (`banzami`, `admin`, `support`, `pay`, `api`, etc.),
+- reserved system handles (`banza`, `admin`, `support`, `pay`, `api`, etc.),
 - handles that impersonate banks or government entities,
 - handles containing slurs or offensive terms.
 

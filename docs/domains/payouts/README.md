@@ -60,7 +60,7 @@ Funds are committed for disbursement:
 
 ```
 DR  merchant_wallet   (LIABILITY ↓) — merchant's balance is consumed
-CR  bank_account      (ASSET ↓)     — funds leave Banzami's bank balance
+CR  bank_account      (ASSET ↓)     — funds leave the reference operator's bank balance
 ```
 
 The `LedgerPostingId` is stored on the payout record for use in reversals.
@@ -70,7 +70,7 @@ The `LedgerPostingId` is stored on the payout record for use in reversals.
 Funds are returned to the merchant:
 
 ```
-DR  bank_account      (ASSET ↑)     — funds returned to Banzami
+DR  bank_account      (ASSET ↑)     — funds returned to operador
 CR  merchant_wallet   (LIABILITY ↑) — merchant's balance restored
 ```
 

@@ -1,5 +1,5 @@
 {
-  "_spec": "Banzami Ledger Conformance Suite v1.0",
+  "_spec": "the reference operator Ledger Conformance Suite v1.0",
   "_description": "Validates double-entry ledger correctness, immutability, and balance invariants.",
 
   "suite_id": "ledger",

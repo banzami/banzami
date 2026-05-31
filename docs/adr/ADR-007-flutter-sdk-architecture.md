@@ -27,7 +27,7 @@ The candidate approaches were:
 Flutter was chosen because:
 - **Single codebase** covers iOS and Android with pixel-perfect rendering.
 - **No bridge overhead** — Dart compiles to native ARM; financial UI is not degraded by JS-thread contention.
-- **Widget composability** allows shipping individual screens (`BanzamiSendScreen`, `BanzamiReceiveScreen`, `BanzamiScanScreen`, `BanzamiHomeScreen`) that host apps can embed directly via `Navigator.push`, without taking ownership of the full app shell.
+- **Widget composability** allows shipping individual screens (`the reference operatorSendScreen`, `the reference operatorReceiveScreen`, `the reference operatorScanScreen`, `the reference operatorHomeScreen`) that host apps can embed directly via `Navigator.push`, without taking ownership of the full app shell.
 - **Banza's engineering team** converges on one mobile language rather than maintaining two.
 
 **Package structure:**
@@ -35,12 +35,12 @@ Flutter was chosen because:
 ```
 sdk/flutter/
   lib/
-    banzami_sdk.dart     ← single barrel export
+    banza_sdk.dart     ← single barrel export
     client/              ← BanzaClient (HTTP), BanzaApiException
     models/              ← Consumer, WalletBalance, Transfer, QrCode, …
     utils/               ← formatMinor()
-    widgets/             ← BanzamiButton, BanzamiAmountInput, BanzamiQrDisplay, BanzamiQrScanner, BanzamiTransferItem
-    screens/             ← BanzamiHomeScreen, BanzamiSendScreen, BanzamiReceiveScreen, BanzamiScanScreen
+    widgets/             ← the reference operatorButton, the reference operatorAmountInput, the reference operatorQrDisplay, the reference operatorQrScanner, the reference operatorTransferItem
+    screens/             ← the reference operatorHomeScreen, the reference operatorSendScreen, the reference operatorReceiveScreen, the reference operatorScanScreen
     theme/               ← BanzaColors, BanzaTextStyles, BanzaSpacing, BanzaRadius, BanzaTheme
 ```
 

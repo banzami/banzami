@@ -46,7 +46,7 @@ export interface ResearchReport {
   duration_ms: number;
 }
 
-const RESEARCH_SYSTEM_PROMPT = `You are BanzamIA performing deep protocol research for the Banzami payment network.
+const RESEARCH_SYSTEM_PROMPT = `You are BanzAI performing deep protocol research for the BANZA payment network.
 You have been given evidence collected from multiple sources: protocol documents, RFC/ADR specifications, graph relationships, and conformance rules.
 
 Your task: synthesise the evidence into a comprehensive, grounded answer.

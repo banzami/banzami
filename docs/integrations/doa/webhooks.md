@@ -6,11 +6,11 @@ Complete reference for Banza webhook integration, including signature verificati
 
 ## Overview
 
-Banza webhooks deliver signed HTTP POST requests to a merchant-registered endpoint when domain events occur. For Doa, the only event type currently handled is `payment_link.paid`, which fires when a donor completes payment in the Banzami app.
+Banza webhooks deliver signed HTTP POST requests to a merchant-registered endpoint when domain events occur. For Doa, the only event type currently handled is `payment_link.paid`, which fires when a donor completes payment in the operator app.
 
-Doa's webhook endpoint: `POST /api/webhooks/banzami`
+Doa's webhook endpoint: `POST /api/webhooks/banza`
 
-**Relationship to polling**: Webhooks and the browser polling loop (`GET /api/donations/banzami-status`) are complementary, not exclusive. Both paths converge on the same idempotent `applyPaymentEvent()` function. Enabling webhooks eliminates the up-to-3-second polling lag without any risk of double-billing.
+**Relationship to polling**: Webhooks and the browser polling loop (`GET /api/donations/banza-status`) are complementary, not exclusive. Both paths converge on the same idempotent `applyPaymentEvent()` function. Enabling webhooks eliminates the up-to-3-second polling lag without any risk of double-billing.
 
 ---
 
@@ -19,11 +19,11 @@ Doa's webhook endpoint: `POST /api/webhooks/banzami`
 Register your endpoint using the Banza API:
 
 ```bash
-curl -X POST https://api.banzami.com/v1/webhooks/endpoints \
-  -H "Authorization: Bearer $BANZAMI_JWT" \
+curl -X POST https://api.banza.network/v1/webhooks/endpoints \
+  -H "Authorization: Bearer $BANZA_JWT" \
   -H "Content-Type: application/json" \
   -d '{
-    "url":    "https://doadoa.app/api/webhooks/banzami",
+    "url":    "https://doadoa.app/api/webhooks/banza",
     "events": ["payment_link.paid"]
   }'
 ```
@@ -34,7 +34,7 @@ curl -X POST https://api.banzami.com/v1/webhooks/endpoints \
 {
   "id":          "wep_01jqx...",
   "merchant_id": "mer_01jqx...",
-  "url":         "https://doadoa.app/api/webhooks/banzami",
+  "url":         "https://doadoa.app/api/webhooks/banza",
   "events":      ["payment_link.paid"],
   "active":      true,
   "secret":      "whsec_ABC...XYZ",
@@ -42,7 +42,7 @@ curl -X POST https://api.banzami.com/v1/webhooks/endpoints \
 }
 ```
 
-Save `secret` as `BANZAMI_WEBHOOK_SECRET` in your environment. **It is returned only once.** Banza stores only the hash of the secret.
+Save `secret` as `BANZA_WEBHOOK_SECRET` in your environment. **It is returned only once.** Banza stores only the hash of the secret.
 
 ---
 
@@ -94,7 +94,7 @@ function verifySignature(secret, header, rawBody):
 
 **Why constant-time comparison?** Variable-time string comparison (e.g. `===`) leaks timing information that an attacker can use to learn the expected signature one byte at a time. `crypto.timingSafeEqual` runs in constant time regardless of where strings differ.
 
-**Doa implementation** (`app/api/webhooks/banzami/route.ts`):
+**Doa implementation** (`app/api/webhooks/banza/route.ts`):
 
 ```typescript
 import { createHmac, timingSafeEqual } from 'crypto';
@@ -268,7 +268,7 @@ At checkout, `initiatePayment()` inserts:
   "intent_id":  "di_01jqx...",
   "event_type": "payment_initiated",
   "payload": {
-    "provider":     "banzami",
+    "provider":     "banza",
     "provider_ref": "lnk_01jqxyzabc123",
     "initiate": { "kind": "inline", "token": "...", "provider_ref": "..." }
   }
@@ -297,12 +297,12 @@ The Banza API lets you inspect delivery history:
 
 ```bash
 # List events for a merchant
-curl "https://api.banzami.com/v1/webhooks/events?merchant_id=mer_01jqx..." \
-  -H "Authorization: Bearer $BANZAMI_JWT"
+curl "https://api.banza.network/v1/webhooks/events?merchant_id=mer_01jqx..." \
+  -H "Authorization: Bearer $BANZA_JWT"
 
 # Inspect delivery attempts for a specific event
-curl "https://api.banzami.com/v1/webhooks/events/evt_01jqx.../deliveries" \
-  -H "Authorization: Bearer $BANZAMI_JWT"
+curl "https://api.banza.network/v1/webhooks/events/evt_01jqx.../deliveries" \
+  -H "Authorization: Bearer $BANZA_JWT"
 ```
 
 **Delivery statuses**: `pending`, `success`, `failed`.
@@ -326,13 +326,13 @@ cloudflared tunnel --url http://localhost:3000
 Register the tunnel URL as your webhook endpoint:
 
 ```bash
-curl -X POST https://sandbox-api.banzami.com/v1/webhooks/endpoints \
+curl -X POST https://sandbox.banza.network/v1/webhooks/endpoints \
   -H "Authorization: Bearer $SANDBOX_JWT" \
-  -d '{ "url": "https://abc.ngrok.io/api/webhooks/banzami",
+  -d '{ "url": "https://abc.ngrok.io/api/webhooks/banza",
          "events": ["payment_link.paid"] }'
 ```
 
-Save the returned `secret` as `BANZAMI_WEBHOOK_SECRET=whsec_...` in `.env.local` and restart the dev server.
+Save the returned `secret` as `BANZA_WEBHOOK_SECRET=whsec_...` in `.env.local` and restart the dev server.
 
 ---
 
@@ -342,7 +342,7 @@ Manual test sequence:
 
 ```bash
 # 1. Create a payment link
-curl -X POST https://sandbox-api.banzami.com/v1/payment-links \
+curl -X POST https://sandbox.banza.network/v1/payment-links \
   -H "Authorization: Bearer $SANDBOX_JWT" \
   -d '{
     "merchant_id":  "...",
@@ -353,10 +353,10 @@ curl -X POST https://sandbox-api.banzami.com/v1/payment-links \
 # → Note the link id
 
 # 2. Simulate payment (marks link as USED + fires webhook)
-curl -X POST https://sandbox-api.banzami.com/v1/payment-links/{id}/mark-used \
+curl -X POST https://sandbox.banza.network/v1/payment-links/{id}/mark-used \
   -H "Authorization: Bearer $SANDBOX_JWT"
 
 # 3. Inspect your server logs for:
-#    banzami_webhook_received  { type: 'payment_link.paid' }
-#    banzami_webhook_ok        { intent_id: '...', deduped: false }
+#    banza_webhook_received  { type: 'payment_link.paid' }
+#    banza_webhook_ok        { intent_id: '...', deduped: false }
 ```

@@ -41,7 +41,7 @@ class WebhookHandlerTest extends TestCase
 
     public function testParseThrowsOnInvalidSignature(): void
     {
-        $this->expectException(BanzamiException::class);
+        $this->expectException(the reference operatorException::class);
         $this->expectExceptionCode(401);
 
         $body    = json_encode(['type' => 'transaction.completed', 'payload' => []]);
@@ -52,7 +52,7 @@ class WebhookHandlerTest extends TestCase
 
     public function testParseThrowsOnEmptySignature(): void
     {
-        $this->expectException(BanzamiException::class);
+        $this->expectException(the reference operatorException::class);
         $this->expectExceptionCode(401);
 
         $body    = json_encode(['type' => 'transaction.completed', 'payload' => []]);
@@ -63,7 +63,7 @@ class WebhookHandlerTest extends TestCase
 
     public function testParseThrowsOnMissingTypeField(): void
     {
-        $this->expectException(BanzamiException::class);
+        $this->expectException(the reference operatorException::class);
         $this->expectExceptionCode(400);
 
         $body    = json_encode(['payload' => ['id' => 'txn_1']]);

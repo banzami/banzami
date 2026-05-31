@@ -1,5 +1,5 @@
 {
-  "_spec": "Banzami Event Envelope Conformance Vectors v1.0",
+  "_spec": "the reference operator Event Envelope Conformance Vectors v1.0",
   "_stability": "stable",
   "_note": "Event shape vectors validate the structure of events emitted by the operator. Events are checked via GET /events/history after triggering operations.",
 

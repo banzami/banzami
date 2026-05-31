@@ -1,4 +1,4 @@
-//! Operator and wallet capability declarations for the Banzami kernel.
+//! Operator and wallet capability declarations for the BANZA kernel.
 //!
 //! This crate defines declarative capability types that operators and wallets
 //! use to announce what they support. The kernel consults these declarations

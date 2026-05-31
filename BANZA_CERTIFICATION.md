@@ -1,7 +1,7 @@
 # BANZA — Certification
 
 > This document describes: **BANZA** — the open financial infrastructure protocol.
-> For other layers: [BanzAI](../banzai/BANZAI_REFERENCE.md) · [Banzami](../banzami/BANZAMI_REFERENCE.md)
+> For other layers: [BanzAI](../banzai/BANZAI_REFERENCE.md) · [the reference operator](../banza/BANZA_REFERENCE.md)
 
 **Version:** 1.0  
 **Date:** 2026-05-30  
@@ -160,14 +160,14 @@ Create a valid manifest for your target level. Run the Manifest Validator to ver
 
 ### Step 2: Implement the capabilities
 
-Build your operator implementation against the BANZA Kernel API or by implementing the equivalent protocol behaviour. Use the [Banzami reference operator](../banzami/BANZAMI_ARCHITECTURE.md) as your reference.
+Build your operator implementation against the BANZA Kernel API or by implementing the equivalent protocol behaviour. Use the [the reference operator reference operator](../banza/BANZA_ARCHITECTURE.md) as your reference.
 
 ### Step 3: Run the conformance suite
 
 Run the conformance suite for your target level against your sandbox environment:
 
 ```bash
-banzami-conformance run \
+banza-conformance run \
   --level 1 \
   --api-key bz_test_... \
   --base-url https://sandbox-api.youroperator.ao \

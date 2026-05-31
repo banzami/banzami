@@ -1,6 +1,6 @@
 //! SQLite-backed double-entry ledger for local development.
 //!
-//! This is a reference implementation of the Banzami ledger semantics using
+//! This is a reference implementation of the the reference operator ledger semantics using
 //! SQLite. It is NOT a production financial system — balances reset when you
 //! delete the database file (or use `LocalLedger::open_in_memory()`).
 //!

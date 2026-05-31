@@ -1,5 +1,5 @@
 {
-  "_spec": "Banzami QR Conformance Vectors v1.0",
+  "_spec": "BANZA QR Conformance Vectors v1.0",
   "_stability": "stable",
 
   "vectors": [
@@ -29,10 +29,10 @@
         },
         "response_field_patterns": {
           "id": "^qr-",
-          "payload_data": "^BANZAMI"
+          "payload_data": "^BANZA"
         }
       },
-      "notes": "payload_data must start with BANZAMI prefix (BANZAMI-SBX: in sandbox, BANZAMI: in production)."
+      "notes": "payload_data must start with BANZA prefix (BANZA-SBX: in sandbox, BANZA: in production)."
     },
     {
       "id": "QR-002",
@@ -191,7 +191,7 @@
     },
     {
       "id": "QR-007",
-      "title": "QR payload — sandbox prefix must be BANZAMI-SBX:",
+      "title": "QR payload — sandbox prefix must be BANZA-SBX:",
       "certification_level": 1,
       "stability": "stable",
       "input": {
@@ -206,10 +206,10 @@
       "expected": {
         "status": 200,
         "response_field_patterns": {
-          "payload_data": "^BANZAMI-SBX:"
+          "payload_data": "^BANZA-SBX:"
         }
       },
-      "notes": "In sandbox mode (simulated=true), the QR payload must use BANZAMI-SBX: prefix, not BANZAMI:."
+      "notes": "In sandbox mode (simulated=true), the QR payload must use BANZA-SBX: prefix, not BANZA:."
     }
   ]
 }

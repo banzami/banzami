@@ -7,23 +7,23 @@ Complete checklist for going live with the Banza payment method. Work through ea
 ## 1. Credentials and Environment
 
 - [ ] **Replace sandbox key with live key**
-  - `BANZAMI_API_KEY=bz_live_...`
+  - `BANZA_API_KEY=bz_live_...`
   - Verify the prefix starts with `bz_live_` — not `bz_test_`
 
 - [ ] **Point to live gateway**
-  - `BANZAMI_GATEWAY_URL=https://api.banzami.com`
-  - Previously: `https://sandbox-api.banzami.com`
+  - `BANZA_GATEWAY_URL=https://api.banza.network`
+  - Previously: `https://sandbox.banza.network`
 
 - [ ] **Set production merchant and wallet IDs**
-  - `BANZAMI_MERCHANT_ID=mer_...` (your live merchant UUID)
-  - `BANZAMI_WALLET_ID=wlt_...` (your live AOA wallet UUID)
+  - `BANZA_MERCHANT_ID=mer_...` (your live merchant UUID)
+  - `BANZA_WALLET_ID=wlt_...` (your live AOA wallet UUID)
 
 - [ ] **Verify pay page base URL**
-  - `BANZAMI_PAY_BASE_URL=https://pay.banzami.com`
+  - `BANZA_PAY_BASE_URL=https://pay.banza.network`
   - This is the same domain for both environments — verify the value is set
 
 - [ ] **Enable Banza in method list**
-  - `PAYMENT_PROVIDERS=stripe,bank-transfer,banzami` (or your current set)
+  - `PAYMENT_PROVIDERS=stripe,bank-transfer,banza` (or your current set)
 
 ---
 
@@ -32,11 +32,11 @@ Complete checklist for going live with the Banza payment method. Work through ea
 - [ ] **Register production webhook endpoint**
 
   ```bash
-  curl -X POST https://api.banzami.com/v1/webhooks/endpoints \
+  curl -X POST https://api.banza.network/v1/webhooks/endpoints \
     -H "Authorization: Bearer $LIVE_JWT" \
     -H "Content-Type: application/json" \
     -d '{
-      "url":    "https://doadoa.app/api/webhooks/banzami",
+      "url":    "https://doadoa.app/api/webhooks/banza",
       "events": ["payment_link.paid"]
     }'
   ```
@@ -44,7 +44,7 @@ Complete checklist for going live with the Banza payment method. Work through ea
   The response contains a `secret` field. **This is returned only once.**
 
 - [ ] **Store the secret**
-  - `BANZAMI_WEBHOOK_SECRET=whsec_...`
+  - `BANZA_WEBHOOK_SECRET=whsec_...`
   - Added to production environment variables (Vercel env, secrets manager, etc.)
   - Never committed to the repository
 
@@ -60,10 +60,10 @@ Complete checklist for going live with the Banza payment method. Work through ea
   - Open a campaign donation flow
   - Select Banza as payment method
   - Confirm NO amber "SANDBOX" badge appears in the payment panel
-  - If badge appears, `BANZAMI_API_KEY` still starts with `bz_test_`
+  - If badge appears, `BANZA_API_KEY` still starts with `bz_test_`
 
 - [ ] **Webhook signature verification is active**
-  - `BANZAMI_WEBHOOK_SECRET` is set in production environment
+  - `BANZA_WEBHOOK_SECRET` is set in production environment
   - Server has been restarted / redeployed after setting the variable
 
 - [ ] **Credentials are NOT in the repository**
@@ -84,11 +84,11 @@ Perform a real end-to-end test with a small amount (e.g., 100 AOA = 10,000 centa
   - Go through the full Doa donation flow on the production URL
   - Select Banza
   - Confirm the QR code renders correctly
-  - Confirm the pay URL format is `https://pay.banzami.com/{slug}` (not the sandbox domain)
+  - Confirm the pay URL format is `https://pay.banza.network/{slug}` (not the sandbox domain)
 
 - [ ] **Complete the payment in the Banza consumer app**
   - Scan the QR with a real Banza account
-  - Confirm the app shows the correct amount and merchant name ("Banzami Business")
+  - Confirm the app shows the correct amount and merchant name ("the reference operator Business")
   - Complete with PIN or biometrics
 
 - [ ] **Verify confirmation in Doa**
@@ -114,15 +114,15 @@ Perform a real end-to-end test with a small amount (e.g., 100 AOA = 10,000 centa
 ## 5. Observability
 
 - [ ] **Logs contain Banza events**
-  - `banzami_initiate_ok` logged at initiation
-  - `api.webhooks.banzami` and `banzami_webhook_ok` logged at confirmation
+  - `banza_initiate_ok` logged at initiation
+  - `api.webhooks.banza` and `banza_webhook_ok` logged at confirmation
 
-- [ ] **No `CRITICAL: Banzami sandbox key in production` log line**
+- [ ] **No `CRITICAL: the reference operator sandbox key in production` log line**
   - If the startup check fires, fix the API key before going live
 
 - [ ] **Webhook rejection rate is zero**
-  - No `banzami_webhook_rejected` log lines for legitimate payments
-  - If rejections appear, verify `BANZAMI_WEBHOOK_SECRET` matches the registered endpoint's secret
+  - No `banza_webhook_rejected` log lines for legitimate payments
+  - If rejections appear, verify `BANZA_WEBHOOK_SECRET` matches the registered endpoint's secret
 
 ---
 
@@ -154,7 +154,7 @@ Perform a real end-to-end test with a small amount (e.g., 100 AOA = 10,000 centa
 
 - [ ] At least one real donation completed end-to-end via Banza
 - [ ] No unexpected webhook failures in Banza dashboard
-- [ ] No `banzami_webhook_rejected` log events (excluding test deliveries)
+- [ ] No `banza_webhook_rejected` log events (excluding test deliveries)
 - [ ] Donation amounts in Doa's database match Banza dashboard balances
 - [ ] Receipt delivery working for Banza-confirmed donations
 

@@ -11,7 +11,7 @@ Accept payments via the BANZA payment network in any WooCommerce store. Customer
 
 ## Installation
 
-1. Upload the `banzami-payment/` folder to `/wp-content/plugins/`.
+1. Upload the `banza-payment/` folder to `/wp-content/plugins/`.
 2. In WordPress admin go to **Plugins → Installed Plugins** and activate **Banza Payment Gateway**.
 3. Go to **WooCommerce → Settings → Payments** and click **Banza**.
 4. Fill in the settings (see below) and click **Save changes**.
@@ -23,7 +23,7 @@ Accept payments via the BANZA payment network in any WooCommerce store. Customer
 | **Enable** | Toggle the gateway on/off at checkout |
 | **Title** | Label shown to customers at checkout (e.g. "Banza — Pagar com o telemóvel") |
 | **Description** | Short description shown below the title at checkout |
-| **Gateway URL** | Your Banza API gateway URL (`https://api.banzami.com` for production) |
+| **Gateway URL** | Your Banza API gateway URL (`https://api.banza.network` for production) |
 | **API Key** | Merchant API key from the Banza dashboard — starts with `bz_live_` |
 | **Webhook Secret** | Signing secret from the Banza dashboard — used to verify webhook authenticity |
 | **Currency** | `AOA` (Angolan Kwanza) or `USD` |
@@ -34,7 +34,7 @@ Accept payments via the BANZA payment network in any WooCommerce store. Customer
 Register your webhook endpoint in the Banza merchant dashboard:
 
 ```
-https://your-store.com/wc-api/banzami
+https://your-store.com/wc-api/banza
 ```
 
 Events the plugin handles:
@@ -59,7 +59,7 @@ Customer → WooCommerce Checkout
 Customer → Scans QR with Banza app
          → Confirms payment in app
 
-Banzami  → POST https://your-store.com/wc-api/banzami
+the reference operator  → POST https://your-store.com/wc-api/banza
          → { "type": "transaction.completed", "payload": { "id": "...", "reference": "42" } }
 
 Plugin   → Verifies HMAC signature
@@ -75,9 +75,9 @@ The plugin stores these custom meta fields on each order:
 
 | Meta key | Value |
 |---|---|
-| `_banzami_transaction_id` | Banza transaction ID (UUID) |
-| `_banzami_amount_minor` | Amount in minor units (integer) sent to the API |
-| `_banzami_refund_processed` | Set to `"1"` after a refund webhook is processed (prevents duplicates) |
+| `_banza_transaction_id` | Banza transaction ID (UUID) |
+| `_banza_amount_minor` | Amount in minor units (integer) sent to the API |
+| `_banza_refund_processed` | Set to `"1"` after a refund webhook is processed (prevents duplicates) |
 
 ## Currency and Minor Units
 
@@ -93,7 +93,7 @@ Use [ngrok](https://ngrok.com/) or a similar tunnel to expose your local WordPre
 ```bash
 ngrok http 80
 # Copy the HTTPS URL and set it as webhook endpoint in operator dashboard
-# e.g. https://abc123.ngrok.io/wc-api/banzami
+# e.g. https://abc123.ngrok.io/wc-api/banza
 ```
 
 Set **Gateway URL** in the plugin settings to `http://localhost:8080` (your local API gateway).
@@ -105,7 +105,7 @@ BODY='{"type":"transaction.completed","payload":{"id":"tx_test","reference":"1"}
 SECRET="your-webhook-secret"
 SIG="sha256=$(echo -n "$BODY" | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $2}')"
 
-curl -X POST https://your-tunnel.ngrok.io/wc-api/banzami \
+curl -X POST https://your-tunnel.ngrok.io/wc-api/banza \
   -H "Content-Type: application/json" \
   -H "Banza-Signature: $SIG" \
   -d "$BODY"
@@ -118,7 +118,7 @@ Check that:
 1. The Webhook URL is correctly registered in the Banza dashboard.
 2. The Webhook Secret matches exactly (no trailing spaces).
 3. Your server is accessible from the internet (not blocked by a firewall).
-4. WooCommerce → Status → Logs shows no PHP errors for the `banzami` source.
+4. WooCommerce → Status → Logs shows no PHP errors for the `banza` source.
 
 **Signature verification fails (401 in logs).**
 The Webhook Secret in WooCommerce settings must exactly match the one in the Banza dashboard. Regenerate both if unsure.
@@ -132,7 +132,7 @@ Ensure the plugin is enabled in WooCommerce → Settings → Payments and that t
 ## Running Tests
 
 ```bash
-cd plugins/woocommerce/banzami-payment
+cd plugins/woocommerce/banza-payment
 composer install
 ./vendor/bin/phpunit
 ```

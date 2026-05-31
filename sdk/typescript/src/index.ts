@@ -1,11 +1,11 @@
 export { BanzaClient }                              from './client.js';
-export type { BanzaClientOptions, BanzamiHooks }   from './client.js';
+export type { BanzaClientOptions, BanzaHooks }   from './client.js';
 
 export { BanzaApiError }                           from './errors.js';
 
 export {
   WebhooksClient,
-  BanzamiWebhookSignatureError,
+  BanzaWebhookSignatureError,
   constructEvent,
   verifySignature,
   generateTestSignature,
@@ -17,7 +17,7 @@ export {
 export { formatMinor, addMinor, subtractMinor }      from './money.js';
 
 export type {
-  BanzamiEnvironment,
+  BanzaEnvironment,
   Page,
   Consumer,
   ConsumerStatus,

@@ -5,7 +5,7 @@ In your Django settings add:
     BANZA_WEBHOOK_SECRET = "whsec_..."
 
 In urls.py:
-    path("webhooks/banzami/", views.banza_webhook),
+    path("webhooks/banza/", views.banza_webhook),
     path("checkout/qr/", views.create_qr_checkout),
 """
 
@@ -90,8 +90,8 @@ def banza_webhook(request):
 
 
 def _handle_transaction_completed(payload: dict) -> None:
-    print(f"[banzami] Transaction completed: {payload.get('transaction_id')}")
+    print(f"[banza] Transaction completed: {payload.get('transaction_id')}")
 
 
 def _handle_payout_completed(payload: dict) -> None:
-    print(f"[banzami] Payout completed: {payload.get('payout_id')}")
+    print(f"[banza] Payout completed: {payload.get('payout_id')}")

@@ -1,5 +1,5 @@
 {
-  "_comment": "Golden test vectors for Banzami webhook signature verification. All SDKs MUST produce identical results for each vector. Generated from the canonical Go implementation (services/api-gateway/internal/webhook/signer.go).",
+  "_comment": "Golden test vectors for BANZA webhook signature verification. All SDKs MUST produce identical results for each vector. Generated from the canonical Go implementation (services/api-gateway/internal/webhook/signer.go).",
   "_spec": "docs/standards/webhook-signature-spec.md",
   "_algorithm": "HMAC-SHA256(key=secret, msg='{timestamp}.{raw_body}')",
   "_header_format": "Banza-Signature: t=<unix_seconds>,v1=<hex_hmac_sha256>",
@@ -110,8 +110,8 @@
     },
     {
       "id": "V-012",
-      "description": "Wrong X-Banzami-Signature header name — wrong field, not Banzami-Signature",
-      "comment": "SDKs that look up 'x-banzami-signature' instead of 'banzami-signature' will silently fail",
+      "description": "Wrong X-the reference operator-Signature header name — wrong field, not the reference operator-Signature",
+      "comment": "SDKs that look up 'x-banza-signature' instead of 'banza-signature' will silently fail",
       "timestamp": null,
       "raw_body": "{\"type\":\"payment_link.paid\",\"id\":\"evt_test_001\"}",
       "expected_header": "sha256=c5b81e18bf170f081781f860811ee5567618e251b8b6002a90f4ac12c109dbcb",

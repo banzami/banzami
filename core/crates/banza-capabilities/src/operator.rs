@@ -10,7 +10,7 @@
 
 use banza_types::Currency;
 
-/// Top-level capability declaration for a Banzami operator.
+/// Top-level capability declaration for a a BANZA operator.
 ///
 /// Operators construct and publish this manifest. The kernel uses it at startup
 /// to log what is active. In a multi-operator context (RFC-0001, RFC-0005),
@@ -27,7 +27,7 @@ pub struct OperatorManifest {
     /// Semantic version of this operator deployment.
     pub operator_version: String,
 
-    /// Banzami kernel version range this operator is compatible with.
+    /// BANZA kernel version range this operator is compatible with.
     ///
     /// Format: semver range, e.g. `"0.1.x"` or `">=0.1.0,<0.2.0"`.
     pub banza_kernel_version: String,

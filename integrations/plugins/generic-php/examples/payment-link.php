@@ -8,22 +8,22 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use Banza\BanzaClient;
 
 $client = new BanzaClient(
-    baseUrl: getenv('BANZAMI_GATEWAY_URL') ?: 'https://api.banzami.ao',
-    apiKey:  getenv('BANZAMI_API_KEY'),
+    baseUrl: getenv('BANZA_GATEWAY_URL') ?: 'https://api.banza.ao',
+    apiKey:  getenv('BANZA_API_KEY'),
 );
 
 $link = $client->createPaymentLink([
-    'merchant_id'  => getenv('BANZAMI_MERCHANT_ID'),
-    'wallet_id'    => getenv('BANZAMI_WALLET_ID'),
+    'merchant_id'  => getenv('BANZA_MERCHANT_ID'),
+    'wallet_id'    => getenv('BANZA_WALLET_ID'),
     'amount_minor' => 15000,    // 15.000 Kz
     'currency'     => 'AOA',
     'description'  => 'Pedido #' . uniqid(),
 ]);
 
-echo 'Payment URL: https://pay.banzami.ao/' . $link['slug'] . PHP_EOL;
+echo 'Payment URL: https://pay.banza.ao/' . $link['slug'] . PHP_EOL;
 echo 'Link ID: ' . $link['id'] . PHP_EOL;
 echo 'Status: ' . $link['status'] . PHP_EOL;
 
 // In a web context, redirect the customer:
-// header('Location: https://pay.banzami.ao/' . $link['slug']);
+// header('Location: https://pay.banza.ao/' . $link['slug']);
 // exit;

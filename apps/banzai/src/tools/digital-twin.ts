@@ -128,7 +128,7 @@ export function buildDigitalTwin(input: DigitalTwinInput): DigitalTwin {
     if (delta < 0) recs.push(`Readiness declined by ${Math.abs(delta)} points since last assessment — review recent changes.`);
   }
   if (recs.length === 0) {
-    recs.push('All requirements met. Submit manifest to Banzami network for formal certification.');
+    recs.push('All requirements met. Submit manifest to BANZA network for formal certification.');
   }
 
   // Trajectory

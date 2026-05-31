@@ -2,7 +2,7 @@
   "_spec": "BANZA QR Code Lifecycle Specification v1.0",
   "_status": "canonical",
   "_authority": "ADR-006, INV-QR-001",
-  "_source_of_truth": "core/crates/banzami-qr/src/qr_code.rs, core/crates/banzami-qr/src/engine.rs",
+  "_source_of_truth": "core/crates/banza-qr/src/qr_code.rs, core/crates/banza-qr/src/engine.rs",
 
   "states": {
     "ACTIVE":  "QR code is valid and accepts payment.",
@@ -53,7 +53,7 @@
     "description": "The canonical QR payment sequence from scan to ledger posting.",
     "steps": [
       { "step": 1, "action": "Consumer scans QR payload string" },
-      { "step": 2, "action": "Consumer device parses prefix (BANZA: or BANZA-SBX: (legacy: BANZAMI: or BANZAMI-SBX: accepted during 12-month transition)) and decodes Base64url body" },
+      { "step": 2, "action": "Consumer device parses prefix (BANZA: or BANZA-SBX: (legacy: BANZA: or BANZA-SBX: accepted during 12-month transition)) and decodes Base64url body" },
       { "step": 3, "action": "Type discriminator 't' determines STATIC or DYNAMIC path" },
       {
         "step": 4,

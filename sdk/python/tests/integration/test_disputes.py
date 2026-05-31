@@ -82,7 +82,7 @@ async def test_add_evidence():
         async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             dispute = await c.disputes.add_evidence(
                 "dsp_001",
-                evidence="https://storage.banzami.com/receipts/rec_001.pdf",
+                evidence="https://storage.banza.network/receipts/rec_001.pdf",
             )
 
     assert dispute.status == DisputeStatus.UNDER_REVIEW

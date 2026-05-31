@@ -30,10 +30,10 @@ export const TOLERANCE_SECONDS = 300;
 // Errors
 // ---------------------------------------------------------------------------
 
-export class BanzamiWebhookSignatureError extends Error {
+export class BanzaWebhookSignatureError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'BanzamiWebhookSignatureError';
+    this.name = 'BanzaWebhookSignatureError';
   }
 }
 
@@ -58,7 +58,7 @@ function parseSignatureHeader(header: string): ParsedHeader {
     if (key === 't') {
       const n = Number(val);
       if (!Number.isInteger(n) || n <= 0) {
-        throw new BanzamiWebhookSignatureError(
+        throw new BanzaWebhookSignatureError(
           `Banza-Signature: invalid timestamp value "${val}"`,
         );
       }
@@ -69,7 +69,7 @@ function parseSignatureHeader(header: string): ParsedHeader {
   }
 
   if (timestamp === undefined || !v1) {
-    throw new BanzamiWebhookSignatureError(
+    throw new BanzaWebhookSignatureError(
       'Banza-Signature header is malformed: expected "t=<unix>,v1=<hex>"',
     );
   }
@@ -83,7 +83,7 @@ function parseSignatureHeader(header: string): ParsedHeader {
 /**
  * Verify a `Banza-Signature` header against the raw request body.
  *
- * @throws {BanzamiWebhookSignatureError} If the signature is invalid, the
+ * @throws {BanzaWebhookSignatureError} If the signature is invalid, the
  *   timestamp is outside the replay-protection window, or the header is
  *   malformed.
  */
@@ -99,7 +99,7 @@ export function verifySignature(
   },
 ): void {
   if (!header) {
-    throw new BanzamiWebhookSignatureError(
+    throw new BanzaWebhookSignatureError(
       'Banza-Signature header is missing.',
     );
   }
@@ -111,7 +111,7 @@ export function verifySignature(
   if (tolerance > 0) {
     const age = Math.abs(now - parsed.timestamp);
     if (age > tolerance) {
-      throw new BanzamiWebhookSignatureError(
+      throw new BanzaWebhookSignatureError(
         `Webhook timestamp is ${age}s old (tolerance: ${tolerance}s) — possible replay attack.`,
       );
     }
@@ -131,7 +131,7 @@ export function verifySignature(
     expectedBuf.length !== receivedBuf.length ||
     !timingSafeEqual(expectedBuf, receivedBuf)
   ) {
-    throw new BanzamiWebhookSignatureError(
+    throw new BanzaWebhookSignatureError(
       'Webhook signature mismatch. Ensure you are passing the raw request body ' +
       'before any JSON parsing, and that the correct webhook secret is configured.',
     );
@@ -154,7 +154,7 @@ export function verifySignature(
  * @param secret   Webhook secret from the operator dashboard.
  * @returns        Parsed and verified {@link WebhookEvent}.
  *
- * @throws {BanzamiWebhookSignatureError} If signature verification fails.
+ * @throws {BanzaWebhookSignatureError} If signature verification fails.
  *
  * @example
  * ```typescript

@@ -10,7 +10,7 @@
 
 ## Context
 
-The Banzami Wallet is the foundational financial container for every consumer on the network. Every payment, transfer, QR scan, and payout settlement flows through a wallet. Getting the domain architecture right is a prerequisite for every subsequent financial feature — mistakes here propagate into the ledger, identity, and settlement layers.
+The BANZA Wallet is the foundational financial container for every consumer on the network. Every payment, transfer, QR scan, and payout settlement flows through a wallet. Getting the domain architecture right is a prerequisite for every subsequent financial feature — mistakes here propagate into the ledger, identity, and settlement layers.
 
 At the time of this ADR the `core/consumer-wallets` crate exists with a minimal three-state model (`ACTIVE`, `SUSPENDED`, `CLOSED`) and no onboarding lifecycle, no PIN security specification, no handle constraint definition, and no formal event model. The domain boundary between consumer identity (`core/identity`), the wallet engine (`core/consumer-wallets`), and the ledger (`core/ledger`) is implicit.
 
@@ -260,7 +260,7 @@ All invariants below are registered in `docs/validation/INVARIANT_TAXONOMY.md`. 
 
 **Go services (api-gateway, admin-api, public-api):** Read wallet state and balance via HTTP calls to core-api. They never write financial tables (`INV-SEC-004`). Wallet mutations are always initiated through core-api endpoints.
 
-**Mobile (Banzami app):** Communicates exclusively through the `@banza/sdk` TypeScript layer or `banza_flutter` SDK. PIN is captured on-device, transmitted over TLS as plaintext in the request body, hashed immediately in core-api before any persistence.
+**Mobile (operator app):** Communicates exclusively through the `@banza/sdk` TypeScript layer or `banza_flutter` SDK. PIN is captured on-device, transmitted over TLS as plaintext in the request body, hashed immediately in core-api before any persistence.
 
 **Background jobs (core/jobs/):** OTP expiry, stale onboarding cleanup, and reservation expiry run as Tokio tasks in core-api. They interact with consumer_wallets via the `ConsumerWalletEngine` trait directly (not HTTP).
 

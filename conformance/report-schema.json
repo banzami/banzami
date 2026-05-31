@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://banza.network/conformance/report-schema.json",
-  "title": "Banzami Conformance Report",
-  "description": "Canonical format for conformance test results produced by the Banzami conformance runner.",
+  "title": "the reference operator Conformance Report",
+  "description": "Canonical format for conformance test results produced by the the reference operator conformance runner.",
   "type": "object",
 
   "required": ["report_id", "generated_at", "runner_version", "operator_url", "protocol_version", "certification_level_achieved", "summary", "suites"],

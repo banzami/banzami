@@ -12,7 +12,7 @@ async function cmdIndex() {
   const verbose = args.includes('--verbose') || args.includes('-v') || !args.includes('--quiet');
   const embedder = createEmbeddingProvider(config);
 
-  console.log(`BanzamIA Indexer`);
+  console.log(`BanzAI Indexer`);
   console.log(`  Mode:     ${config.mode}`);
   console.log(`  Embedder: ${config.embedding.provider} (${config.embedding.dims} dims)`);
   console.log(`  Qdrant:   ${config.qdrant.url}`);
@@ -89,7 +89,7 @@ async function cmdStatus() {
   const state = await getIndexState(config);
   const colInfo = alive ? await collectionInfo(config) : { points_count: 0 };
 
-  console.log('BanzamIA RAG Status');
+  console.log('BanzAI RAG Status');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(`  Mode:             ${config.mode}`);
   console.log(`  Qdrant:           ${alive ? '✓ available' : '✗ unavailable'} (${config.qdrant.url})`);

@@ -6,15 +6,15 @@ BANZA is governed as an **open protocol** — its rules, contracts, and certific
 
 ## Operator Independence
 
-**Banzami is an independent commercial company.** It is not the protocol's governing body. Key facts:
+**An operator is an independent commercial entity.** It is not the protocol's governing body. Key facts:
 
-- BANZA is **not owned by Banzami**
-- BANZA is **not governed by Banzami**
-- Banzami does **not control** the certification framework
-- Banzami is **not part of** the BANZA protocol organization (`github.com/banza-protocol`)
-- Banzami operates at `github.com/banzami` and `banzami.com`
-- Banzami may contribute to BANZA via the ADR process, like any other operator
-- The BANZA protocol continues to exist if Banzami ceases operations
+- BANZA is **not owned by the reference operator**
+- BANZA is **not governed by the reference operator**
+- the reference operator does **not control** the certification framework
+- the reference operator is **not part of** the BANZA protocol organization (`github.com/banza-protocol`)
+- Um operador operates at `github.com/banza` and `banza.network`
+- the reference operator may contribute to BANZA via the ADR process, like any other operator
+- The BANZA protocol continues to exist if the reference operator ceases operations
 
 **No single operator governs the protocol.** See [BANZA_REFERENCE.md](BANZA_REFERENCE.md) for the canonical ecosystem hierarchy.
 
@@ -153,17 +153,17 @@ The BANZA protocol is maintained by its core engineering team. External maintain
 **The kernel never contains operator business logic. Operators never modify kernel
 invariants.** This boundary is permanent and enforced by code review.
 
-### Banzami — one operator among many
+### Operators — independent participants in the protocol
 
-Banzami is the first commercial operator built on Banza. It is not:
+A certified operator built on Banza. It is not:
 
 - A privileged operator with special kernel access
 - The hidden center of the ecosystem
 - The reference for how all operators must work
 
-Banzami implements the same public provider traits as any future operator.
+the reference operator implements the same public provider traits as any future operator.
 Its private repository contains no code that belongs in the kernel, and the
-kernel contains no code specific to Banzami.
+kernel contains no code specific to operador.
 
 ---
 
@@ -180,5 +180,5 @@ ADRs record decisions after they are made. RFCs propose changes before they are 
 
 - Protocol questions: open a GitHub Discussion
 - RFC proposals: open a PR to `docs/rfc/`
-- Security issues: security@banzami.com (see [BANZA_SECURITY.md](BANZA_SECURITY.md))
-- Code of conduct: conduct@banzami.com
+- Security issues: security@banza.network (see [BANZA_SECURITY.md](BANZA_SECURITY.md))
+- Code of conduct: conduct@banza.network

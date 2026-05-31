@@ -1,4 +1,4 @@
-export { BanzamiCheckout }         from './checkout';
-export type { BanzamiCheckoutConfig, OpenOptions } from './checkout';
-export { BanzamiApiError, formatAmount }           from './api';
+export { BanzaCheckout }         from './checkout';
+export type { BanzaCheckoutConfig, OpenOptions } from './checkout';
+export { BanzaApiError, formatAmount }           from './api';
 export type { PaymentLink, CreateLinkOptions }     from './api';

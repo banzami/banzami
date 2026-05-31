@@ -1,8 +1,5 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(sed -i '' 's/banzami payment gateway plugin/banza payment gateway plugin/g' integrations/plugins/woocommerce/banza-payment/composer.json)",
-      "Bash(sed -i '' 's/Banzami\\\\\\\\\\\\\\\\WooCommerce/Banza\\\\\\\\\\\\\\\\WooCommerce/g' integrations/plugins/woocommerce/banza-payment/composer.json)"
-    ]
+    "allow": []
   }
 }

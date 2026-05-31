@@ -12,9 +12,9 @@ The Banza sandbox is a complete replica of the production environment — same A
 
 | Service | URL |
 |---------|-----|
-| API Gateway | `https://sandbox-api.banzami.com` |
-| Business Dashboard | `https://sandbox-dashboard.banzami.com` |
-| Pay Page | `https://pay.banzami.com` (same domain — sandbox links are isolated by environment) |
+| API Gateway | `https://sandbox.banza.network` |
+| Business Dashboard | `https://sandbox-dashboard.banza.network` |
+| Pay Page | `https://pay.banza.network` (same domain — sandbox links are isolated by environment) |
 
 ---
 
@@ -32,13 +32,13 @@ Banza enforces this at the gateway — a `bz_test_` key is rejected by the live 
 **Doa reads the prefix at startup**:
 
 ```typescript
-// lib/payments/providers/banzami.ts
-const API_KEY    = process.env.BANZAMI_API_KEY ?? '';
+// lib/payments/providers/banza.ts
+const API_KEY    = process.env.BANZA_API_KEY ?? '';
 const IS_SANDBOX = API_KEY.startsWith('bz_test_');
 
-class BanzamiProvider implements PaymentProvider {
+class the reference operatorProvider implements PaymentProvider {
   readonly sandbox      = IS_SANDBOX;
-  readonly display_name = IS_SANDBOX ? 'Banzami (Sandbox)' : 'Banzami';
+  readonly display_name = IS_SANDBOX ? 'the reference operator (Sandbox)' : 'the reference operator';
   // ...
 }
 ```
@@ -51,14 +51,14 @@ This flag propagates to the donor UI as a visual badge — see [frontend-integra
 
 ```env
 # Sandbox configuration
-BANZAMI_GATEWAY_URL=https://sandbox-api.banzami.com
-BANZAMI_API_KEY=bz_test_your_sandbox_key_here
-BANZAMI_MERCHANT_ID=your-test-merchant-uuid
-BANZAMI_WALLET_ID=your-test-wallet-uuid
-BANZAMI_PAY_BASE_URL=https://pay.banzami.com
+BANZA_GATEWAY_URL=https://sandbox.banza.network
+BANZA_API_KEY=bz_test_your_sandbox_key_here
+BANZA_MERCHANT_ID=your-test-merchant-uuid
+BANZA_WALLET_ID=your-test-wallet-uuid
+BANZA_PAY_BASE_URL=https://pay.banza.network
 
-# Enable Banzami in the method picker
-PAYMENT_PROVIDERS=stripe,bank-transfer,banzami
+# Enable the reference operator in the method picker
+PAYMENT_PROVIDERS=stripe,bank-transfer,banza
 ```
 
 No other code changes are needed. The `bz_test_` prefix is the only switch.
@@ -67,20 +67,20 @@ No other code changes are needed. The `bz_test_` prefix is the only switch.
 
 ## Getting a Sandbox Account
 
-1. Visit `https://sandbox-dashboard.banzami.com` and register a sandbox merchant.
+1. Visit `https://sandbox-dashboard.banza.network` and register a sandbox merchant.
 2. The admin dashboard auto-approves KYB for sandbox accounts.
 3. A `bz_test_` API key is issued and emailed.
 4. Create a sandbox wallet via the dashboard or API:
 
 ```bash
 # Authenticate
-curl -X POST https://sandbox-api.banzami.com/v1/auth/token \
+curl -X POST https://sandbox.banza.network/v1/auth/token \
   -H "Content-Type: application/json" \
   -d '{ "api_key": "bz_test_your_key" }'
 # → { "token": "eyJ..." }
 
 # Create AOA wallet
-curl -X POST https://sandbox-api.banzami.com/v1/wallets \
+curl -X POST https://sandbox.banza.network/v1/wallets \
   -H "Authorization: Bearer $SANDBOX_JWT" \
   -d '{ "merchant_id": "mer_...", "currency": "AOA" }'
 # → { "id": "wlt_..." }
@@ -95,7 +95,7 @@ curl -X POST https://sandbox-api.banzami.com/v1/wallets \
 Sandbox wallets start with zero balance. Fund them using the sandbox endpoint:
 
 ```bash
-curl -X POST https://sandbox-api.banzami.com/v1/sandbox/fund \
+curl -X POST https://sandbox.banza.network/v1/sandbox/fund \
   -H "Authorization: Bearer $SANDBOX_JWT" \
   -H "Content-Type: application/json" \
   -d '{
@@ -113,7 +113,7 @@ Maximum: 100,000,000 centavos (1,000,000.00 AOA) per call. No daily limit.
 
 ### Method 1: Sandbox dashboard
 
-1. Open `https://sandbox-dashboard.banzami.com`
+1. Open `https://sandbox-dashboard.banza.network`
 2. Navigate to **Payment Links**
 3. Find the link created by Doa (description: `DOA-{prefix}`)
 4. Click **Simulate Payment**
@@ -123,18 +123,18 @@ Banza marks the link as `USED` and fires any registered webhook endpoints.
 ### Method 2: API call
 
 ```bash
-curl -X POST https://sandbox-api.banzami.com/v1/payment-links/{link_id}/mark-used \
+curl -X POST https://sandbox.banza.network/v1/payment-links/{link_id}/mark-used \
   -H "Authorization: Bearer $SANDBOX_JWT"
 ```
 
-This is equivalent to a donor scanning the QR and confirming in the Banzami app.
+This is equivalent to a donor scanning the QR and confirming in the operator app.
 
 ### Method 3: Sandbox simulate endpoint
 
 For simulating specific outcomes (not yet available for payment links, currently for card transactions):
 
 ```bash
-curl -X POST https://sandbox-api.banzami.com/v1/sandbox/simulate/payment \
+curl -X POST https://sandbox.banza.network/v1/sandbox/simulate/payment \
   -H "Authorization: Bearer $SANDBOX_JWT" \
   -d '{
     "wallet_id":    "wlt_...",
@@ -153,7 +153,7 @@ Valid scenarios: `success`, `insufficient_funds`, `fraud_blocked`.
 The sandbox supports test instruments that trigger specific outcomes. Retrieve the current list:
 
 ```bash
-curl https://sandbox-api.banzami.com/v1/sandbox/instruments \
+curl https://sandbox.banza.network/v1/sandbox/instruments \
   -H "Authorization: Bearer $SANDBOX_JWT"
 ```
 
@@ -183,28 +183,28 @@ Webhook verification uses the same HMAC-SHA256 algorithm in sandbox — the sand
 
 ```bash
 # Register sandbox webhook endpoint (local dev with ngrok tunnel)
-curl -X POST https://sandbox-api.banzami.com/v1/webhooks/endpoints \
+curl -X POST https://sandbox.banza.network/v1/webhooks/endpoints \
   -H "Authorization: Bearer $SANDBOX_JWT" \
   -d '{
-    "url":    "https://your-tunnel.ngrok.io/api/webhooks/banzami",
+    "url":    "https://your-tunnel.ngrok.io/api/webhooks/banza",
     "events": ["payment_link.paid"]
   }'
 # → { "secret": "whsec_...", ... }
 ```
 
-Set `BANZAMI_WEBHOOK_SECRET=whsec_...` in `.env.local` and restart.
+Set `BANZA_WEBHOOK_SECRET=whsec_...` in `.env.local` and restart.
 
 Simulate a payment to trigger the webhook:
 
 ```bash
-curl -X POST https://sandbox-api.banzami.com/v1/payment-links/{id}/mark-used \
+curl -X POST https://sandbox.banza.network/v1/payment-links/{id}/mark-used \
   -H "Authorization: Bearer $SANDBOX_JWT"
 ```
 
 Your server logs should show:
 ```
-{ action: 'api.webhooks.banzami', type: 'payment_link.paid', ... }
-banzami_webhook_ok { intent_id: '...', deduped: false }
+{ action: 'api.webhooks.banza', type: 'payment_link.paid', ... }
+banza_webhook_ok { intent_id: '...', deduped: false }
 ```
 
 ---
@@ -223,18 +223,18 @@ banzami_webhook_ok { intent_id: '...', deduped: false }
 
 ## Sandbox UI — SANDBOX Badge
 
-When `IS_SANDBOX = true`, the `BanzamiPanel` shows a visual badge:
+When `IS_SANDBOX = true`, the `the reference operatorPanel` shows a visual badge:
 
 ```
 ┌─────────────────────────────────┐
-│ Paga com o Banzami    [SANDBOX] │  ← amber badge
+│ Paga com o operador    [SANDBOX] │  ← amber badge
 │                                  │
 │ [QR code]                        │
 │ ...                              │
 └─────────────────────────────────┘
 ```
 
-This makes it immediately obvious during development and QA that the integration is running against sandbox. The badge disappears when `BANZAMI_API_KEY=bz_live_...` is set.
+This makes it immediately obvious during development and QA that the integration is running against sandbox. The badge disappears when `BANZA_API_KEY=bz_live_...` is set.
 
 ---
 
@@ -245,8 +245,8 @@ See [production-checklist.md](production-checklist.md) for the complete transiti
 **Key steps**:
 
 1. Replace `bz_test_` API key with `bz_live_` key.
-2. Replace `BANZAMI_GATEWAY_URL` with `https://api.banzami.com`.
+2. Replace `BANZA_GATEWAY_URL` with `https://api.banza.network`.
 3. Replace merchant/wallet IDs with production values.
-4. Register a new webhook endpoint against the production API and update `BANZAMI_WEBHOOK_SECRET`.
+4. Register a new webhook endpoint against the production API and update `BANZA_WEBHOOK_SECRET`.
 5. Verify the `SANDBOX` badge is gone from the Banza method picker.
 6. Run a real end-to-end test with a small amount before enabling for all campaigns.

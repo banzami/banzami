@@ -17,7 +17,7 @@ export class BanzaError extends Error {
   get isInsufficientFunds(): boolean { return this.code === 'INSUFFICIENT_FUNDS'; }
 }
 
-export interface BanzamiHooks {
+export interface BanzaHooks {
   /** Called before every HTTP attempt, including retries. */
   onRequest?:  (method: string, path: string, attempt: number) => void;
   /** Called after every successful HTTP response. */
@@ -32,7 +32,7 @@ export interface BanzaClientConfig {
   timeout?:     number; // ms, default 30000
   maxRetries?:  number; // default 3
   retryDelay?:  number; // base delay ms, doubles each retry, default 500
-  hooks?:       BanzamiHooks;
+  hooks?:       BanzaHooks;
 }
 
 export interface PaymentLink {
@@ -112,7 +112,7 @@ export interface Merchant {
 }
 
 /**
- * Banzami API client for Node.js.
+ * BANZA API client for Node.js.
  *
  * Uses the native fetch API (Node >= 18). No external dependencies.
  *
@@ -120,7 +120,7 @@ export interface Merchant {
  * import { BanzaClient } from '@banza/node';
  *
  * const client = new BanzaClient({
- *   gatewayUrl: 'https://api.banzami.com',
+ *   gatewayUrl: 'https://api.banza.network',
  *   apiKey:     'bz_live_...',
  * });
  *
@@ -130,7 +130,7 @@ export interface Merchant {
  *   amount_minor: 50000,
  *   currency:     'AOA',
  * });
- * // Redirect customer to: https://pay.banzami.com/${link.slug}
+ * // Redirect customer to: https://pay.banza.network/${link.slug}
  * ```
  */
 export class BanzaClient {
@@ -139,7 +139,7 @@ export class BanzaClient {
   private readonly timeout:    number;
   private readonly maxRetries: number;
   private readonly retryDelay: number;
-  private readonly hooks:      BanzamiHooks;
+  private readonly hooks:      BanzaHooks;
 
   constructor(cfg: BanzaClientConfig) {
     this.base       = cfg.gatewayUrl.replace(/\/$/, '');
@@ -269,7 +269,7 @@ export class BanzaClient {
    *
    * @param rawBody   Raw request body Buffer or string (do NOT parse first).
    * @param signature Value of the `Banza-Signature` header.
-   * @param secret    Webhook secret from the Banzami dashboard.
+   * @param secret    Webhook secret from the operator dashboard.
    */
   static verifyWebhook(
     rawBody:   Buffer | string,

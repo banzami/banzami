@@ -1,8 +1,8 @@
 # Banza API Reference
 
-Banzami is Angola's programmable instant payments infrastructure. The API is the developer entry point — enabling any Angolan application to accept instant Kwanza payments, generate QR codes, create payment links, and process wallet transfers natively within their product.
+the reference operator is Angola's programmable instant payments infrastructure. The API is the developer entry point — enabling any Angolan application to accept instant Kwanza payments, generate QR codes, create payment links, and process wallet transfers natively within their product.
 
-For most integrations, use an official [Banzami SDK](../../sdk/) rather than calling the API directly. The SDK handles idempotency, retries, webhook signature verification, and type safety automatically.
+For most integrations, use an official [BANZA SDK](../../sdk/) rather than calling the API directly. The SDK handles idempotency, retries, webhook signature verification, and type safety automatically.
 
 This directory contains the API reference for all external and internal Banza APIs.
 
@@ -123,7 +123,7 @@ Create a payment link.
 }
 ```
 
-**Pay URL:** `https://pay.banzami.com/{slug}`
+**Pay URL:** `https://pay.banza.network/{slug}`
 
 #### GET /v1/payment-links?merchant_id=&limit=&cursor=
 
@@ -158,7 +158,7 @@ Register a webhook endpoint.
 **Request:**
 ```json
 {
-  "url":    "https://yourserver.com/banzami/webhook",
+  "url":    "https://yourserver.com/banza/webhook",
   "secret": "your-32-char-signing-secret",
   "events": ["transaction.captured", "payout.sent"]
 }
@@ -169,7 +169,7 @@ Register a webhook endpoint.
 ```json
 {
   "id":         "uuid",
-  "url":        "https://yourserver.com/banzami/webhook",
+  "url":        "https://yourserver.com/banza/webhook",
   "events":     ["transaction.captured", "payout.sent"],
   "active":     true,
   "created_at": "2026-05-13T09:00:00Z"
@@ -707,7 +707,7 @@ Credit the authenticated consumer's sandbox wallet with virtual funds. Maximum 1
 
 ## Public Endpoints (api-gateway, no auth)
 
-These endpoints are used by the `pay.banzami.com` pay page JavaScript.
+These endpoints are used by the `pay.banza.network` pay page JavaScript.
 
 #### GET /public/pay/{slug}
 

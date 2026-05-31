@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://banza.network/conformance/capabilities/schema.json",
-  "title": "Banzami Operator Capability Descriptor",
-  "description": "Describes the declared capabilities of a Banzami operator and the certification level each implies.",
+  "title": "the reference operator Operator Capability Descriptor",
+  "description": "Describes the declared capabilities of a a BANZA operator and the certification level each implies.",
   "type": "object",
 
   "required": ["supports_wallets", "supports_qr", "supports_settlement"],
@@ -15,7 +15,7 @@
     },
     "supports_qr": {
       "type": "boolean",
-      "description": "QR code generation (POST /qr), scanning (decode BANZAMI-SBX: or BANZAMI: payload), and pay (POST /qr/:id/pay). Required for Level 1.",
+      "description": "QR code generation (POST /qr), scanning (decode BANZA-SBX: or BANZA: payload), and pay (POST /qr/:id/pay). Required for Level 1.",
       "certification_level": 1
     },
     "supports_settlement": {

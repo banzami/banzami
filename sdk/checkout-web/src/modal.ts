@@ -84,7 +84,7 @@ export class CheckoutModal {
     injectStyle();
     this.cleanup();
 
-    const deepLink  = `banzami://pay/link/${link.slug}`;
+    const deepLink  = `banza://pay/link/${link.slug}`;
     const amountTxt = link.amount_minor != null
       ? formatAmount(link.amount_minor, link.currency)
       : 'Valor livre';
@@ -102,7 +102,7 @@ export class CheckoutModal {
           <p id="bz-checkout-amount">${amountTxt}</p>
         </div>
         <div id="bz-checkout-qr"><canvas id="bz-qr-canvas"></canvas></div>
-        <a id="bz-checkout-btn" href="${deepLink}">Abrir app Banzami</a>
+        <a id="bz-checkout-btn" href="${deepLink}">Abrir app the reference operator</a>
         <p id="bz-checkout-waiting">A aguardar confirmação de pagamento…</p>
         <div id="bz-checkout-success">
           <div id="bz-checkout-success-icon">✓</div>

@@ -20,14 +20,14 @@ Canonical QR payment payload format specification for the BANZA protocol.
 
 | Environment | Prefix |
 |---|---|
-| Sandbox (`simulated=true`) | `BANZA-SBX:` (legacy: `BANZAMI-SBX:`) |
-| Production (`simulated=false`) | `BANZA:` (legacy: `BANZAMI:`) |
+| Sandbox (`simulated=true`) | `BANZA-SBX:` (legacy: `BANZA-SBX:`) |
+| Production (`simulated=false`) | `BANZA:` (legacy: `BANZA:`) |
 
 An operator MUST NOT use `BANZA:` (production prefix) in a sandbox environment. This is a certification FAIL.
 
 ## Known divergence
 
-The Rust kernel (`core/crates/banzami-qr/src/engine.rs`) implements a compact protocol format.  
+The Rust kernel (`core/crates/banza-qr/src/engine.rs`) implements a compact protocol format.  
 The sandbox operator (`reference/sandbox-operator/src/state.rs`) implements a verbose debug format.
 
 **The compact kernel format is the canonical protocol format.** `payload-format.json` specifies it. The sandbox debug format is acceptable in sandbox environments only (where `simulated=true`).

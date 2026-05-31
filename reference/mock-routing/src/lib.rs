@@ -161,7 +161,7 @@ impl RoutingEngine for DegradedRoutingEngine {
 // SandboxRoutingEngine — convenience alias for the reference operator
 // ---------------------------------------------------------------------------
 
-/// The default routing engine for the Banzami sandbox.
+/// The default routing engine for the the reference operator sandbox.
 ///
 /// Uses `StaticRoutingEngine::with_example_rules()` under the hood — a
 /// multi-currency example ruleset with no operator-specific assumptions.

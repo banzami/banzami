@@ -36,14 +36,14 @@ BANZA_REFERENCE.md
         ↓
    website sections
         ↓
-    banzami.com
+    banza.network
 ```
 
 The website is **only the visual presentation layer**. It renders the markdown document elegantly. It does not own content.
 
 ### The Publication Rule
 
-Nothing may appear on any public surface — banzami.com, landing pages, docs pages, manifesto pages, ecosystem pages, architecture pages, SDK explanation pages, marketing pages, or investor pages — without first existing inside `docs/BANZA_REFERENCE.md`.
+Nothing may appear on any public surface — banza.network, landing pages, docs pages, manifesto pages, ecosystem pages, architecture pages, SDK explanation pages, marketing pages, or investor pages — without first existing inside `docs/BANZA_REFERENCE.md`.
 
 ### The Update Rule
 
@@ -71,10 +71,10 @@ Each H2 section in `BANZA_REFERENCE.md` maps to a route in `apps/docs`:
 
 | Section | Route |
 |---------|-------|
-| `## 1. What Is Banzami?` | `/what-is-banzami` |
+| `## 1. What Is the reference operator?` | `/what-is-banza` |
 | `## 5. A Morning in Luanda` | `/a-morning-in-luanda` |
-| `## 12. Banzami for Developers` | `/banzami-for-developers` |
-| `## 14. The Banzami Flywheel` | `/the-banzami-flywheel` |
+| `## 12. the reference operator for Developers` | `/banza-for-developers` |
+| `## 14. The the reference operator Flywheel` | `/the-banza-flywheel` |
 | (all sections) | `/reference` — full document view |
 
 Routes are generated statically at build time from the parsed section list. No manual route maintenance.

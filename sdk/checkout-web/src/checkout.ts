@@ -1,9 +1,9 @@
-import { CheckoutApi, BanzamiApiError } from './api';
+import { CheckoutApi, BanzaApiError } from './api';
 import type { CreateLinkOptions, PaymentLink } from './api';
 import { CheckoutModal } from './modal';
 
-export interface BanzamiCheckoutConfig {
-  /** Base URL of the Banzami API gateway. */
+export interface BanzaCheckoutConfig {
+  /** Base URL of the BANZA API gateway. */
   gatewayUrl: string;
   /** Merchant API key (bz_live_... or bz_test_...). */
   apiKey:     string;
@@ -21,16 +21,16 @@ export interface OpenOptions {
   /** Link expiry. Defaults to 30 minutes from now. */
   expiresAt?:   Date;
   onSuccess?:   (link: PaymentLink) => void;
-  onError?:     (err: BanzamiApiError | Error) => void;
+  onError?:     (err: BanzaApiError | Error) => void;
   onCancel?:    () => void;
 }
 
-export class BanzamiCheckout {
+export class BanzaCheckout {
   private readonly api:   CheckoutApi;
   private readonly modal: CheckoutModal;
-  private readonly cfg:   BanzamiCheckoutConfig;
+  private readonly cfg:   BanzaCheckoutConfig;
 
-  constructor(config: BanzamiCheckoutConfig) {
+  constructor(config: BanzaCheckoutConfig) {
     this.cfg   = config;
     this.api   = new CheckoutApi(config.gatewayUrl, config.apiKey);
     this.modal = new CheckoutModal();

@@ -1,7 +1,7 @@
 """FastAPI example — payment link creation and webhook reception.
 
 Run:
-    pip install fastapi uvicorn banzami
+    pip install fastapi uvicorn banza
     uvicorn examples.fastapi.main:app --reload
 """
 
@@ -87,7 +87,7 @@ async def create_qr(body: QrRequest):
 # Webhook handler
 # ---------------------------------------------------------------------------
 
-@app.post("/webhooks/banzami")
+@app.post("/webhooks/banza")
 async def handle_webhook(
     request: Request,
     x_banza_signature: str = Header(...),

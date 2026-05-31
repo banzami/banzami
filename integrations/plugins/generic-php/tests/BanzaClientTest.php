@@ -15,13 +15,13 @@ class BanzaClientTest extends TestCase
         $handler = function (string $method, string $url, array $headers, ?string $body) use ($status, $responseBody): array {
             return ['status' => $status, 'body' => json_encode($responseBody)];
         };
-        return new BanzaClient('https://api.banzami.ao', 'bz_test_key', 30, $handler);
+        return new BanzaClient('https://api.banza.ao', 'bz_test_key', 30, $handler);
     }
 
     private function makeClientWithHandler(callable $handler): BanzaClient
     {
         // retryDelayMs=0 so retry tests complete instantly
-        return new BanzaClient('https://api.banzami.ao', 'bz_test', 30, $handler, 3, 0);
+        return new BanzaClient('https://api.banza.ao', 'bz_test', 30, $handler, 3, 0);
     }
 
     // -------------------------------------------------------------------------
@@ -53,7 +53,7 @@ class BanzaClientTest extends TestCase
 
     public function testCreatePaymentLinkValidationError(): void
     {
-        $this->expectException(BanzamiException::class);
+        $this->expectException(the reference operatorException::class);
         $this->expectExceptionCode(422);
 
         $client = $this->makeClient(422, [
@@ -75,7 +75,7 @@ class BanzaClientTest extends TestCase
 
     public function testGetPaymentLinkNotFound(): void
     {
-        $this->expectException(BanzamiException::class);
+        $this->expectException(the reference operatorException::class);
         $this->expectExceptionCode(404);
 
         $client = $this->makeClient(404, [
@@ -119,7 +119,7 @@ class BanzaClientTest extends TestCase
 
     public function testCreateTransactionInsufficientFunds(): void
     {
-        $this->expectException(BanzamiException::class);
+        $this->expectException(the reference operatorException::class);
         $this->expectExceptionCode(422);
 
         $client = $this->makeClient(422, [
@@ -144,7 +144,7 @@ class BanzaClientTest extends TestCase
             $capturedUrl = $url;
             return ['status' => 200, 'body' => json_encode($fixture)];
         };
-        $client = new BanzaClient('https://api.banzami.ao', 'bz_test_key', 30, $handler);
+        $client = new BanzaClient('https://api.banza.ao', 'bz_test_key', 30, $handler);
 
         $result = $client->listTransactions('merch_1', 10, 'cursor_prev');
 
@@ -207,7 +207,7 @@ class BanzaClientTest extends TestCase
             $capturedUrl = $url;
             return ['status' => 200, 'body' => json_encode($fixture)];
         };
-        $client = new BanzaClient('https://api.banzami.ao', 'bz_test_key', 30, $handler);
+        $client = new BanzaClient('https://api.banza.ao', 'bz_test_key', 30, $handler);
 
         $result = $client->listPayouts('merch_1', 5);
 
@@ -242,7 +242,7 @@ class BanzaClientTest extends TestCase
             $capturedHeaders = $headers;
             return ['status' => 200, 'body' => json_encode(['slug' => 'abc123', 'amount' => ['minor' => 5000, 'currency' => 'AOA']])];
         };
-        $client = new BanzaClient('https://api.banzami.ao', 'bz_test_key', 30, $handler);
+        $client = new BanzaClient('https://api.banza.ao', 'bz_test_key', 30, $handler);
 
         $result = $client->resolvePaymentLink('abc123');
 
@@ -338,7 +338,7 @@ class BanzaClientTest extends TestCase
         };
         $client = $this->makeClientWithHandler($handler);
 
-        $this->expectException(BanzamiException::class);
+        $this->expectException(the reference operatorException::class);
         $this->expectExceptionCode(422);
 
         try {

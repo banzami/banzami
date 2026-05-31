@@ -7,7 +7,7 @@ return [
     |--------------------------------------------------------------------------
     | The base URL of the Banza API gateway.
     */
-    'gateway_url' => env('BANZA_GATEWAY_URL', 'https://api.banzami.ao'),
+    'gateway_url' => env('BANZA_GATEWAY_URL', 'https://api.banza.ao'),
 
     /*
     |--------------------------------------------------------------------------

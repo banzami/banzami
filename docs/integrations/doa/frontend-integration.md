@@ -11,8 +11,8 @@ The Banza UI lives inside Doa's multi-step donation flow:
 ```
 DonateFlow
 └── Step 4: Payment method selection
-    ├── MethodPicker          ← list of available methods (Stripe, Bank Transfer, Banzami)
-    └── BanzaPanel          ← mounted when method = 'banzami'
+    ├── MethodPicker          ← list of available methods (Stripe, Bank Transfer, the reference operator)
+    └── BanzaPanel          ← mounted when method = 'banza'
         ├── Sandbox badge     ← conditional, amber, top-right
         ├── Step instructions ← numbered list (open app → scan → confirm)
         ├── QR card           ← bordered container with generated QR image
@@ -24,19 +24,19 @@ All components are in `app/(public)/c/[slug]/doar/`.
 
 ---
 
-## BanzamiPanel Props
+## the reference operatorPanel Props
 
 ```typescript
 interface BanzaPanelProps {
-  payUrl:    string;   // e.g. "https://pay.banzami.com/abc123def"
+  payUrl:    string;   // e.g. "https://pay.banza.network/abc123def"
   linkId:    string;   // e.g. "lnk_01jqx..." — used as &link_id param in status poll
   intentId:  string;   // donation_intent.id — used as &intent_id param in status poll
   returnUrl: string;   // redirect target after confirmed (e.g. "/c/{slug}/doar/obrigado?intent=...")
-  isSandbox: boolean;  // true when BANZAMI_API_KEY starts with bz_test_
+  isSandbox: boolean;  // true when BANZA_API_KEY starts with bz_test_
 }
 ```
 
-`payUrl` and `linkId` are both derived from the Banza payment link — `payUrl = BANZAMI_PAY_BASE_URL + '/' + slug`, `linkId = link.id`. They differ: `slug` is used in URLs, `id` is used for API calls.
+`payUrl` and `linkId` are both derived from the Banza payment link — `payUrl = BANZA_PAY_BASE_URL + '/' + slug`, `linkId = link.id`. They differ: `slug` is used in URLs, `id` is used for API calls.
 
 ---
 
@@ -54,7 +54,7 @@ When `isSandbox = true`, an amber badge appears in the panel header:
 
 This badge is purely informational. It does not alter API behavior. The API key prefix is the actual environment gate.
 
-The badge disappears in production when `BANZAMI_API_KEY=bz_live_...`.
+The badge disappears in production when `BANZA_API_KEY=bz_live_...`.
 
 ---
 
@@ -63,12 +63,12 @@ The badge disappears in production when `BANZAMI_API_KEY=bz_live_...`.
 The `isSandbox` prop traces back to the API key stored in the server environment:
 
 ```
-process.env.BANZAMI_API_KEY (bz_test_...)
-    → BanzaProvider.sandbox = true         (lib/payments/providers/banzami.ts)
+process.env.BANZA_API_KEY (bz_test_...)
+    → BanzaProvider.sandbox = true         (lib/payments/providers/banza.ts)
     → PaymentProvider.sandbox?: boolean      (lib/payments/provider.ts)
     → listPublicMethods() → PaymentMethodMeta.sandbox  (lib/payments/registry.ts)
     → DonateFlow props.methods[].sandbox     (app/(public)/c/[slug]/doar/donate-flow.tsx)
-    → banzamiSandbox state variable
+    → banzaSandbox state variable
     → BanzaPanel isSandbox={true}
     → "SANDBOX" badge rendered
 ```
@@ -115,9 +115,9 @@ The `qrcode` library is ~50 kB. Dynamic import defers this load until the donor 
 
 ```
 ┌──────────────────────────────────────────┐
-│ Paga com o Banzami            [SANDBOX]  │  ← header row
+│ Paga com o operador            [SANDBOX]  │  ← header row
 │                                           │
-│  1 ● Abre a app Banzami                  │
+│  1 ● Abre a app the reference operator                  │
 │  2 ● Toca em Pagar e usa o QR code       │  ← step instructions
 │  3 ● Confirma o pagamento                │
 │                                           │
@@ -143,7 +143,7 @@ Numbered instructions guide the donor through the payment process:
 <ol className="space-y-1 text-sm text-slate-600">
   <li className="flex items-start gap-2">
     <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-500">1</span>
-    <span>Abre a app Banzami</span>
+    <span>Abre a app the reference operator</span>
   </li>
   <li className="flex items-start gap-2">
     <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-500">2</span>
@@ -173,7 +173,7 @@ These steps are rendered in Portuguese (pt-AO) — the primary language of Doa's
 </a>
 ```
 
-This link is critical for donors on mobile — a donor cannot scan a QR displayed on the same screen. Tapping this opens `pay.banzami.com/{slug}` either in the browser or, if the Banzami app is installed and handles the URL scheme, directly in the app.
+This link is critical for donors on mobile — a donor cannot scan a QR displayed on the same screen. Tapping this opens `pay.banza.network/{slug}` either in the browser or, if the operator app is installed and handles the URL scheme, directly in the app.
 
 `rel="noopener noreferrer"` prevents the opened tab from accessing `window.opener` — a standard security practice for `target="_blank"` links.
 
@@ -226,7 +226,7 @@ useEffect(() => {
   pollRef.current = setInterval(async () => {
     try {
       const params = new URLSearchParams({ intent_id: intentId, link_id: linkId });
-      const r = await fetch(`/api/donations/banzami-status?${params}`);
+      const r = await fetch(`/api/donations/banza-status?${params}`);
       if (!r.ok) return;
       const j = await r.json() as { confirmed: boolean };
       if (j.confirmed) {
@@ -247,7 +247,7 @@ useEffect(() => {
 
 **Transient errors**: Network errors are silently caught. The next tick (3 s later) retries. The link remains valid on Banza's side regardless of poll failures.
 
-**Webhook acceleration**: If `BANZAMI_WEBHOOK_SECRET` is configured, Banza pushes `payment_link.paid` before the next poll tick. The webhook handler records the confirmation server-side. When the poll fires, the status check returns `{ confirmed: true }` immediately. The browser proceeds identically — it cannot distinguish webhook-confirmed from poll-confirmed.
+**Webhook acceleration**: If `BANZA_WEBHOOK_SECRET` is configured, Banza pushes `payment_link.paid` before the next poll tick. The webhook handler records the confirmation server-side. When the poll fires, the status check returns `{ confirmed: true }` immediately. The browser proceeds identically — it cannot distinguish webhook-confirmed from poll-confirmed.
 
 ---
 
@@ -257,25 +257,25 @@ Relevant state in `donate-flow.tsx`:
 
 ```typescript
 // Tracks if the active provider is in sandbox mode
-const [banzamiSandbox, setBanzamiSandbox] = useState(false);
+const [banzaSandbox, setthe reference operatorSandbox] = useState(false);
 
 // Set when the donor clicks "Pay with Banza" and initiate-payment succeeds
-// stage === 'banzami' triggers BanzaPanel mount
-const [stage, setStage] = useState<'method' | 'banzami' | 'done'>('method');
+// stage === 'banza' triggers BanzaPanel mount
+const [stage, setStage] = useState<'method' | 'banza' | 'done'>('method');
 
 // The inline result from initiate-payment (payUrl + linkId)
-const [banzamiInline, setBanzamiInline] = useState<{
+const [banzaInline, setthe reference operatorInline] = useState<{
   token: string;        // payUrl
   provider_ref: string; // linkId
 } | null>(null);
 ```
 
-When `submitMethod('banzami')` is called:
+When `submitMethod('banza')` is called:
 
-1. `setBanzamiSandbox(methods.find(m => m.id === 'banzami')?.sandbox ?? false)`
+1. `setthe reference operatorSandbox(methods.find(m => m.id === 'banza')?.sandbox ?? false)`
 2. `POST /api/donations/initiate-payment` → `{ result: { kind: 'inline', token, provider_ref } }`
-3. `setBanzamiInline({ token, provider_ref })`
-4. `setStage('banzami')`
+3. `setthe reference operatorInline({ token, provider_ref })`
+4. `setStage('banza')`
 5. `BanzaPanel` mounts with all required props
 
 ---
@@ -291,7 +291,7 @@ When `submitMethod('banzami')` is called:
 
 ## Branding Usage
 
-The panel uses the text label "Banzami" (or "Banzami (Sandbox)") as the method name. Banza's logo is not embedded in the panel — only the name.
+The panel uses the text label "the reference operator" (or "the reference operator (Sandbox)") as the method name. Banza's logo is not embedded in the panel — only the name.
 
 The QR code uses dark navy (`#0f172a`) ink on white background — high contrast for scanning and visually neutral (doesn't conflict with any Banza brand colors or Doa's Tailwind palette).
 
@@ -299,6 +299,6 @@ The QR code uses dark navy (`#0f172a`) ink on white background — high contrast
 
 ## No Client-Side Banza Credentials
 
-The `BanzaPanel` never sees any Banza API key, JWT, or webhook secret. The pay URL (`https://pay.banzami.com/{slug}`) is public — it was created server-side and returned to the browser as the `token` field. The donor scanning or clicking this URL is the intended public interaction.
+The `BanzaPanel` never sees any Banza API key, JWT, or webhook secret. The pay URL (`https://pay.banza.network/{slug}`) is public — it was created server-side and returned to the browser as the `token` field. The donor scanning or clicking this URL is the intended public interaction.
 
-All API calls to `api.banzami.com` are made from Next.js API routes, where credentials live in server-only environment variables.
+All API calls to `api.banza.network` are made from Next.js API routes, where credentials live in server-only environment variables.

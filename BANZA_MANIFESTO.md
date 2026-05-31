@@ -1,7 +1,7 @@
 # BANZA — Manifesto do Protocolo
 
 > This document describes: **BANZA** — the open financial infrastructure protocol.
-> For other layers: [BanzAI](../banzai/BANZAI_REFERENCE.md) · [Banzami](../banzami/BANZAMI_REFERENCE.md)
+> For other layers: [BanzAI](../banzai/BANZAI_REFERENCE.md) · [the reference operator](../banza/BANZA_REFERENCE.md)
 
 **Version:** 1.0  
 **Date:** 2026-05-30  
@@ -72,7 +72,7 @@ A India Payments Corporation seguiu o mesmo modelo com o UPI em 2016. Em 2024, o
 | **Quem pode participar** | Entidades com acordo com o operador | Qualquer entidade certificada | Qualquer entidade certificada |
 | **Pode um terceiro tornar-se operador independente?** | Não | Sim | Sim |
 
-### O teste definitivo: o que acontece se o Banzami desaparecer?
+### O teste definitivo: o que acontece se o operador desaparecer?
 
 No modelo fechado: se o operador principal desaparece, o sistema desaparece.
 
@@ -80,7 +80,7 @@ No modelo aberto: se um operador desaparece, os outros continuam. O Pix não per
 
 **O BANZA segue o modelo aberto.**
 
-As regras do protocolo BANZA são públicas. O Banzami é o primeiro operador certificado e a implementação de referência — mas não é o dono do protocolo. Se o Banzami desaparecesse amanhã: as regras do protocolo BANZA continuariam a existir. Os outros operadores certificados continuariam a operar. A infraestrutura permaneceria.
+As regras do protocolo BANZA são públicas. O operador é o primeiro operador certificado e a implementação de referência — mas não é o dono do protocolo. Se o operador desaparecesse amanhã: as regras do protocolo BANZA continuariam a existir. Os outros operadores certificados continuariam a operar. A infraestrutura permaneceria.
 
 Isto não é uma propriedade acidental. É uma decisão de arquitectura deliberada.
 
@@ -107,7 +107,7 @@ O BANZA é o protocolo aberto de pagamentos digitais que Angola não tinha — a
 | **Um banco** | O BANZA define regras que operadores seguem. Não detém dinheiro de ninguém. |
 | **Um produto fintech** | Um produto pertence ao seu operador. O protocolo pertence à infraestrutura. |
 | **Uma API fechada** | A especificação do BANZA é pública. Nenhum operador pode alterá-la unilateralmente. |
-| **O Banzami** | O Banzami é um operador — o primeiro e a implementação de referência. Não é o protocolo. |
+| **O operador** | O operador é um operador — o primeiro e a implementação de referência. Não é o protocolo. |
 
 ---
 
@@ -136,7 +136,7 @@ A relação é exactamente a que existe entre o Pix e o Nubank. O Nubank é o ma
 
 ## O Nome
 
-**Banza** e **Banzami** são palavras enraizadas nas tradições linguísticas bantu de Angola, especialmente no universo Kikongo, onde *mbanza* designa um lugar de encontro — um centro de vida comunitária. Nomes distintamente angolanos — não palavras emprestadas de outro continente.
+**Banza** e **the reference operator** são palavras enraizadas nas tradições linguísticas bantu de Angola, especialmente no universo Kikongo, onde *mbanza* designa um lugar de encontro — um centro de vida comunitária. Nomes distintamente angolanos — não palavras emprestadas de outro continente.
 
 ---
 
@@ -153,7 +153,7 @@ O ecossistema tem sucesso quando:
 
 Os operadores mudam. Os produtos evoluem. O que o BANZA garante é que as regras permaneçam abertas, a certificação permaneça acessível, e a infraestrutura permaneça de Angola.
 
-> **BANZA é o protocolo. Banzami é como Angola paga. O protocolo existe independentemente de qualquer operador.**
+> **BANZA é o protocolo. BANZA move o dinheiro. O protocolo existe independentemente de qualquer operador.**
 
 ---
 
@@ -169,4 +169,4 @@ Ver também:
 - [BANZA_REFERENCE.md](BANZA_REFERENCE.md) — Canonical protocol reference (rules, invariants, governance, certification)
 - [BANZA_GOVERNANCE.md](BANZA_GOVERNANCE.md) — Protocol governance model
 - [BANZAI_REFERENCE.md](../banzai/BANZAI_REFERENCE.md) — Protocol Operating System
-- [BANZAMI_REFERENCE.md](../banzami/BANZAMI_REFERENCE.md) — Reference operator
+- [BANZA_REFERENCE.md](../banza/BANZA_REFERENCE.md) — Reference operator

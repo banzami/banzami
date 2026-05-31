@@ -60,7 +60,7 @@ export async function runBenchmark(options: {
   const questions = options.questions ?? await loadQuestions();
 
   console.log('');
-  console.log('BanzamIA Evaluation Benchmark');
+  console.log('BanzAI Evaluation Benchmark');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(`  Questions:   ${questions.length}`);
   console.log(`  Embedder:    ${config.embedding.provider}`);

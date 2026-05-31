@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Static webhook helper: `BanzaClient::verifyWebhookSignature` — HMAC-SHA256 verification using `hash_equals` for timing-safe comparison
 - `WebhookHandler` class: `parse(string $rawBody, string $signature): array` — verifies signature and decodes the event in one call
 - Static money helpers: `BanzaClient::formatAmount(int $amountMinor, string $currency): string` and `BanzaClient::toMinorUnits(float $total, string $currency): int`
-- `BanzamiException` extending `\RuntimeException` with `getHttpStatus()`, `isNotFound()`, and `isUnauthorized()` convenience methods
+- `the reference operatorException` extending `\RuntimeException` with `getHttpStatus()`, `isNotFound()`, and `isUnauthorized()` convenience methods
 - Automatic idempotency key generation (shared across retries) for all POST requests
 - Retry logic for network errors (code 0), HTTP 429, and 5xx responses with exponential backoff
 - Cursor-based pagination on list endpoints (`next_cursor` field)

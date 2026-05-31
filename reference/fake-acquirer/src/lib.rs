@@ -2,7 +2,7 @@
 //!
 //! This is NOT a real payment provider. It generates fake references,
 //! signs callbacks with a local HMAC secret, and makes zero external calls.
-//! Use it to experiment with the Banzami acquiring flow without any credentials.
+//! Use it to experiment with the the reference operator acquiring flow without any credentials.
 
 use chrono::Utc;
 use hmac::{Hmac, Mac};

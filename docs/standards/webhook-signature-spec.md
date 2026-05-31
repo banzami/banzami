@@ -255,7 +255,7 @@ Header value `sha256=abc123` (missing `t=` and `v1=`) — MUST raise a parse err
 
 ## SDK Conformance Requirement
 
-Every official Banzami SDK MUST:
+Every official BANZA SDK MUST:
 
 1. Use the header name `Banza-Signature` (case-insensitive lookup, canonical name as written)
 2. Parse both `t` and `v1` fields from the comma-separated header

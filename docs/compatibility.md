@@ -56,7 +56,7 @@ Internal surfaces:
 - Simulated provider internals (FakeAcquirer, SimulatedSettlement, etc.)
 - Demo wallet UI HTML/CSS/JS
 - `reference/` directory structures and implementation details
-- Local ledger SQLite schema (used by banzami-local-ledger only)
+- Local ledger SQLite schema (used by banza-local-ledger only)
 - In-memory state layout of the sandbox operator
 
 ---

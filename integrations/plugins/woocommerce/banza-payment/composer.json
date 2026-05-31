@@ -1,5 +1,5 @@
 {
-    "name": "banzami/banzami-woocommerce",
+    "name": "banza/banza-woocommerce",
     "description": "Banza payment gateway plugin for WooCommerce",
     "license": "UNLICENSED",
     "type": "wordpress-plugin",

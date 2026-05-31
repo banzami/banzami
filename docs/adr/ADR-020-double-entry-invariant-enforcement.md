@@ -2,7 +2,7 @@
 
 **Status:** Accepted  
 **Date:** 2026-05-28  
-**Author:** Banzami Organisation  
+**Author:** the reference operator Organisation  
 **Deciders:** Fidel Monteiro (Founder)  
 **Supersedes:** None  
 **See also:** ADR-002 (original double-entry decision)

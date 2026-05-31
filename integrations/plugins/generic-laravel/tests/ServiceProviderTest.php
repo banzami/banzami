@@ -18,7 +18,7 @@ class ServiceProviderTest extends TestCase
 
     protected function getEnvironmentSetUp($app): void
     {
-        $app['config']->set('banza.gateway_url', 'https://api.banzami.ao');
+        $app['config']->set('banza.gateway_url', 'https://api.banza.ao');
         $app['config']->set('banza.api_key', 'test-api-key');
     }
 
@@ -31,7 +31,7 @@ class ServiceProviderTest extends TestCase
         $this->assertSame($a, $b, 'BanzaClient must be a singleton');
     }
 
-    public function test_facade_resolves_to_banzami_client(): void
+    public function test_facade_resolves_to_banza_client(): void
     {
         $resolved = Banza::getFacadeRoot();
 
@@ -40,7 +40,7 @@ class ServiceProviderTest extends TestCase
 
     public function test_config_is_merged_with_defaults(): void
     {
-        $this->assertSame('https://api.banzami.ao', config('banza.gateway_url'));
+        $this->assertSame('https://api.banza.ao', config('banza.gateway_url'));
         $this->assertSame('test-api-key', config('banza.api_key'));
         $this->assertArrayHasKey('webhook_secret', config('banza'));
         $this->assertArrayHasKey('merchant_id', config('banza'));
@@ -51,7 +51,7 @@ class ServiceProviderTest extends TestCase
     {
         $paths = BanzaServiceProvider::pathsToPublish(BanzaServiceProvider::class, 'banza-config');
 
-        $this->assertNotEmpty($paths, 'banzami-config tag must register at least one publishable path');
+        $this->assertNotEmpty($paths, 'banza-config tag must register at least one publishable path');
 
         $sourceFile = array_key_first($paths);
         $this->assertFileExists($sourceFile, 'The published config source file must exist');

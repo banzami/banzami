@@ -138,7 +138,7 @@ Raw HTTP integration is permitted in:
 - **Advanced debugging** — developers tracing raw requests to diagnose issues
 - **Internal Banza services** — Go services calling the Rust core over loopback are not external integrations
 - **Public unauthenticated endpoints** — payment link status polling (`GET /public/pay/{slug}/status`), QR payload display, health checks
-- **Browser-side checkout UI** — the `@banzami/checkout-js` browser SDK handles frontend flows using only publishable endpoints; no secret keys involved
+- **Browser-side checkout UI** — the `@banza/checkout-js` browser SDK handles frontend flows using only publishable endpoints; no secret keys involved
 - **WooCommerce/WordPress frontend polling** — same restriction as browser checkout
 
 ### Platform Stabilization Phase (2026-05-18)
@@ -198,21 +198,21 @@ The cost column is real but bounded. The benefit column compounds indefinitely w
 ### DOA Migration Path
 
 DOA's direct HTTP integration is in:
-- `lib/payments/providers/banzami.ts` — payment link creation, auth
-- `app/api/donations/banzami-status/route.ts` — payment link status check
+- `lib/payments/providers/banza.ts` — payment link creation, auth
+- `app/api/donations/banza-status/route.ts` — payment link status check
 
 Migration replaces these with:
 ```typescript
-import Banzami from '@banza/sdk';
+import the reference operator from '@banza/sdk';
 
-const banzami = new Banzami({ apiKey: process.env.BANZAMI_API_KEY });
+const banza = new the reference operator({ apiKey: process.env.BANZA_API_KEY });
 ```
 
 Idempotency, retries, error handling, environment routing — all move into the SDK.
 
-The webhook route (`app/api/webhooks/banzami/route.ts`) replaces the manual `verifySignature()` function with:
+The webhook route (`app/api/webhooks/banza/route.ts`) replaces the manual `verifySignature()` function with:
 ```typescript
-const event = await banzami.webhooks.constructEvent(rawBody, sigHeader);
+const event = await banza.webhooks.constructEvent(rawBody, sigHeader);
 ```
 
 ### SDK Design Target
@@ -225,11 +225,11 @@ The SDK experience must match or exceed:
 The integration from a developer's perspective:
 ```typescript
 // Initialize (once, in environment config)
-const banzami = new Banzami({ apiKey: process.env.BANZAMI_API_KEY });
-// banzami.isSandbox → true if bz_test_ key
+const banza = new the reference operator({ apiKey: process.env.BANZA_API_KEY });
+// banza.isSandbox → true if bz_test_ key
 
 // Create payment link
-const link = await banzami.paymentLinks.create({
+const link = await banza.paymentLinks.create({
   merchantId: MERCHANT_ID,
   walletId:   WALLET_ID,
   amount:     { minor: 150000, currency: 'AOA' },
@@ -237,7 +237,7 @@ const link = await banzami.paymentLinks.create({
 });
 
 // Verify webhook
-const event = await banzami.webhooks.constructEvent(rawBody, sigHeader);
+const event = await banza.webhooks.constructEvent(rawBody, sigHeader);
 if (event.type === 'payment_link.paid') { ... }
 ```
 

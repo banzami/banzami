@@ -50,7 +50,7 @@ A settlement batch covers one merchant's wallet for a defined time period:
 
 ```
 gross_amount   — total transaction volume collected
-fee_amount     — Banzami's processing fees
+fee_amount     — the reference operator's processing fees
 net_amount     — gross_amount - fee_amount (what the merchant receives)
 period_start   — start of the covered period
 period_end     — end of the covered period

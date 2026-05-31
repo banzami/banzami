@@ -3,7 +3,7 @@
 import { BanzaClient, formatMinor } from '@banza/sdk';
 
 const client = new BanzaClient({
-  baseUrl: 'https://api.banzami.com',
+  baseUrl: 'https://api.banza.network',
   apiKey:  '<your-publishable-api-key>',
 });
 
@@ -28,7 +28,7 @@ async function startCheckout(params: {
     currency:    'AOA',
     description: params.description,
   });
-  window.location.href = `https://pay.banzami.com/${link.slug}`;
+  window.location.href = `https://pay.banza.network/${link.slug}`;
 }
 
 export { loadBalance, startCheckout };

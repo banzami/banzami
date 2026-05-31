@@ -122,7 +122,7 @@ const CERTIFICATION_REQUIRES: Array<[string, string]> = [
   ['adr:ADR-006', 'rfc:RFC-0001'],
 ];
 
-const GRAPH_FILE = '.banzamia-graph.json';
+const GRAPH_FILE = '.banzai-graph.json';
 
 async function walkMarkdownFiles(dir: string, root: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true });

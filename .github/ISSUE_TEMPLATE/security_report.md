@@ -7,7 +7,7 @@ about: Report a security vulnerability
 
 Please report security vulnerabilities by **private email** to:
 
-**security@banzami.com**
+**security@banza.network**
 
 See [BANZA_SECURITY.md](../BANZA_SECURITY.md) for the full security policy and what to include in your report.
 

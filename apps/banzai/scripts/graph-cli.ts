@@ -6,7 +6,7 @@ import { graphStats } from '../src/graph/store.js';
 const repoRoot = resolve(new URL(import.meta.url).pathname, '../../../', config.docsRoot);
 
 console.log('');
-console.log('BanzamIA — Protocol Graph Indexer');
+console.log('BanzAI — Protocol Graph Indexer');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 console.log(`  Repo root: ${repoRoot}`);
 console.log('');
@@ -39,5 +39,5 @@ if (stats.edges_by_relationship && typeof stats.edges_by_relationship === 'objec
 }
 
 await saveGraph(graph, repoRoot);
-console.log('✓ Graph saved to .banzamia-graph.json');
+console.log('✓ Graph saved to .banzai-graph.json');
 console.log('');

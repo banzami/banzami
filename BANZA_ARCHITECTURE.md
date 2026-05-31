@@ -1,7 +1,7 @@
 # BANZA — Arquitectura do Sistema
 
 > This document describes: **BANZA** — the open financial infrastructure protocol.
-> For other layers: [BanzAI](../banzai/BANZAI_REFERENCE.md) · [Banzami](../banzami/BANZAMI_REFERENCE.md)
+> For other layers: [BanzAI](../banzai/BANZAI_REFERENCE.md) · [the reference operator](../banza/BANZA_REFERENCE.md)
 
 **Version:** 1.0  
 **Date:** 2026-05-30  
@@ -81,7 +81,7 @@ Os contratos do protocolo definem a superfície pública que qualquer implementa
 |------------|---------|
 | `contracts/openapi/` | Especificação OpenAPI — shape das APIs |
 | `contracts/webhooks/` | Esquemas de payload de webhooks |
-| `contracts/qr/` | Formato de payload QR (`BANZAMI-SBX:` e `BANZAMI:`) |
+| `contracts/qr/` | Formato de payload QR (`BANZA-SBX:` e `BANZA:`) |
 | `contracts/sdk-certification/` | Vectores de certificação de SDK |
 
 Mudanças a contratos públicos requerem um ADR e um período de revisão mínimo de 7 dias. Ver [BANZA_GOVERNANCE.md](BANZA_GOVERNANCE.md).
@@ -100,7 +100,7 @@ SettlementExecutionProvider ← operadores implementam
 NotificationProvider       ← operadores implementam
 ```
 
-Esta arquitectura garante que o Kernel nunca contém código específico de um operador. O Banzami implementa estes providers — como qualquer outro operador certificado.
+Esta arquitectura garante que o Kernel nunca contém código específico de um operador. O operador implementa estes providers — como qualquer outro operador certificado.
 
 Para os providers disponíveis, ver `docs/architecture/provider-model.md`.
 
@@ -112,7 +112,7 @@ Os operadores declaram as suas capacidades num manifesto formal. O protocolo def
 
 ```json
 {
-  "operator_id": "banzami",
+  "operator_id": "banza",
   "certification_level": 2,
   "capabilities": {
     "wallet.consumer": true,
@@ -229,9 +229,9 @@ Estado actual: fase de desenho. Ver [BANZA_REFERENCE.md §10](BANZA_REFERENCE.md
 
 ## Implementação de Referência
 
-O Banzami é a implementação de referência do protocolo BANZA. A sua arquitectura técnica está documentada em [BANZAMI_ARCHITECTURE.md](../banzami/BANZAMI_ARCHITECTURE.md).
+The reference operator do protocolo BANZA. A sua arquitectura técnica está documentada em [BANZA_ARCHITECTURE.md](../banza/BANZA_ARCHITECTURE.md).
 
-O Kernel BANZA é desenvolvido no repositório `~/banza`. O Banzami implementa-o em `~/banzami`. Estas são responsabilidades separadas com repositórios separados.
+O Kernel BANZA é desenvolvido no repositório `~/banza`. O operador implementa-o em `~/banza`. Estas são responsabilidades separadas com repositórios separados.
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Status:** Accepted  
 **Date:** 2026-05-28  
-**Author:** Banzami Organisation  
+**Author:** the reference operator Organisation  
 **Deciders:** Fidel Monteiro (Founder)  
 **Supersedes:** None  
 **See also:** ADR-018, ADR-021
@@ -54,7 +54,7 @@ Concretely:
 
 **Negative:**
 - More interface design discipline required upfront
-- Some features that "just work" for Banzami must be expressed as provider traits
+- Some features that "just work" for the reference operator must be expressed as provider traits
 - Reference implementations add maintenance overhead
 
 ## Alternatives considered

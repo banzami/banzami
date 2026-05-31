@@ -12,27 +12,27 @@ All Banza-related log events use structured JSON output. Events are keyed by an 
 
 | Action | Level | When emitted |
 |--------|-------|-------------|
-| `api.webhooks.banzami` | info | Every inbound webhook request (after routing) |
-| `banzami_webhook_rejected` | warn | Signature verification failure |
-| `banzami_webhook_ok` | info | Successful processing |
-| `banzami_webhook_ignored` | info | Unknown event type or unresolved intent |
-| `banzami_webhook_error` | error | `applyPaymentEvent()` threw (DB error) |
+| `api.webhooks.banza` | info | Every inbound webhook request (after routing) |
+| `banza_webhook_rejected` | warn | Signature verification failure |
+| `banza_webhook_ok` | info | Successful processing |
+| `banza_webhook_ignored` | info | Unknown event type or unresolved intent |
+| `banza_webhook_error` | error | `applyPaymentEvent()` threw (DB error) |
 
 ### Poll Events
 
 | Action | Level | When emitted |
 |--------|-------|-------------|
-| `banzami_status_checked` | debug | Each poll tick (high volume — consider sampling) |
-| `banzami_status_confirmed` | info | Status changed to USED, `applyPaymentEvent()` called |
-| `banzami_status_error` | warn | Banza API returned non-200 on status check |
+| `banza_status_checked` | debug | Each poll tick (high volume — consider sampling) |
+| `banza_status_confirmed` | info | Status changed to USED, `applyPaymentEvent()` called |
+| `banza_status_error` | warn | Banza API returned non-200 on status check |
 
 ### Initiation Events
 
 | Action | Level | When emitted |
 |--------|-------|-------------|
-| `banzami_initiate_ok` | info | Payment link created successfully |
-| `banzami_initiate_replay` | info | Existing link returned (idempotency replay) |
-| `banzami_initiate_error` | error | Banza API call failed |
+| `banza_initiate_ok` | info | Payment link created successfully |
+| `banza_initiate_replay` | info | Existing link returned (idempotency replay) |
+| `banza_initiate_error` | error | Banza API call failed |
 
 ---
 
@@ -41,14 +41,14 @@ All Banza-related log events use structured JSON output. Events are keyed by an 
 ```typescript
 // Webhook received
 console.log(JSON.stringify({
-  action:   'api.webhooks.banzami',
+  action:   'api.webhooks.banza',
   type:     payload.type,
   event_id: payload.id,
 }));
 
 // Webhook OK
 console.log(JSON.stringify({
-  action:    'banzami_webhook_ok',
+  action:    'banza_webhook_ok',
   intent_id: intentId,
   deduped:   result.deduped,
   event_id:  payload.id,
@@ -56,13 +56,13 @@ console.log(JSON.stringify({
 
 // Webhook rejected
 console.warn(JSON.stringify({
-  action: 'banzami_webhook_rejected',
+  action: 'banza_webhook_rejected',
   reason: verification.reason,
 }));
 
 // Status confirmed
 console.log(JSON.stringify({
-  action:      'banzami_status_confirmed',
+  action:      'banza_status_confirmed',
   intent_id:   intentId,
   link_id:     linkId,
   deduped:     result.deduped,
@@ -70,7 +70,7 @@ console.log(JSON.stringify({
 
 // Initiation error
 console.error(JSON.stringify({
-  action:    'banzami_initiate_error',
+  action:    'banza_initiate_error',
   intent_id: input.intent_id,
   error:     err instanceof Error ? err.message : String(err),
 }));
@@ -101,20 +101,20 @@ Do **not** log:
 A successful Banza payment produces this log sequence:
 
 ```
-1. banzami_initiate_ok          { intent_id, link_id, sandbox }
+1. banza_initiate_ok          { intent_id, link_id, sandbox }
 2. (poll ticks)                 no log or debug-level only
-3. api.webhooks.banzami         { type: 'payment_link.paid', event_id }  ← webhook arrives
-4. banzami_webhook_ok           { intent_id, deduped: false }
-5. banzami_status_confirmed     { intent_id, deduped: true }             ← poll fires after webhook
+3. api.webhooks.banza         { type: 'payment_link.paid', event_id }  ← webhook arrives
+4. banza_webhook_ok           { intent_id, deduped: false }
+5. banza_status_confirmed     { intent_id, deduped: true }             ← poll fires after webhook
 ```
 
 Or, when polling confirms before webhook:
 
 ```
-1. banzami_initiate_ok          { intent_id, link_id, sandbox }
-2. banzami_status_confirmed     { intent_id, deduped: false }
-3. api.webhooks.banzami         { type: 'payment_link.paid', event_id }  ← webhook arrives later
-4. banzami_webhook_ok           { intent_id, deduped: true }             ← no-op
+1. banza_initiate_ok          { intent_id, link_id, sandbox }
+2. banza_status_confirmed     { intent_id, deduped: false }
+3. api.webhooks.banza         { type: 'payment_link.paid', event_id }  ← webhook arrives later
+4. banza_webhook_ok           { intent_id, deduped: true }             ← no-op
 ```
 
 In both sequences, exactly one `deduped: false` event appears — this is the write that recorded the confirmation. All others are `deduped: true`.
@@ -138,7 +138,7 @@ Expected rows for a completed Banza payment:
 | event_type | payload highlights |
 |------------|--------------------|
 | `payment_confirmed` | `provider_ref: "lnk_..."`, `amount`, `paid_at` |
-| `payment_initiated` | `provider: "banzami"`, `provider_ref: "lnk_..."` |
+| `payment_initiated` | `provider: "banza"`, `provider_ref: "lnk_..."` |
 
 Given a Banza link ID (`lnk_...`):
 
@@ -158,17 +158,17 @@ Check Banza's delivery history for a specific event:
 
 ```bash
 # List recent webhook events for the merchant
-curl "https://api.banzami.com/v1/webhooks/events?merchant_id=mer_01jqx..." \
-  -H "Authorization: Bearer $BANZAMI_JWT"
+curl "https://api.banza.network/v1/webhooks/events?merchant_id=mer_01jqx..." \
+  -H "Authorization: Bearer $BANZA_JWT"
 
 # Inspect delivery attempts for a specific event
-curl "https://api.banzami.com/v1/webhooks/events/evt_01jqx.../deliveries" \
-  -H "Authorization: Bearer $BANZAMI_JWT"
+curl "https://api.banza.network/v1/webhooks/events/evt_01jqx.../deliveries" \
+  -H "Authorization: Bearer $BANZA_JWT"
 ```
 
 Delivery statuses: `pending`, `success`, `failed`.
 
-A `failed` delivery means Doa returned a non-200 response or timed out. Check Doa's logs for `banzami_webhook_rejected` or `banzami_webhook_error` around the delivery timestamp.
+A `failed` delivery means Doa returned a non-200 response or timed out. Check Doa's logs for `banza_webhook_rejected` or `banza_webhook_error` around the delivery timestamp.
 
 ---
 
@@ -178,13 +178,13 @@ If Doa has application metrics (e.g., via Prometheus or a hosted APM), instrumen
 
 | Metric | Type | Labels |
 |--------|------|--------|
-| `banzami_payment_initiations_total` | Counter | `outcome` (ok, replay, error) |
-| `banzami_payment_confirmations_total` | Counter | `path` (poll, webhook), `deduped` (true, false) |
-| `banzami_webhook_requests_total` | Counter | `outcome` (ok, rejected, ignored, error) |
-| `banzami_poll_latency_seconds` | Histogram | — |
-| `banzami_initiation_latency_seconds` | Histogram | — |
+| `banza_payment_initiations_total` | Counter | `outcome` (ok, replay, error) |
+| `banza_payment_confirmations_total` | Counter | `path` (poll, webhook), `deduped` (true, false) |
+| `banza_webhook_requests_total` | Counter | `outcome` (ok, rejected, ignored, error) |
+| `banza_poll_latency_seconds` | Histogram | — |
+| `banza_initiation_latency_seconds` | Histogram | — |
 
-**Most important alert**: `banzami_webhook_requests_total{outcome="rejected"}` — if this rises, the webhook secret may be misconfigured or rotated.
+**Most important alert**: `banza_webhook_requests_total{outcome="rejected"}` — if this rises, the webhook secret may be misconfigured or rotated.
 
 ---
 
@@ -192,7 +192,7 @@ If Doa has application metrics (e.g., via Prometheus or a hosted APM), instrumen
 
 In sandbox, expect:
 - Higher error rates (testing error scenarios)
-- `banzami_initiate_ok` with `sandbox: true` in the log
+- `banza_initiate_ok` with `sandbox: true` in the log
 
 In production:
 - `sandbox: true` in any log is a misconfiguration alarm
@@ -201,9 +201,9 @@ In production:
 Add a startup check:
 
 ```typescript
-// lib/payments/providers/banzami.ts
+// lib/payments/providers/banza.ts
 if (process.env.NODE_ENV === 'production' && IS_SANDBOX) {
-  console.error('CRITICAL: Banzami sandbox key in production environment');
+  console.error('CRITICAL: the reference operator sandbox key in production environment');
   // Optionally: throw to fail startup
 }
 ```
@@ -223,11 +223,11 @@ ngrok http 3000
 
 # 3. Watch Doa logs for webhook events
 # In the pnpm dev terminal, look for:
-# { action: 'api.webhooks.banzami', ... }
-# { action: 'banzami_webhook_ok', ... }
+# { action: 'api.webhooks.banza', ... }
+# { action: 'banza_webhook_ok', ... }
 
 # 4. Trigger a test payment
-curl -X POST https://sandbox-api.banzami.com/v1/payment-links/{id}/mark-used \
+curl -X POST https://sandbox.banza.network/v1/payment-links/{id}/mark-used \
   -H "Authorization: Bearer $SANDBOX_JWT"
 
 # 5. Within seconds, logs should show the webhook
@@ -235,7 +235,7 @@ curl -X POST https://sandbox-api.banzami.com/v1/payment-links/{id}/mark-used \
 
 If no webhook log appears:
 1. Verify the ngrok URL matches the registered endpoint (check Banza dashboard under **Webhooks → Endpoints**)
-2. Verify `BANZAMI_WEBHOOK_SECRET` matches the secret returned at endpoint registration
+2. Verify `BANZA_WEBHOOK_SECRET` matches the secret returned at endpoint registration
 3. Check the Banza dashboard under **Webhooks → Events → {event_id} → Deliveries** for delivery status
 
 ---
@@ -248,7 +248,7 @@ If Doa assigns request IDs (e.g., via middleware), include the request ID in web
 const requestId = req.headers.get('x-request-id') ?? crypto.randomUUID();
 
 console.log(JSON.stringify({
-  action:     'api.webhooks.banzami',
+  action:     'api.webhooks.banza',
   request_id: requestId,
   type:       payload.type,
   event_id:   payload.id,

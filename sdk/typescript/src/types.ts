@@ -5,7 +5,7 @@
 /** Selects the data universe for all API operations.
  *  'live' uses real money; 'sandbox' uses virtual, simulated funds.
  *  LIVE and SANDBOX data are completely isolated — they never mix. */
-export type BanzamiEnvironment = 'live' | 'sandbox';
+export type BanzaEnvironment = 'live' | 'sandbox';
 
 // ---------------------------------------------------------------------------
 // Shared

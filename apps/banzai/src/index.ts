@@ -54,7 +54,7 @@ fastify.get('/health', async () => ({ ok: true }));
 
 try {
   await fastify.listen({ port: config.port, host: '0.0.0.0' });
-  fastify.log.info(`BanzamIA running on port ${config.port} [mode: ${config.mode}]`);
+  fastify.log.info(`BanzAI running on port ${config.port} [mode: ${config.mode}]`);
 } catch (err) {
   fastify.log.error(err);
   process.exit(1);

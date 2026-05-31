@@ -1,5 +1,5 @@
 {
-  "_spec": "Banzami Event Schema Conformance Suite v1.0",
+  "_spec": "the reference operator Event Schema Conformance Suite v1.0",
 
   "suite_id": "events",
   "suite_name": "Event Schema Validation",

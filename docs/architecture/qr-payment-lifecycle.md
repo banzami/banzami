@@ -27,8 +27,8 @@ Merchant
   │
   ▼
 QR created (status: active, trace_id: tr-xxx)
-  ├─ payload_data: "BANZAMI-SBX:{base64}" (sandbox)
-  │                "BANZAMI:{base64}"       (production)
+  ├─ payload_data: "BANZA-SBX:{base64}" (sandbox)
+  │                "BANZA:{base64}"       (production)
   └─ emit: qr.generated
 
   │
@@ -85,7 +85,7 @@ All of this is queryable via `GET /traces/tr-xxx`.
 
 The sandbox uses:
 ```
-BANZAMI-SBX:{base64_json}
+BANZA-SBX:{base64_json}
 ```
 
 Where the JSON is:
@@ -101,7 +101,7 @@ Where the JSON is:
 }
 ```
 
-Production format is defined in `contracts/qr/`. The prefix changes to `BANZAMI:`
+Production format is defined in `contracts/qr/`. The prefix changes to `BANZA:`
 and the payload is signed. See `contracts/qr/format.md`.
 
 ---

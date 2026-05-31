@@ -21,7 +21,7 @@ type Page[T any] struct {
 // Webhook types
 // ---------------------------------------------------------------------------
 
-// WebhookEventType is a canonical event type string dispatched by the Banzami
+// WebhookEventType is a canonical event type string dispatched by the the reference operator
 // api-gateway. Use WebhookEventType constants for exhaustive switch statements.
 type WebhookEventType = string
 
@@ -73,7 +73,7 @@ const (
 	PaymentLinkExpired   PaymentLinkStatus = "EXPIRED"
 )
 
-// PaymentLink is a shareable URL that a donor can pay with the Banzami app.
+// PaymentLink is a shareable URL that a donor can pay with the operator app.
 type PaymentLink struct {
 	ID          string            `json:"id"`
 	Slug        string            `json:"slug"`

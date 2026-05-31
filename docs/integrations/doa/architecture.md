@@ -16,19 +16,19 @@ The Doa integration sits entirely within the **merchant application** tier. Doa 
 │  │                     │   │  BanzaProvider.initiate()          │ │
 │  │  BanzaPanel       │   │  → POST /v1/payment-links            │ │
 │  │  QR display         │   │                                      │ │
-│  │  Polling loop       │   │  banzami-status route                │ │
+│  │  Polling loop       │   │  banza-status route                │ │
 │  │  Sandbox badge      │   │  → GET  /v1/payment-links/{id}       │ │
 │  │                     │   │                                      │ │
-│  │                     │   │  /api/webhooks/banzami               │ │
+│  │                     │   │  /api/webhooks/banza               │ │
 │  └─────────────────────┘   │  → HMAC verify + applyPaymentEvent() │ │
 │                             └──────────────────────────────────────┘ │
 └──────────────────────────────────────┬──────────────────────────────┘
                                        │  Bearer bz_live_/bz_test_
                           ─────────────┼──────────────────────────
-                          BANZAMI API  │
+                          BANZA API  │
                                        ▼
                           ┌────────────────────────┐
-                          │  api.banzami.com        │
+                          │  api.banza.network        │
                           │                         │
                           │  POST /v1/payment-links │
                           │  GET  /v1/payment-links │
@@ -36,7 +36,7 @@ The Doa integration sits entirely within the **merchant application** tier. Doa 
                           └────────────┬────────────┘
                                        │
                           ┌────────────▼────────────┐
-                          │  Banzami Core (Rust)     │
+                          │  the reference operator Core (Rust)     │
                           │                         │
                           │  Payment link FSM       │
                           │  ACTIVE → USED          │
@@ -53,7 +53,7 @@ The Doa frontend (React, browser) owns:
 
 - Rendering the `BanzaPanel` component when the donor selects Banza
 - Generating the QR image client-side from the pay URL
-- Running the polling loop (calls `/api/donations/banzami-status` every 3 s)
+- Running the polling loop (calls `/api/donations/banza-status` every 3 s)
 - Displaying the sandbox badge when `provider.sandbox = true`
 - Showing confirmation animation and triggering redirect on success
 
@@ -89,14 +89,14 @@ donation_intent created
        │
        ▼
 [event: payment_initiated]
-  payload: { provider: 'banzami', provider_ref: 'lnk_...', initiate: {...} }
+  payload: { provider: 'banza', provider_ref: 'lnk_...', initiate: {...} }
        │
        ▼
 Donor pays in Banza app
        │
-       ├── Poll path: banzami-status detects USED
+       ├── Poll path: banza-status detects USED
        │         ─OR─
-       └── Webhook path: Banzami pushes payment_link.paid
+       └── Webhook path: the reference operator pushes payment_link.paid
        │
        ▼
 [event: payment_confirmed]
@@ -131,7 +131,7 @@ This detection happens at module initialization time. The `sandbox` field is pro
 BanzaProvider.sandbox
     → listPublicMethods() → PaymentMethodMeta.sandbox
     → DonateFlow props.methods[].sandbox
-    → submitMethod() → setBanzamiSandbox(true)
+    → submitMethod() → setthe reference operatorSandbox(true)
     → BanzaPanel isSandbox={true}
     → "SANDBOX" badge rendered
 ```
@@ -147,8 +147,8 @@ The badge is purely informational — it does not change any API behavior. The A
 The current (transitional) implementation uses direct `fetch()` calls from two server-only files:
 
 ```
-lib/payments/providers/banzami.ts    ← initiation (POST /v1/payment-links)
-app/api/donations/banzami-status/    ← status check (GET /v1/payment-links/{id})
+lib/payments/providers/banza.ts    ← initiation (POST /v1/payment-links)
+app/api/donations/banza-status/    ← status check (GET /v1/payment-links/{id})
 ```
 
 Both files use `import 'server-only'` (Next.js compiler directive) to enforce that credentials never reach the browser. The module boundary is enforced at build time — importing either file from a `'use client'` component causes a build error.
@@ -158,23 +158,23 @@ Both files use `import 'server-only'` (Next.js compiler directive) to enforce th
 The target architecture after SDK migration:
 
 ```typescript
-// lib/payments/providers/banzami.ts — after migration
+// lib/payments/providers/banza.ts — after migration
 import { BanzaClient } from '@banza/sdk';
 
-const banzami = new BanzaClient({ apiKey: process.env.BANZA_API_KEY });
-// banzami.isSandbox → true when bz_test_ key — replaces IS_SANDBOX detection
+const banza = new BanzaClient({ apiKey: process.env.BANZA_API_KEY });
+// banza.isSandbox → true when bz_test_ key — replaces IS_SANDBOX detection
 
 // Payment link creation
-const link = await banzami.paymentLinks.create({
+const link = await banza.paymentLinks.create({
   merchantId:  MERCHANT_ID,
   walletId:    WALLET_ID,
   amount:      { minor: input.amount, currency: 'AOA' },
   description: `DOA-${input.intent_id.slice(0, 8).toUpperCase()}`,
-  idempotencyKey: `banzami:${input.intent_id}`,
+  idempotencyKey: `banza:${input.intent_id}`,
 });
 
 // Webhook verification
-const event = await banzami.webhooks.constructEvent(rawBody, sigHeader);
+const event = await banza.webhooks.constructEvent(rawBody, sigHeader);
 ```
 
 The SDK provides:
@@ -182,8 +182,8 @@ The SDK provides:
 - built-in idempotency key management and reuse across retries
 - exponential backoff on `429`/`5xx` responses
 - typed response models — no manual `as BanzaPaymentLink` casts
-- `banzami.webhooks.constructEvent()` — replaces the manual `verifySignature()` implementation
-- `banzami.isSandbox` — replaces the `API_KEY.startsWith('bz_test_')` detection
+- `banza.webhooks.constructEvent()` — replaces the manual `verifySignature()` implementation
+- `banza.isSandbox` — replaces the `API_KEY.startsWith('bz_test_')` detection
 
 ---
 
@@ -195,7 +195,7 @@ The SDK provides:
                Banza-Signature: t=...,v1=...
                             │
                             ▼
-               POST /api/webhooks/banzami
+               POST /api/webhooks/banza
                             │
                     ┌───────┴────────┐
                     │ Verify HMAC    │ ← WEBHOOK_SECRET in env
@@ -220,7 +220,7 @@ The SDK provides:
                     │ applyPayment   │ ← idempotent
                     │ Event()        │
                     └───────┬────────┘
-                            │ 500 on DB error → Banzami retries
+                            │ 500 on DB error → the reference operator retries
                             ▼
                     ┌───────┴────────┐
                     │ Receipt        │ ← async, non-blocking
@@ -243,7 +243,7 @@ BanzaProvider.initiate()
         ↓
         { id: 'lnk_...', slug: 'abc123', status: 'ACTIVE', ... }
         ↓
-        payUrl = BANZAMI_PAY_BASE_URL + '/' + slug
+        payUrl = BANZA_PAY_BASE_URL + '/' + slug
         provider_ref = id
 
 BanzaPanel mounts:
@@ -251,7 +251,7 @@ BanzaPanel mounts:
     ├─► Dynamic import('qrcode') → generate QR from payUrl
     │
     └─► setInterval(3000ms):
-            GET /api/donations/banzami-status?intent_id=X&link_id=Y
+            GET /api/donations/banza-status?intent_id=X&link_id=Y
                 │
                 └─► GET /v1/payment-links/{Y}
                     status = ACTIVE → { confirmed: false }
@@ -272,7 +272,7 @@ Three independent idempotency layers protect the payment lifecycle:
 
 | Layer | Key | Mechanism |
 |-------|-----|-----------|
-| Payment link creation | `banzami:{intent_id}` | Checked in `donation_events` before calling API — replay returns existing initiate result |
+| Payment link creation | `banza:{intent_id}` | Checked in `donation_events` before calling API — replay returns existing initiate result |
 | Confirmation recording | `(intent_id, payment_confirmed, provider_ref)` | Dedup query in `applyPaymentEvent()` — second call returns `{ deduped: true }` |
 | Receipt delivery | `intent_id` | Idempotency key passed to `generateAndDeliverReceipt()` — no duplicate emails/SMS |
 

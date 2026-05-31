@@ -1,7 +1,7 @@
 # BANZA — Conformance Suite
 
 > This document describes: **BANZA** — the open financial infrastructure protocol.
-> For other layers: [BanzAI](../banzai/BANZAI_REFERENCE.md) · [Banzami](../banzami/BANZAMI_REFERENCE.md)
+> For other layers: [BanzAI](../banzai/BANZAI_REFERENCE.md) · [the reference operator](../banza/BANZA_REFERENCE.md)
 
 **Version:** 1.0  
 **Date:** 2026-05-30  
@@ -16,7 +16,7 @@ The BANZA conformance system lets any operator, SDK, or integration verify that 
 
 - **Operators** — HTTP servers that implement wallets, transfers, QR, payment requests, events, settlement, and traces
 - **SDKs** — Client libraries that parse QR payloads, event envelopes, and webhook signatures
-- **QR runtimes** — Code that generates or scans `BANZAMI-SBX:` and `BANZAMI:` payloads
+- **QR runtimes** — Code that generates or scans `BANZA-SBX:` and `BANZA:` payloads
 - **Event emitters** — Services that emit conformant event envelopes with trace fields
 - **Ledger implementations** — Storage that satisfies double-entry and immutability invariants
 - **Settlement providers** — Implementations that satisfy the no-money-creation invariant
@@ -31,7 +31,7 @@ The BANZA conformance system lets any operator, SDK, or integration verify that 
 | 3 | Federation Operator | All Level 2 + valid operator manifest, capability declaration |
 | 4 | Infrastructure Operator | All Level 3 + settlement fee model, no-money-creation invariant |
 
-The reference sandbox operator (Banzami) is certified at **Level 2**.
+The reference sandbox operator (the reference operator) is certified at **Level 2**.
 
 For full certification requirements per level, see [BANZA_CERTIFICATION.md](BANZA_CERTIFICATION.md).
 
@@ -40,13 +40,13 @@ For full certification requirements per level, see [BANZA_CERTIFICATION.md](BANZ
 Start your operator, then:
 
 ```bash
-python3 tools/banzami-conformance/run.py \
+python3 tools/banza-conformance/run.py \
   --url http://localhost:3000 \
   --level 2 \
   --output report.json
 ```
 
-See `tools/banzami-conformance/README.md` for full options.
+See `tools/banza-conformance/README.md` for full options.
 
 ## Conformance vectors
 
@@ -147,7 +147,7 @@ The manifest schema is validated by `conformance/manifests/schema.json`.
 2. Add the vector to the appropriate file in `conformance/vectors/`
 3. Set `"stability": "experimental"` until it passes the reference operator
 4. Reference the vector from the relevant suite's `vectors` array
-5. Implement the test case in `tools/banzami-conformance/run.py`
+5. Implement the test case in `tools/banza-conformance/run.py`
 
 Deprecated vectors get `"deprecated": true` rather than being removed — this preserves history.
 

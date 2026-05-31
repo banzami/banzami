@@ -1,13 +1,13 @@
 {
-  "_spec": "Banzami QR Runtime Conformance Suite v1.0",
+  "_spec": "BANZA QR Runtime Conformance Suite v1.0",
 
   "suite_id": "qr",
   "suite_name": "QR Runtime Conformance",
   "protocol_version": "1.0",
 
   "payload_format": {
-    "sandbox": "BANZAMI-SBX:{base64url(json)}",
-    "production": "BANZAMI:{base64url(signed_json)}",
+    "sandbox": "BANZA-SBX:{base64url(json)}",
+    "production": "BANZA:{base64url(signed_json)}",
     "spec": "contracts/qr/"
   },
 
@@ -30,8 +30,8 @@
         {
           "id": "QR-PAYLOAD-002",
           "title": "Sandbox payload must set sandbox=true",
-          "description": "Any payload with BANZAMI-SBX: prefix must contain sandbox:true in the decoded JSON.",
-          "prefix": "BANZAMI-SBX:",
+          "description": "Any payload with BANZA-SBX: prefix must contain sandbox:true in the decoded JSON.",
+          "prefix": "BANZA-SBX:",
           "required_json_field": { "sandbox": true }
         },
         {
@@ -73,14 +73,14 @@
         {
           "id": "QR-MAL-002",
           "title": "Malformed base64 rejected",
-          "input": "BANZAMI-SBX:not!valid!base64",
+          "input": "BANZA-SBX:not!valid!base64",
           "expected_error": "decode_error"
         },
         {
           "id": "QR-MAL-003",
           "title": "Valid base64 but invalid JSON rejected",
           "input_base64": "aW52YWxpZCBqc29u",
-          "prefix": "BANZAMI-SBX:",
+          "prefix": "BANZA-SBX:",
           "expected_error": "json_parse_error"
         },
         {

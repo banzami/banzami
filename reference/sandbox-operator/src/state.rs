@@ -561,7 +561,7 @@ impl AppState {
                 "description": description,
             });
             let enc = base64_encode(serde_json::to_string(&raw).unwrap().as_bytes());
-            format!("BANZAMI-SBX:{enc}")
+            format!("BANZA-SBX:{enc}")
         };
         let qr = SandboxQrCode {
             id:                 qr_id.clone(),

@@ -28,7 +28,7 @@ The reference operator is emphatically **not** any of the following:
 | A licensed financial institution | No regulatory compliance, no real accounts |
 | A commercial operator | No revenue, no customers, no SLA |
 | A fintech product | No UI beyond the educational demo wallet |
-| A second Banzami | No EMIS, no Multicaixa, no real bank rails |
+| A second the reference operator | No EMIS, no Multicaixa, no real bank rails |
 | A production security reference | Fake HMAC secrets, no TLS enforcement, no auth |
 | A deployment template | Not hardened, not monitored, not recoverable |
 
@@ -55,7 +55,7 @@ New features in `reference/` should answer **yes** to all three:
 
 1. Does it help a developer understand the Banza kernel?
 2. Can it run entirely without external infrastructure?
-3. Would it be useful in any operator's context (not just Banzami)?
+3. Would it be useful in any operator's context (not just the reference operator)?
 
 Features that answer **no** to any of these belong in an operator deployment,
 not in the public kernel repository.
@@ -88,7 +88,7 @@ Returns operator status and environment tag.
 {
   "status": "ok",
   "environment": "sandbox",
-  "operator": "banzami-sandbox",
+  "operator": "banza-sandbox",
   "note": "This is a local development sandbox — not a production system."
 }
 ```
@@ -183,7 +183,7 @@ abstraction model.
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `PORT` | `3100` | TCP port the operator listens on |
-| `RUST_LOG` | `sandbox_operator=debug,banzami=debug,info` | Log level filter |
+| `RUST_LOG` | `sandbox_operator=debug,banza=debug,info` | Log level filter |
 
 ## Directory layout
 
@@ -321,13 +321,13 @@ Demonstrates the QR payment loop: generate a QR payload, then pay it.
 
 1. "Generate QR" — enter merchant wallet and amount, click Generate
 2. The QR ID auto-fills the "Pay QR" form
-3. The `BANZAMI-SBX:` payload string is shown — this is what goes into a real QR image
+3. The `BANZA-SBX:` payload string is shown — this is what goes into a real QR image
 4. Enter a consumer wallet and click Pay QR
 5. Try paying the same QR again — it returns an error (already paid)
 
 **What to observe:**
 
-- The `payload_data` starts with `BANZAMI-SBX:` and is base64-encoded JSON
+- The `payload_data` starts with `BANZA-SBX:` and is base64-encoded JSON
 - Decode it to see the structured QR payload: `qr_id`, `merchant_wallet_id`, `amount_minor`, `currency`
 - In production, this string is encoded into an actual QR image by any QR library
 - QR codes are single-use — a second payment attempt returns `422`

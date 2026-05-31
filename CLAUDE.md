@@ -10,7 +10,7 @@
 ```
 BANZA    = open financial infrastructure protocol        ← THIS REPO
 BanzAI   = Protocol Operating System                    ~/banzai
-Banzami  = Reference operator implementation            ~/banzami
+the reference operator  = Reference operator implementation            ~/banza
 ```
 
 Read the shared operating rules first: [docs/governance/CLAUDE_BASE.md](docs/governance/CLAUDE_BASE.md)
@@ -19,10 +19,10 @@ Read the shared operating rules first: [docs/governance/CLAUDE_BASE.md](docs/gov
 
 ## This Repository's Purpose
 
-`~/banza` is the **open protocol kernel**. It defines the rules that all operators must follow. It does not implement any specific operator's product. It is not Banzami. It is not a wallet app. It is the infrastructure beneath all operators.
+`~/banza` is the **open protocol kernel**. It defines the rules that all operators must follow. It does not implement any specific operator's product. It is not the reference operator. It is not a wallet app. It is the infrastructure beneath all operators.
 
 **The protocol exists independently of any operator.**  
-If Banzami ceases operations, the BANZA protocol — its specifications, contracts, SDKs, conformance suite, and certification framework — remains fully available to all operators.
+If the reference operator ceases operations, the BANZA protocol — its specifications, contracts, SDKs, conformance suite, and certification framework — remains fully available to all operators.
 
 ---
 
@@ -48,11 +48,11 @@ If Banzami ceases operations, the BANZA protocol — its specifications, contrac
 
 **Never introduce product logic into protocol specifications.**
 
-Protocol specifications define rules (what is correct), not operator experiences (how a product looks). If a change is specific to how Banzami's app works, it belongs in `~/banzami`, not here.
+Protocol specifications define rules (what is correct), not operator experiences (how a product looks). If a change is specific to how the reference operator's app works, it belongs in `~/banza`, not here.
 
 **Never make the protocol dependent on a single operator.**
 
-All protocol contracts, invariants, and certification criteria must be operator-agnostic. No operator name (including Banzami) should appear in protocol specifications as a hard dependency.
+All protocol contracts, invariants, and certification criteria must be operator-agnostic. No operator name (including the reference operator) should appear in protocol specifications as a hard dependency.
 
 **Never weaken a financial invariant for convenience.**
 
@@ -111,7 +111,7 @@ No operator implementation may reference a feature that has not first been speci
 
 ## Validation Governance
 
-The Banzami implementation matrix lives in `~/banzami/docs/validation/BANZAMI_IMPLEMENTATION_MATRIX.json` (the reference operator repo, not this repo). Status changes to that matrix require governed approval per the Banzami repo's governance model.
+The the reference operator implementation matrix lives in `~/banza/docs/validation/BANZA_IMPLEMENTATION_MATRIX.json` (the reference operator repo, not this repo). Status changes to that matrix require governed approval per the the reference operator repo's governance model.
 
 This repo (`~/banza`) does not own a validation matrix — it owns protocol specifications in `contracts/`, conformance vectors in `conformance/`, and certification criteria in `BANZA_CERTIFICATION.md`.
 
@@ -119,7 +119,7 @@ This repo (`~/banza`) does not own a validation matrix — it owns protocol spec
 
 ## Deployment
 
-The protocol kernel components are deployed via `./deploy.sh` in `~/banzami` (the reference operator repo). Protocol kernel changes are not deployed independently — they are consumed by the reference operator and by any other certified operator.
+The protocol kernel components are deployed via `./deploy.sh` in `~/banza` (the reference operator repo). Protocol kernel changes are not deployed independently — they are consumed by the reference operator and by any other certified operator.
 
 ---
 
@@ -127,7 +127,7 @@ The protocol kernel components are deployed via `./deploy.sh` in `~/banzami` (th
 
 - Not a consumer app
 - Not a merchant dashboard
-- Not Banzami's private implementation
+- Not the reference operator's private implementation
 - Not a proprietary product
 - Not a wallet interface
 - Not BanzAI (that is `~/banzai`)

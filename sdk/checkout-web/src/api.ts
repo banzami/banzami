@@ -16,13 +16,13 @@ export interface CreateLinkOptions {
   expiresAt?:   Date;
 }
 
-export class BanzamiApiError extends Error {
+export class BanzaApiError extends Error {
   constructor(
     message: string,
     public readonly status: number,
   ) {
     super(message);
-    this.name = 'BanzamiApiError';
+    this.name = 'BanzaApiError';
   }
 }
 
@@ -49,14 +49,14 @@ export class CheckoutApi {
       }),
     });
     if (!res.ok) {
-      throw new BanzamiApiError(`Failed to create payment link: ${res.status}`, res.status);
+      throw new BanzaApiError(`Failed to create payment link: ${res.status}`, res.status);
     }
     return res.json();
   }
 
   async getStatus(slug: string): Promise<{ paid: boolean }> {
     const res = await fetch(`${this.gatewayUrl}/public/pay/${encodeURIComponent(slug)}/status`);
-    if (!res.ok) throw new BanzamiApiError(`Status check failed: ${res.status}`, res.status);
+    if (!res.ok) throw new BanzaApiError(`Status check failed: ${res.status}`, res.status);
     return res.json();
   }
 }

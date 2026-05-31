@@ -1,5 +1,5 @@
 === Banza Payment Gateway ===
-Contributors:      banzami
+Contributors:      banza
 Tags:              payment, gateway, angola, kwanza, mobile, qr
 Requires at least: 6.0
 Tested up to:      6.5
@@ -33,12 +33,12 @@ The **Banza Payment Gateway** allows your WooCommerce store to accept payments v
 
 == Installation ==
 
-1. Upload the `banzami-payment` folder to `/wp-content/plugins/`.
+1. Upload the `banza-payment` folder to `/wp-content/plugins/`.
 2. Activate the plugin through the **Plugins** menu in WordPress.
 3. Go to **WooCommerce → Settings → Payments** and click *Banza*.
 4. Enter your **API Key** and **Webhook Secret** from the operator dashboard.
 5. Set the **Webhook URL** in the operator dashboard to:
-   `https://your-store.com/wc-api/banzami`
+   `https://your-store.com/wc-api/banza`
 
 == Changelog ==
 

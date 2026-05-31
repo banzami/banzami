@@ -135,7 +135,7 @@ impl KycStatus {
 /// | `available_account` | Funds available to send or withdraw       |
 /// | `reserved_account`  | Funds reserved pending outbound transfers |
 ///
-/// Both accounts are `LIABILITY` type — Banzami owes these funds to the consumer.
+/// Both accounts are `LIABILITY` type — the reference operator owes these funds to the consumer.
 ///
 /// # Onboarding states
 ///

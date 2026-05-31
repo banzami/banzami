@@ -18,7 +18,7 @@ import { describe, it, expect } from 'vitest';
 import {
   verifySignature,
   generateTestSignature,
-  BanzamiWebhookSignatureError,
+  BanzaWebhookSignatureError,
 } from '../../sdk/typescript/src/webhooks.js';
 
 // ---------------------------------------------------------------------------
@@ -88,7 +88,7 @@ describe('replay attack protection', () => {
       verifySignature(v.raw_body, v.expected_header, SECRET, {
         currentTimestamp: v.current_timestamp_for_test,
       }),
-    ).toThrow(BanzamiWebhookSignatureError);
+    ).toThrow(BanzaWebhookSignatureError);
   });
 });
 
@@ -103,7 +103,7 @@ describe('signature mismatch', () => {
       verifySignature(v.raw_body, v.expected_header, SECRET, {
         currentTimestamp: v.current_timestamp_for_test,
       }),
-    ).toThrow(BanzamiWebhookSignatureError);
+    ).toThrow(BanzaWebhookSignatureError);
   });
 
   it('V-007: wrong secret must be rejected', () => {
@@ -112,7 +112,7 @@ describe('signature mismatch', () => {
       verifySignature(v.raw_body, v.expected_header, SECRET, {
         currentTimestamp: v.current_timestamp_for_test,
       }),
-    ).toThrow(BanzamiWebhookSignatureError);
+    ).toThrow(BanzaWebhookSignatureError);
   });
 });
 
@@ -127,7 +127,7 @@ describe('malformed headers', () => {
       verifySignature(v.raw_body, v.expected_header, SECRET, {
         currentTimestamp: v.current_timestamp_for_test,
       }),
-    ).toThrow(BanzamiWebhookSignatureError);
+    ).toThrow(BanzaWebhookSignatureError);
   });
 
   it('V-009: missing t= field must be rejected', () => {
@@ -136,7 +136,7 @@ describe('malformed headers', () => {
       verifySignature(v.raw_body, v.expected_header, SECRET, {
         currentTimestamp: v.current_timestamp_for_test,
       }),
-    ).toThrow(BanzamiWebhookSignatureError);
+    ).toThrow(BanzaWebhookSignatureError);
   });
 
   it('V-010: missing v1= field must be rejected', () => {
@@ -145,7 +145,7 @@ describe('malformed headers', () => {
       verifySignature(v.raw_body, v.expected_header, SECRET, {
         currentTimestamp: v.current_timestamp_for_test,
       }),
-    ).toThrow(BanzamiWebhookSignatureError);
+    ).toThrow(BanzaWebhookSignatureError);
   });
 
   it('V-011: empty header must be rejected', () => {
@@ -154,7 +154,7 @@ describe('malformed headers', () => {
       verifySignature(v.raw_body, v.expected_header, SECRET, {
         currentTimestamp: v.current_timestamp_for_test,
       }),
-    ).toThrow(BanzamiWebhookSignatureError);
+    ).toThrow(BanzaWebhookSignatureError);
   });
 
   it('V-012: wrong header format (old Banza-Signature style) must be rejected', () => {
@@ -163,7 +163,7 @@ describe('malformed headers', () => {
       verifySignature(v.raw_body, v.expected_header, SECRET, {
         currentTimestamp: v.current_timestamp_for_test,
       }),
-    ).toThrow(BanzamiWebhookSignatureError);
+    ).toThrow(BanzaWebhookSignatureError);
   });
 });
 

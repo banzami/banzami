@@ -1,5 +1,5 @@
 {
-  "_spec": "Banzami Transfer Conformance Vectors v1.0",
+  "_spec": "the reference operator Transfer Conformance Vectors v1.0",
   "_stability": "stable",
   "_note": "All vectors use seed wallets that exist on any freshly started sandbox operator. Amounts are chosen to be safely within seed balances.",
 

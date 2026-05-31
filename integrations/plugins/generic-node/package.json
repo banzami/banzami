@@ -1,7 +1,7 @@
 {
   "name": "@banza/node",
   "version": "0.1.0",
-  "description": "Banzami payment integration for Node.js — payment links, webhooks, and signature verification",
+  "description": "the reference operator payment integration for Node.js — payment links, webhooks, and signature verification",
   "license": "UNLICENSED",
   "type": "module",
   "main": "./dist/index.cjs",

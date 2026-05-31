@@ -1,11 +1,11 @@
 openapi: "3.0.3"
 
 info:
-  title: Banzami Reference Operator API
+  title: the reference operator Reference Operator API
   version: "1.0"
   description: |
-    The Banzami Sandbox Operator is a local development server that implements
-    the Banzami kernel payment protocol using fully simulated providers.
+    The the reference operator Sandbox Operator is a local development server that implements
+    the BANZA kernel payment protocol using fully simulated providers.
 
     **This is not a production API.** All state is in-memory and resets on restart.
     `simulated: true` and `production_allowed: false` are enforced at the protocol level.
@@ -16,7 +16,7 @@ info:
     For AOA: 1 AOA = 100 minor units.
 
   contact:
-    name: Banzami
+    name: the reference operator
     url: https://github.com/banza-protocols/banza
 
   license:
@@ -72,7 +72,7 @@ paths:
       summary: Operator capability manifest
       description: |
         Returns the operator's capability manifest per RFC-0005 operator discovery.
-        Clients use this endpoint to discover what a Banzami operator supports.
+        Clients use this endpoint to discover what a a BANZA operator supports.
       operationId: getOperatorManifest
       tags: [health]
       responses:
@@ -314,7 +314,7 @@ paths:
       summary: Generate a QR payment code
       description: |
         Generates a QR payment code for a merchant. Returns the QR payload in the
-        canonical `BANZAMI-SBX:{base64json}` format. In production, this string
+        canonical `BANZA-SBX:{base64json}` format. In production, this string
         would be encoded into an actual QR image.
       operationId: generateQr
       tags: [qr]
@@ -674,7 +674,7 @@ components:
       properties:
         id:                  { type: string, example: qr-a1b2c3d4 }
         status:              { type: string, enum: [active, paid] }
-        payload_data:        { type: string, description: "BANZAMI-SBX:{base64json} canonical QR payload" }
+        payload_data:        { type: string, description: "BANZA-SBX:{base64json} canonical QR payload" }
         merchant_wallet_id:  { type: string }
         amount_minor:        { type: integer, format: int64, nullable: true }
         currency:            { type: string }

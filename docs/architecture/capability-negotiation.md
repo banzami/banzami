@@ -23,7 +23,7 @@ The manifest describes the operator's identity, environment, and capabilities.
 
 ```json
 {
-  "operator_id":        "banzami-sandbox",
+  "operator_id":        "banza-sandbox",
   "operator_version":   "0.1.0",
   "protocol_version":   "1.0",
   "environment":        "sandbox",
@@ -92,11 +92,11 @@ capability set, the operator responds with the intersection it supports.
 ## Safety enforcement
 
 The `production_allowed` field is a hard safety gate in the sandbox operator.
-If `BANZAMI_ALLOW_PRODUCTION` is set in the environment, the operator refuses to
+If `BANZA_ALLOW_PRODUCTION` is set in the environment, the operator refuses to
 start:
 
 ```
-FATAL: BANZAMI_ALLOW_PRODUCTION is set. This sandbox operator is not permitted
+FATAL: BANZA_ALLOW_PRODUCTION is set. This sandbox operator is not permitted
 to run in a production context. Refusing to start.
 ```
 

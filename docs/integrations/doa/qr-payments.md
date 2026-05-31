@@ -1,6 +1,6 @@
 # Doa × Banza — QR Payments
 
-QR is the primary payment modality for Angola. This document covers every aspect of how Doa implements the Banzami QR payment experience.
+QR is the primary payment modality for Angola. This document covers every aspect of how Doa implements the BANZA QR payment experience.
 
 ---
 
@@ -10,7 +10,7 @@ Banza payment links use a **merchant-presented QR** model:
 
 1. The merchant (Doa) creates a payment link and renders its URL as a QR code.
 2. The customer (donor) scans with the Banza consumer app.
-3. The Banzami app resolves the link, shows the amount and merchant name.
+3. The operator app resolves the link, shows the amount and merchant name.
 4. The customer confirms with PIN or biometrics.
 5. The link transitions from `ACTIVE` to `USED`.
 6. The merchant detects confirmation via polling or webhook.
@@ -24,13 +24,13 @@ This is distinct from a customer-presented QR (where the merchant scans the cust
 The QR encodes the Banza pay-page URL:
 
 ```
-https://pay.banzami.com/{slug}
+https://pay.banza.network/{slug}
 ```
 
 Where `{slug}` is the short, URL-safe identifier returned by the payment link API. Example:
 
 ```
-https://pay.banzami.com/abc123def
+https://pay.banza.network/abc123def
 ```
 
 The Banza consumer app handles this URL natively — opening it in the app directly presents the payment confirmation screen without going through the browser.
@@ -44,7 +44,7 @@ The Banza consumer app handles this URL natively — opening it in the app direc
 Doa generates the QR image **client-side** using the `qrcode` npm package:
 
 ```typescript
-// Dynamic import — deferred until BanzamiPanel mounts
+// Dynamic import — deferred until the reference operatorPanel mounts
 import('qrcode').then((QRCode) => {
   QRCode.toDataURL(payUrl, {
     width: 260,
@@ -90,19 +90,19 @@ The QR panel always renders an external link:
 </a>
 ```
 
-This is critical for donors who are already on their phone — they cannot scan a QR displayed on the same device. Tapping this link opens `pay.banzami.com/{slug}` in the browser or, if the Banzami app is installed and handles the URL scheme, directly in the app.
+This is critical for donors who are already on their phone — they cannot scan a QR displayed on the same device. Tapping this link opens `pay.banza.network/{slug}` in the browser or, if the operator app is installed and handles the URL scheme, directly in the app.
 
 ---
 
 ## Polling Architecture
 
-While the QR is displayed, the browser polls `GET /api/donations/banzami-status` every 3 seconds:
+While the QR is displayed, the browser polls `GET /api/donations/banza-status` every 3 seconds:
 
 ```typescript
 pollRef.current = setInterval(async () => {
   try {
     const params = new URLSearchParams({ intent_id: intentId, link_id: linkId });
-    const r = await fetch(`/api/donations/banzami-status?${params}`);
+    const r = await fetch(`/api/donations/banza-status?${params}`);
     if (!r.ok) return;  // transient error — try again next tick
     const j = await r.json() as { confirmed: boolean };
     if (j.confirmed) {
@@ -114,7 +114,7 @@ pollRef.current = setInterval(async () => {
 }, 3000);
 ```
 
-**Poll endpoint (`GET /api/donations/banzami-status`)**:
+**Poll endpoint (`GET /api/donations/banza-status`)**:
 
 1. Validates `intent_id` (UUID) and `link_id` via Zod schema.
 2. Calls `GET /v1/payment-links/{link_id}` with Bearer token.
@@ -124,9 +124,9 @@ pollRef.current = setInterval(async () => {
 **Poll lifecycle**:
 
 ```
-BanzamiPanel mounts → setInterval(3000ms) starts
+the reference operatorPanel mounts → setInterval(3000ms) starts
       │
-      ├── Each tick: fetch banzami-status
+      ├── Each tick: fetch banza-status
       │         ├── network error → skip tick, continue
       │         ├── status ACTIVE → { confirmed: false } → continue
       │         └── status USED  → { confirmed: true }
@@ -188,13 +188,13 @@ Donor is on a mobile phone visiting doadoa.app
 
 Step 1: Amount selection
 Step 2: Identity + OTP
-Step 3: Method picker → selects Banzami
+Step 3: Method picker → selects the reference operator
 
-BanzamiPanel renders:
+the reference operatorPanel renders:
   ┌─────────────────────────────┐
-  │ Paga com o Banzami    SANDBOX│ ← sandbox badge (if test key)
+  │ Paga com o operador    SANDBOX│ ← sandbox badge (if test key)
   │                              │
-  │ 1 ● Abre a app Banzami      │
+  │ 1 ● Abre a app the reference operator      │
   │ 2 ● Toca em Pagar e usa QR  │
   │ 3 ● Confirma o pagamento    │
   │                              │
@@ -210,10 +210,10 @@ BanzamiPanel renders:
   └─────────────────────────────┘
 
 Donor taps "Ou abre o link"
-  → Banza app opens at pay.banzami.com/abc123def
+  → Banza app opens at pay.banza.network/abc123def
   → Shows: "Banza Business — 1,500.00 AOA"
   → Donor enters PIN
-  → Banzami confirms
+  → the reference operator confirms
 
 Poll detects USED:
   → Green check: "Pagamento confirmado!"
@@ -227,7 +227,7 @@ Poll detects USED:
 ```
 Donor is on a laptop visiting doadoa.app
 
-BanzamiPanel renders:
+the reference operatorPanel renders:
   [Same layout — QR code prominent]
 
 Donor opens Banza app on their phone:
@@ -245,7 +245,7 @@ Desktop browser's poll detects USED within 3 s:
 
 ## Webhook Acceleration
 
-When `BANZAMI_WEBHOOK_SECRET` is configured, Banza pushes `payment_link.paid` immediately after the link transitions to `USED`. This fires before the next poll tick — the webhook path confirms the payment server-side before the browser even asks.
+When `BANZA_WEBHOOK_SECRET` is configured, Banza pushes `payment_link.paid` immediately after the link transitions to `USED`. This fires before the next poll tick — the webhook path confirms the payment server-side before the browser even asks.
 
 On the next poll tick, `applyPaymentEvent()` returns `{ deduped: true }` — the event was already recorded by the webhook. The response is still `{ confirmed: true }` and the browser proceeds normally.
 

@@ -15,11 +15,11 @@ $currency_display = strtoupper( $currency ) === 'AOA'
     ? number_format( $amount_minor, 0, ',', '.' ) . ' Kz'
     : number_format( $amount_minor / 100, 2, ',', '.' ) . ' ' . strtoupper( $currency );
 
-$deep_link = 'banzami://pay/transaction/' . rawurlencode( $transaction_id );
+$deep_link = 'banza://pay/transaction/' . rawurlencode( $transaction_id );
 $timeout_secs = $timeout_mins * 60;
 ?>
 
-<div id="banzami-payment-page" style="max-width:480px;margin:2rem auto;text-align:center;font-family:system-ui,sans-serif;">
+<div id="banza-payment-page" style="max-width:480px;margin:2rem auto;text-align:center;font-family:system-ui,sans-serif;">
 
     <div style="background:#990011;color:#fff;border-radius:12px;padding:2rem;margin-bottom:1.5rem;">
         <p style="margin:0 0 .25rem;font-size:.75rem;opacity:.7;letter-spacing:.05em;text-transform:uppercase;">Valor a pagar</p>
@@ -33,9 +33,9 @@ $timeout_secs = $timeout_mins * 60;
         </p>
 
         <?php if ( $transaction_id ) : ?>
-            <div id="banzami-qr" style="display:flex;justify-content:center;margin-bottom:1rem;">
+            <div id="banza-qr" style="display:flex;justify-content:center;margin-bottom:1rem;">
                 <!-- QR generated client-side by qrcode.js from the deep link payload -->
-                <canvas id="banzami-qr-canvas"></canvas>
+                <canvas id="banza-qr-canvas"></canvas>
             </div>
         <?php endif; ?>
 
@@ -45,11 +45,11 @@ $timeout_secs = $timeout_mins * 60;
         </a>
 
         <p style="font-size:.75rem;color:#9E9A96;margin:0;">
-            A aguardar confirmação de pagamento<span id="banzami-dots">…</span>
+            A aguardar confirmação de pagamento<span id="banza-dots">…</span>
         </p>
     </div>
 
-    <p id="banzami-timeout-notice" style="font-size:.8rem;color:#B45309;background:#FFFBEB;border-radius:8px;padding:.75rem;display:none;">
+    <p id="banza-timeout-notice" style="font-size:.8rem;color:#B45309;background:#FFFBEB;border-radius:8px;padding:.75rem;display:none;">
         Tempo de pagamento expirou. O seu pedido foi cancelado.
     </p>
 
@@ -68,12 +68,12 @@ $timeout_secs = $timeout_mins * 60;
     var orderId       = <?php echo (int) $order->get_id(); ?>;
     var successUrl    = <?php echo wp_json_encode( $order->get_checkout_order_received_url() ); ?>;
     var timeoutSecs   = <?php echo (int) $timeout_secs; ?>;
-    var checkUrl      = <?php echo wp_json_encode( add_query_arg( [ 'wc-api' => 'banzami_status', 'order_id' => $order->get_id(), 'key' => $order->get_order_key() ], home_url( '/' ) ) ); ?>;
+    var checkUrl      = <?php echo wp_json_encode( add_query_arg( [ 'wc-api' => 'banza_status', 'order_id' => $order->get_id(), 'key' => $order->get_order_key() ], home_url( '/' ) ) ); ?>;
 
     // Generate QR code
     window.addEventListener('load', function () {
         if (typeof QRCode !== 'undefined' && transactionId) {
-            new QRCode(document.getElementById('banzami-qr-canvas'), {
+            new QRCode(document.getElementById('banza-qr-canvas'), {
                 text:          deepLink,
                 width:         200,
                 height:        200,
@@ -85,7 +85,7 @@ $timeout_secs = $timeout_mins * 60;
     });
 
     // Animate the "waiting" dots
-    var dots = document.getElementById('banzami-dots');
+    var dots = document.getElementById('banza-dots');
     var dotCount = 0;
     var dotTimer = setInterval(function () {
         dotCount = (dotCount + 1) % 4;
@@ -100,7 +100,7 @@ $timeout_secs = $timeout_mins * 60;
         elapsed += pollInterval;
         if (elapsed >= timeoutSecs * 1000) {
             clearInterval(dotTimer);
-            document.getElementById('banzami-timeout-notice').style.display = 'block';
+            document.getElementById('banza-timeout-notice').style.display = 'block';
             return;
         }
         fetch(checkUrl)

@@ -2,7 +2,7 @@
 
 **Status:** Accepted  
 **Date:** 2026-05-28  
-**Author:** Banzami Organisation  
+**Author:** the reference operator Organisation  
 **Deciders:** Fidel Monteiro (Founder)  
 **Supersedes:** None
 
@@ -12,7 +12,7 @@
 
 Banza began as a single private fintech product targeting Angola's payment market. As the platform matured, it became clear that the generic financial primitives — double-entry ledger, wallet engine, transaction FSM, routing, settlement, QR runtime — had value beyond any single commercial deployment.
 
-The problem: the infrastructure was entirely private, tightly coupled to one operator (Banzami), and inaccessible to contributors, researchers, and alternative operators. This created:
+The problem: the infrastructure was entirely private, tightly coupled to one operator (the reference operator), and inaccessible to contributors, researchers, and alternative operators. This created:
 
 - Invisible coupling: the "infrastructure" was inseparable from the "product"
 - Contributor barrier: no way to experiment without access to private infrastructure
@@ -31,7 +31,7 @@ The kernel is operator-neutral. It defines:
 
 The analogy is precise:
 - Banza kernel = Linux kernel
-- Banzami (first commercial operator) = Ubuntu / first distribution
+- the reference operator (first commercial operator) = Ubuntu / first distribution
 - Future operators = future distributions
 
 ## Consequences
@@ -40,7 +40,7 @@ The analogy is precise:
 - Community contribution is now possible without access to private infrastructure
 - Financial invariants are publicly auditable
 - The architecture supports multiple independent operators
-- Banzami becomes clearly "one operator" rather than "the only possible implementation"
+- the reference operator becomes clearly "one operator" rather than "the only possible implementation"
 - External trust increases: operators can inspect what they're running
 
 **Negative:**
@@ -52,6 +52,6 @@ The analogy is precise:
 
 **Keep everything private:** Rejected. Creates permanent contributor barrier and prevents ecosystem formation.
 
-**Open-source the entire Banzami product:** Rejected. Banzami includes operational secrets, compliance rules, and provider credentials that cannot be public.
+**Open-source the entire the reference operator product:** Rejected. the reference operator includes operational secrets, compliance rules, and provider credentials that cannot be public.
 
 **Open-source contracts only (not Rust core):** Rejected. The value is in the verifiable invariant implementations, not just the protocol specs.

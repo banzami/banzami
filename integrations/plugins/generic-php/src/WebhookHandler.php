@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Banza;
 
 /**
- * Helper for processing Banzami webhook events.
+ * Helper for processing BANZA webhook events.
  *
  * Usage:
  *   $handler = new WebhookHandler('your-webhook-secret');

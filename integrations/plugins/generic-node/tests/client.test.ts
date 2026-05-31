@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BanzaClient, BanzaError } from '../src/client.js';
 
-const BASE = 'https://api.banzami.com';
+const BASE = 'https://api.banza.network';
 const KEY  = 'bz_test_key';
 
 function makeClient(): BanzaClient {

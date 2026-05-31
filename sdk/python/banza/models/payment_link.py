@@ -29,4 +29,4 @@ class PaymentLink(BaseModel):
 
     @property
     def checkout_url(self) -> str:
-        return f"https://pay.banzami.co/{self.slug}"
+        return f"https://pay.banza.network/{self.slug}"

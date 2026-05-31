@@ -1,7 +1,7 @@
 {
-  "name": "@banzami/checkout",
+  "name": "@banza/checkout",
   "version": "0.1.0",
-  "description": "Embeddable Banzami payment checkout for any website",
+  "description": "Embeddable the reference operator payment checkout for any website",
   "license": "UNLICENSED",
   "main": "./dist/checkout.cjs.js",
   "module": "./dist/checkout.esm.js",
