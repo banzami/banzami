@@ -1,20 +1,20 @@
 """HMAC-SHA256 webhook signature verification.
 
-Banzami signs every webhook delivery with:
+BANZA signs every webhook delivery with:
 
-    Banzami-Signature: t=<unix_seconds>,v1=<hex_hmac_sha256>
+    Banza-Signature: t=<unix_seconds>,v1=<hex_hmac_sha256>
 
 The HMAC is computed over the concatenation of the timestamp string, a
 literal period, and the raw request body bytes:
 
     hmac_input = f"{unix_seconds}.".encode() + raw_body_bytes
 
-Pass the *raw* request body (bytes) and the full ``Banzami-Signature``
+Pass the *raw* request body (bytes) and the full ``Banza-Signature``
 header value to :func:`verify_signature`.  Never decode or JSON-parse the
 body before verification — doing so can alter the byte sequence and
 invalidate the signature.
 
-Spec: docs/standards/webhook-signature-spec.md
+Spec: contracts/webhooks/signature.json
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ import hmac
 import time as _time
 from typing import NamedTuple
 
-SIGNATURE_HEADER = "Banzami-Signature"
+SIGNATURE_HEADER = "Banza-Signature"
 TOLERANCE_SECONDS = 300
 
 
