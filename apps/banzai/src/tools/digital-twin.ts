@@ -53,7 +53,7 @@ const RFCS: RFCReference[] = [
   { rfc_id: 'RFC-0003', title: 'Ledger Invariants', relevance: 'ledger' },
   { rfc_id: 'RFC-0004', title: 'QR Payment Protocol', relevance: 'qr' },
   { rfc_id: 'RFC-0005', title: 'Settlement Model', relevance: 'settlement' },
-  { rfc_id: 'RFC-0006', title: 'Operator Manifest', relevance: 'manifest' },
+  { rfc_id: 'RFC-0006', title: 'Offline Payment Support', relevance: 'offline' },
   { rfc_id: 'RFC-0007', title: 'Trace Model', relevance: 'trace' },
   { rfc_id: 'RFC-0008', title: 'Federation Protocol', relevance: 'federation' },
   { rfc_id: 'RFC-0009', title: 'Payment Request Model', relevance: 'payment' },

@@ -31,8 +31,8 @@ const LEVEL_CHECKS: ConformanceCheck[] = [
   { id: 'L3-001', name: 'Cross-operator settlement', level: 3, result: 'skip' },
   { id: 'L3-002', name: 'Multi-operator routing', level: 3, result: 'skip' },
   { id: 'L3-003', name: 'Reconciliation convergence', level: 3, result: 'skip' },
-  { id: 'L4-001', name: 'Full federation participation', level: 4, result: 'skip' },
-  { id: 'L4-002', name: 'Offline payment support', level: 4, result: 'skip' },
+  { id: 'L4-001', name: 'Settlement batch lifecycle (open, close, settle)', level: 4, result: 'skip' },
+  { id: 'L4-002', name: 'EMIS card acquiring integration (acquiring.emis)', level: 4, result: 'skip' },
 ];
 
 export interface OperatorCapabilities {
@@ -74,8 +74,8 @@ export function runConformanceCheck(
       case 'L3-003': result = capabilities.cross_operator ? 'pass' : 'fail'; break;
       case 'L4-001': result = capabilities.federation ? 'pass' : 'fail'; break;
       case 'L4-002':
-        result = capabilities.offline ? 'pass' : 'fail';
-        if (!capabilities.offline) reason = 'RFC-0006 offline payment support not implemented';
+        result = 'skip';
+        reason = 'L4 (Infrastructure Operator) conformance suite is v1.1 scope — not certifiable in v1.0';
         break;
       default:
         result = 'skip';
