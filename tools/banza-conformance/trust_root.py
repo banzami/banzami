@@ -147,6 +147,52 @@ def verify_certificate_signature(cert: dict, root_public_key_bytes: bytes) -> tu
 
 # ── Certificate generation ────────────────────────────────────────────────────
 
+def generate_brl(revoked: list = None) -> dict:
+    """
+    Generate a BANZA Revocation List dict.
+
+    revoked: list of dicts, each with {"operator_id": str, "reason": str,
+             "permanent": bool, "since": str (ISO 8601)}.
+    Omit or pass None for an empty (no-revocations) BRL.
+
+    The signature field is a placeholder — BRL signature verification
+    is tested in FED-TRUST-003, not FED-CERT-008 to 011.
+    """
+    now = datetime.now(timezone.utc)
+    issued_at = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    expires_at = (now + timedelta(hours=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return {
+        "schema_version": "1",
+        "issued_at": issued_at,
+        "expires_at": expires_at,
+        "revoked": revoked or [],
+        "signature": "A" * 86,
+    }
+
+
+def generate_key_manifest(keys: dict) -> dict:
+    """
+    Generate a BANZA-KEY-MANIFEST dict.
+
+    keys: dict of {key_id: public_key_bytes (bytes, 32)}.
+    Returns the manifest JSON structure from FEDERATION_FIXTURE_CATALOG.md.
+    """
+    now = datetime.now(timezone.utc)
+    return {
+        "schema_version": "1",
+        "published_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "keys": [
+            {
+                "key_id": kid,
+                "public_key": f"ed25519:{b64url_encode(pub)}",
+                "active_since": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "status": "active",
+            }
+            for kid, pub in keys.items()
+        ],
+    }
+
+
 def generate_test_certificate(
     operator_id: str = OPERATOR_A_ID,
     certification_level: int = 3,
@@ -154,6 +200,8 @@ def generate_test_certificate(
     issuer_key_id: str = None,
     root_private_key=None,
     operator_public_key_bytes: bytes = None,
+    issued_at_override: "datetime | None" = None,
+    expires_at_override: "datetime | None" = None,
 ) -> dict:
     """
     Generate a test certificate dict.
@@ -182,6 +230,16 @@ def generate_test_certificate(
     else:
         public_key = "ed25519:" + "A" * 43
 
+    if issued_at_override is not None:
+        issued_at = issued_at_override.strftime("%Y-%m-%dT%H:%M:%SZ")
+    else:
+        issued_at = (now - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    if expires_at_override is not None:
+        expires_at = expires_at_override.strftime("%Y-%m-%dT%H:%M:%SZ")
+    else:
+        expires_at = (now + timedelta(days=lifetime_days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
     cert = {
         "schema_version": "1",
         "operator_id": operator_id,
@@ -189,8 +247,8 @@ def generate_test_certificate(
         "protocol_version": "1.0",
         "capabilities": ["cross_operator_routing", "cross_operator_settlement"],
         "public_key": public_key,
-        "issued_at": (now - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "expires_at": (now + timedelta(days=lifetime_days)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "issued_at": issued_at,
+        "expires_at": expires_at,
         "issuer": "BANZA",
         "issuer_key_id": issuer_key_id,
     }
