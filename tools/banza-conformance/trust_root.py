@@ -9,13 +9,22 @@ Requires: cryptography>=41.0.0 (pip install cryptography)
   Only FED-CERT-002 (signature verification) requires this package.
   FED-CERT-001, 003–007 work without it.
 
-Per ADR-026 canonical signing rule:
-  payload  = all cert fields EXCEPT "signature", sorted lexicographically
+Per ADR-026 canonical signing rule (applies to certs, BRLs, and evidence):
+  payload  = all fields EXCEPT "signature", sorted lexicographically
   bytes    = json.dumps(payload, sort_keys=True, separators=(',',':')).encode('utf-8')
   sig      = base64url_no_padding(ed25519_sign(root_private_key, bytes))
+
+BRL structure (signed):
+  {schema_version, issuer, issuer_key_id, issued_at, expires_at, revoked, signature}
+  INV-TRUST-005: unsigned or unverifiable BRL = absent BRL (fail-closed)
+
+Evidence package signing:
+  report minus {package_signature, evidence_hash} → canonical JSON → ed25519 sign
+  evidence_hash = sha256(canonical_bytes).hexdigest()
 """
 
 import base64
+import hashlib
 import json
 from datetime import datetime, date, timedelta, timezone
 
@@ -149,14 +158,10 @@ def verify_certificate_signature(cert: dict, root_public_key_bytes: bytes) -> tu
 
 def generate_brl(revoked: list = None) -> dict:
     """
-    Generate a BANZA Revocation List dict.
+    Generate an UNSIGNED BANZA Revocation List dict (placeholder signature).
 
-    revoked: list of dicts, each with {"operator_id": str, "reason": str,
-             "permanent": bool, "since": str (ISO 8601)}.
-    Omit or pass None for an empty (no-revocations) BRL.
-
-    The signature field is a placeholder — BRL signature verification
-    is tested in FED-TRUST-003, not FED-CERT-008 to 011.
+    Used for backward-compatible initialization when no signing key is yet available.
+    For signed BRLs (required when crypto is available), use generate_signed_brl().
     """
     now = datetime.now(timezone.utc)
     issued_at = now.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -168,6 +173,169 @@ def generate_brl(revoked: list = None) -> dict:
         "revoked": revoked or [],
         "signature": "A" * 86,
     }
+
+
+# ── BRL signing (INV-TRUST-005) ───────────────────────────────────────────────
+
+def sign_brl(brl: dict, root_private_key) -> dict:
+    """
+    Sign a BRL dict with the test BANZA root key (INV-TRUST-005).
+
+    Canonical form: all fields EXCEPT 'signature', sorted lexicographically.
+    Returns a new dict with the 'signature' field set.
+    """
+    brl_copy = {k: v for k, v in brl.items() if k != "signature"}
+    canonical = json.dumps(brl_copy, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    sig_bytes = root_private_key.sign(canonical)
+    brl_copy["signature"] = b64url_encode(sig_bytes)
+    return brl_copy
+
+
+def verify_brl_signature(brl: dict, root_public_key_bytes: bytes) -> tuple:
+    """
+    Verify BRL ed25519 signature against the test BANZA root public key (INV-TRUST-005).
+
+    Returns:
+        (verified: bool, detail: str)
+
+    The signed payload is all BRL fields EXCEPT 'signature', sorted lexicographically.
+    Per INV-TRUST-005: an unverifiable BRL MUST be treated as absent (fail-closed).
+    """
+    if not CRYPTO_AVAILABLE:
+        return False, "cryptography package not installed"
+    try:
+        public_key = Ed25519PublicKey.from_public_bytes(root_public_key_bytes)
+        sig_str = brl.get("signature", "")
+        if not sig_str:
+            return False, "BRL has no signature field (unsigned BRL = absent BRL per INV-TRUST-005)"
+        sig_bytes = b64url_decode(sig_str)
+        brl_payload = {k: v for k, v in brl.items() if k != "signature"}
+        canonical = json.dumps(brl_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        public_key.verify(sig_bytes, canonical)
+        return True, "BRL signature valid"
+    except InvalidSignature:
+        return False, "InvalidSignature: BRL signature does not verify against test BANZA root"
+    except Exception as exc:
+        return False, f"BRL verification error: {exc}"
+
+
+def generate_signed_brl(
+    root_private_key,
+    key_id: str,
+    revoked: list = None,
+    expires_hours: int = 7,
+    issued_delta_hours: int = 0,
+) -> dict:
+    """
+    Generate a cryptographically signed BANZA Revocation List.
+
+    The BRL includes issuer_key_id so the verifier can select the correct
+    public key for verification. Signature covers all fields except 'signature'.
+
+    issued_delta_hours: offset from now for issued_at (negative = in the past).
+    """
+    now = datetime.now(timezone.utc)
+    brl = {
+        "schema_version": "1",
+        "issuer": "BANZA",
+        "issuer_key_id": key_id,
+        "issued_at": (now + timedelta(hours=issued_delta_hours)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "expires_at": (now + timedelta(hours=expires_hours)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "revoked": revoked or [],
+    }
+    return sign_brl(brl, root_private_key)
+
+
+# ── Evidence package signing ──────────────────────────────────────────────────
+
+def sign_evidence_package(
+    report: dict,
+    root_private_key,
+    key_id: str,
+    root_public_key_bytes: bytes,
+) -> dict:
+    """
+    Sign the evidence report, adding package_signature and evidence_hash fields.
+
+    Signed payload: canonical JSON of report minus {package_signature, evidence_hash}.
+    evidence_hash:  SHA-256 hex digest of the canonical payload bytes.
+    signature:      ed25519 signature of the canonical payload bytes.
+
+    Returns a new dict (the input is not mutated).
+    """
+    report_to_sign = {
+        k: v for k, v in report.items()
+        if k not in ("package_signature", "evidence_hash")
+    }
+    canonical = json.dumps(
+        report_to_sign, sort_keys=True, separators=(",", ":"), default=str
+    ).encode("utf-8")
+    evidence_hash = hashlib.sha256(canonical).hexdigest()
+    sig_bytes = root_private_key.sign(canonical)
+
+    signed = dict(report)
+    signed["evidence_hash"] = evidence_hash
+    signed["package_signature"] = {
+        "algorithm": "ed25519",
+        "issuer": "BANZA_TEST_ROOT",
+        "issuer_key_id": key_id,
+        "runner_public_key": f"ed25519:{b64url_encode(root_public_key_bytes)}",
+        "signature": b64url_encode(sig_bytes),
+        "signed_at": datetime.now(timezone.utc).isoformat(),
+        "signed_payload": "canonical_json_sha256",
+    }
+    return signed
+
+
+def verify_evidence_package_signature(report: dict, root_public_key_bytes: bytes) -> tuple:
+    """
+    Verify the package_signature in an evidence report.
+
+    The verification recomputes the canonical JSON of the report (excluding
+    package_signature and evidence_hash), verifies the ed25519 signature, and
+    checks the evidence_hash matches the computed hash.
+
+    Returns:
+        (verified: bool, detail: str)
+    """
+    if not CRYPTO_AVAILABLE:
+        return False, "cryptography package not installed"
+
+    pkg_sig = report.get("package_signature")
+    if not pkg_sig or not isinstance(pkg_sig, dict):
+        return False, "no package_signature field in report"
+
+    sig_str = pkg_sig.get("signature", "")
+    if not sig_str:
+        return False, "package_signature.signature is missing"
+
+    report_to_verify = {
+        k: v for k, v in report.items()
+        if k not in ("package_signature", "evidence_hash")
+    }
+    canonical = json.dumps(
+        report_to_verify, sort_keys=True, separators=(",", ":"), default=str
+    ).encode("utf-8")
+
+    try:
+        public_key = Ed25519PublicKey.from_public_bytes(root_public_key_bytes)
+        sig_bytes = b64url_decode(sig_str)
+        public_key.verify(sig_bytes, canonical)
+    except InvalidSignature:
+        return False, "InvalidSignature: evidence package signature does not verify"
+    except Exception as exc:
+        return False, f"evidence verification error: {exc}"
+
+    # Also verify evidence_hash matches
+    computed_hash = hashlib.sha256(canonical).hexdigest()
+    reported_hash = report.get("evidence_hash")
+    if reported_hash and computed_hash != reported_hash:
+        return False, (
+            f"evidence_hash mismatch: "
+            f"computed={computed_hash[:16]}… != reported={reported_hash[:16]}…"
+        )
+
+    return True, "evidence package signature valid"
 
 
 def generate_key_manifest(keys: dict) -> dict:

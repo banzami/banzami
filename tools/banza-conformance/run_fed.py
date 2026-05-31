@@ -8319,6 +8319,9 @@ def run_federation_mode(
     secondary_key_id = None
     secondary_pub = None
     root_public_key_bytes = None
+    root_priv = None
+    root_pub = None
+    key_id = None
     op_a_priv = None
 
     if _tr.CRYPTO_AVAILABLE:
@@ -8342,6 +8345,9 @@ def run_federation_mode(
             # Start infra servers
             infra = RunnerInfra()
             infra.start()
+
+            # Store signing keys on infra so all set_brl_* calls auto-sign (INV-TRUST-005)
+            infra.configure_signing_keys(root_priv, key_id)
 
             # Populate key manifest: primary + secondary (for FED-CERT-011)
             infra.set_key_manifest({key_id: root_pub, secondary_key_id: root_pub2})
@@ -8797,9 +8803,20 @@ def run_federation_mode(
     }
 
     if output:
+        # Sign the evidence package when crypto is available (INV-TRUST-005 — tamper-evident)
+        if _tr.CRYPTO_AVAILABLE and root_priv is not None and key_id is not None and root_pub is not None:
+            try:
+                report = _tr.sign_evidence_package(report, root_priv, key_id, root_pub)
+            except Exception as exc:
+                print(f"  Warning: evidence package signing failed: {exc}", file=sys.stderr)
         with open(output, "w") as f:
             json.dump(report, f, indent=2, default=str)
         print(f"\nReport written to {output}")
+        if report.get("package_signature"):
+            pkg = report["package_signature"]
+            print(f"  evidence_hash:     {report.get('evidence_hash', '')[:32]}…")
+            print(f"  issuer_key_id:     {pkg.get('issuer_key_id', '')}")
+            print(f"  signed_at:         {pkg.get('signed_at', '')}")
 
     return 0 if total_fail == 0 else 1
 

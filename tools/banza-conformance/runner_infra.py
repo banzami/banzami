@@ -472,6 +472,8 @@ class RunnerInfra:
         self._sim_b_port = _free_port()
         self._trust_root_port = _free_port()
         self._lock = threading.Lock()
+        self._root_priv = None
+        self._key_id = None
 
         self._sim_b_state = {
             "manifest": None,
@@ -533,6 +535,15 @@ class RunnerInfra:
         with self._lock:
             self._sim_b_state["op_a_operator_id"] = op_a_operator_id
             self._sim_b_state["op_a_public_key"] = op_a_public_key
+
+    def configure_signing_keys(self, root_priv, key_id: str) -> None:
+        """
+        Store the test BANZA root signing keypair so that all set_brl_* methods
+        automatically produce cryptographically signed BRLs (INV-TRUST-005).
+        Call once after generating the ephemeral keypair in the runner.
+        """
+        self._root_priv = root_priv
+        self._key_id = key_id
 
     def reset_routing_state(self) -> None:
         """
@@ -628,56 +639,133 @@ class RunnerInfra:
 
     # ── BRL configuration ─────────────────────────────────────────────────────
 
-    def set_brl_empty(self) -> None:
-        """BRL with no revocations (happy-path tests)."""
+    def set_brl_empty(self, root_priv=None, key_id: str = None) -> None:
+        """
+        BRL with no revocations (happy-path tests).
+        Signed with stored or explicit keypair when available (INV-TRUST-005).
+        """
+        from trust_root import CRYPTO_AVAILABLE
+        _priv = root_priv or self._root_priv
+        _kid = key_id or self._key_id
+        if _priv and _kid and CRYPTO_AVAILABLE:
+            from trust_root import generate_signed_brl
+            brl = generate_signed_brl(_priv, _kid, revoked=[])
+        else:
+            brl = self._empty_brl()
         with self._lock:
-            self._trust_root_state["brl"] = self._empty_brl()
+            self._trust_root_state["brl"] = brl
 
-    def set_brl_expired(self) -> None:
-        """BRL that expired 1 hour ago (for FED-TRUST-009 — INV-TRUST-006)."""
+    def set_brl_expired(self, root_priv=None, key_id: str = None) -> None:
+        """
+        BRL that expired 1 hour ago (FED-TRUST-009 — INV-TRUST-006).
+        Signed with valid key but timestamp is stale — tests expiry, not signature.
+        """
+        from trust_root import CRYPTO_AVAILABLE
         now = datetime.now(timezone.utc)
-        issued_at = (now - timedelta(hours=8)).strftime("%Y-%m-%dT%H:%M:%SZ")
-        expires_at = (now - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
-        with self._lock:
-            self._trust_root_state["brl"] = {
+        _priv = root_priv or self._root_priv
+        _kid = key_id or self._key_id
+        if _priv and _kid and CRYPTO_AVAILABLE:
+            from trust_root import sign_brl
+            brl = {
                 "schema_version": "1",
-                "issued_at": issued_at,
-                "expires_at": expires_at,
+                "issuer": "BANZA",
+                "issuer_key_id": _kid,
+                "issued_at": (now - timedelta(hours=8)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "expires_at": (now - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "revoked": [],
+            }
+            brl = sign_brl(brl, _priv)
+        else:
+            brl = {
+                "schema_version": "1",
+                "issued_at": (now - timedelta(hours=8)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "expires_at": (now - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "revoked": [],
                 "signature": "A" * 86,
             }
-
-    def set_brl_very_stale(self, stale_hours: int = 13) -> None:
-        """BRL that expired stale_hours ago (for FED-FAIL-006 — F-602 >12h outage)."""
-        now = datetime.now(timezone.utc)
-        issued_at = (now - timedelta(hours=stale_hours + 1)).strftime("%Y-%m-%dT%H:%M:%SZ")
-        expires_at = (now - timedelta(hours=stale_hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
         with self._lock:
-            self._trust_root_state["brl"] = {
+            self._trust_root_state["brl"] = brl
+
+    def set_brl_very_stale(self, stale_hours: int = 13, root_priv=None, key_id: str = None) -> None:
+        """
+        BRL that expired stale_hours ago (FED-FAIL-006 — F-602 >12h outage).
+        Signed with valid key but timestamp is stale — tests staleness enforcement.
+        """
+        from trust_root import CRYPTO_AVAILABLE
+        now = datetime.now(timezone.utc)
+        _priv = root_priv or self._root_priv
+        _kid = key_id or self._key_id
+        if _priv and _kid and CRYPTO_AVAILABLE:
+            from trust_root import sign_brl
+            brl = {
                 "schema_version": "1",
-                "issued_at": issued_at,
-                "expires_at": expires_at,
+                "issuer": "BANZA",
+                "issuer_key_id": _kid,
+                "issued_at": (now - timedelta(hours=stale_hours + 1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "expires_at": (now - timedelta(hours=stale_hours)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "revoked": [],
+            }
+            brl = sign_brl(brl, _priv)
+        else:
+            brl = {
+                "schema_version": "1",
+                "issued_at": (now - timedelta(hours=stale_hours + 1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "expires_at": (now - timedelta(hours=stale_hours)).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "revoked": [],
                 "signature": "A" * 86,
             }
-
-    def set_brl_revoked(self, operator_id: str) -> None:
-        """BRL that lists operator_id as revoked (FED-CERT-009)."""
-        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        expires = (datetime.now(timezone.utc) + timedelta(hours=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
         with self._lock:
-            self._trust_root_state["brl"] = {
+            self._trust_root_state["brl"] = brl
+
+    def set_brl_revoked(self, operator_id: str, root_priv=None, key_id: str = None) -> None:
+        """
+        BRL that lists operator_id as revoked (FED-CERT-009, FED-FAIL-007).
+        Signed with stored or explicit keypair when available (INV-TRUST-005).
+        """
+        from trust_root import CRYPTO_AVAILABLE
+        now = datetime.now(timezone.utc)
+        _priv = root_priv or self._root_priv
+        _kid = key_id or self._key_id
+        revoked_entry = {
+            "operator_id": operator_id,
+            "reason": "revoked",
+            "permanent": True,
+            "since": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+        if _priv and _kid and CRYPTO_AVAILABLE:
+            from trust_root import generate_signed_brl
+            brl = generate_signed_brl(_priv, _kid, revoked=[revoked_entry])
+        else:
+            brl = {
                 "schema_version": "1",
-                "issued_at": now,
-                "expires_at": expires,
-                "revoked": [{
-                    "operator_id": operator_id,
-                    "reason": "revoked",
-                    "permanent": True,
-                    "since": now,
-                }],
+                "issued_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "expires_at": (now + timedelta(hours=7)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "revoked": [revoked_entry],
                 "signature": "A" * 86,
             }
+        with self._lock:
+            self._trust_root_state["brl"] = brl
+
+    def set_brl_bad_signature(self, key_id: str = None) -> None:
+        """
+        BRL with issuer_key_id set but a deliberately tampered (invalid) signature.
+        Used for negative testing of INV-TRUST-005: tampered BRL must fail closed.
+        The BRL format is valid and not expired — only the signature is wrong.
+        Falls back to stored key_id when none is explicitly provided.
+        """
+        _kid = key_id or self._key_id
+        now = datetime.now(timezone.utc)
+        brl = {
+            "schema_version": "1",
+            "issuer": "BANZA",
+            "issuer_key_id": _kid,
+            "issued_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "expires_at": (now + timedelta(hours=7)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "revoked": [],
+            "signature": "A" * 86,   # valid format, invalid cryptographic value
+        }
+        with self._lock:
+            self._trust_root_state["brl"] = brl
 
     # ── Key manifest configuration ────────────────────────────────────────────
 

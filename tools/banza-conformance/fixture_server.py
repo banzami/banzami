@@ -213,7 +213,7 @@ def trust_verify_peer(peer_manifest_url: str, state: dict) -> dict:
                      certification_level=level, required=3)
     _pass("2.5", "level_check", certification_level=level)
 
-    # Step 2.6 — BRL check (INV-TRUST-003, INV-TRUST-006)
+    # Step 2.6 — BRL check (INV-TRUST-003, INV-TRUST-005, INV-TRUST-006)
     if not brl_url:
         return _fail("2.6", "brl_check", "brl_url_not_configured")
     try:
@@ -221,6 +221,26 @@ def trust_verify_peer(peer_manifest_url: str, state: dict) -> dict:
         brl_fetched_at = now.strftime("%Y-%m-%dT%H:%M:%SZ")
         brl_expires_str = brl.get("expires_at", "")
         brl_issued_str = brl.get("issued_at", "")
+        brl_issuer_key_id = brl.get("issuer_key_id")
+
+        # INV-TRUST-005: Verify BRL cryptographic signature when issuer_key_id present.
+        # If the BRL declares an issuer_key_id and crypto is available, the signature
+        # MUST verify. Failure = fail closed (unsigned/tampered BRL = absent BRL).
+        brl_sig_valid = None
+        brl_sig_detail = "issuer_key_id absent in BRL — signature check skipped"
+        if brl_issuer_key_id and CRYPTO_AVAILABLE and banza_root_keys:
+            if brl_issuer_key_id not in banza_root_keys:
+                return _fail("2.6", "brl_check", "brl_issuer_key_id_unknown",
+                             brl_issuer_key_id=brl_issuer_key_id,
+                             detail=f"key {brl_issuer_key_id!r} not in runner key registry")
+            brl_verified, brl_sig_detail = _tr.verify_brl_signature(
+                brl, banza_root_keys[brl_issuer_key_id]
+            )
+            brl_sig_valid = brl_verified
+            if not brl_verified:
+                return _fail("2.6", "brl_check", "brl_signature_invalid",
+                             brl_issuer_key_id=brl_issuer_key_id,
+                             brl_sig_detail=brl_sig_detail)
 
         # INV-TRUST-006: BRL must not be older than 6 hours (expired BRL = stale)
         if brl_expires_str:
@@ -250,6 +270,9 @@ def trust_verify_peer(peer_manifest_url: str, state: dict) -> dict:
               brl_expires_at=brl_expires_str,
               brl_issued_at=brl_issued_str,
               brl_fetched_at=brl_fetched_at,
+              brl_issuer_key_id=brl_issuer_key_id,
+              brl_signature_valid=brl_sig_valid,
+              brl_sig_detail=brl_sig_detail,
               revoked_count=len(revoked_ids))
     except Exception as exc:
         return _fail("2.6", "brl_check", "brl_fetch_failed", detail=str(exc))
