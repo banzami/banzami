@@ -4,18 +4,20 @@ BANZA Federation Fixture Server
 Minimal local HTTP server that acts as "Operator A" in federation conformance tests.
 
 Routes:
-  POST /conformance/setup                          accept cert + trust config from runner
-  POST /conformance/federation/verify-peer         run ADR-026 trust protocol against a peer
-  POST /conformance/federation/route               execute routing flow + debit + obligation (FED-EXEC)
-  POST /conformance/federation/reset               reset federation execution state (FED-EXEC)
-  GET  /conformance/federation/wallet/{id}         payer wallet balance query (FED-EXEC)
-  GET  /conformance/federation/ledger/{wallet_id}  ledger entries for wallet (FED-EXEC)
-  GET  /conformance/federation/obligations/{rr_id} obligation by routing_request_id (FED-EXEC)
-  GET  /conformance/federation/obligations         all obligations (FED-EXEC)
-  GET  /conformance/federation/events              federation events emitted by Operator A (FED-EXEC)
-  GET  /.well-known/banza/certificate.json         serve current operator certificate
-  GET  /.well-known/banza/operator.json            serve federation manifest (FED-DISC)
-  GET  /health                                     sandbox health response
+  POST /conformance/setup                                        accept cert + trust config from runner
+  POST /conformance/federation/verify-peer                       run ADR-026 trust protocol against a peer
+  POST /conformance/federation/route                             execute routing flow + debit + obligation (FED-EXEC)
+  POST /conformance/federation/reset                             reset federation execution state (FED-EXEC)
+  POST /conformance/federation/obligations/{rr_id}/mark-in-netting  advance obligation to in_netting (FED-OBL)
+  POST /conformance/federation/obligations/{rr_id}/mark-settled      advance obligation to settled (FED-OBL)
+  GET  /conformance/federation/wallet/{id}                       payer wallet balance query (FED-EXEC)
+  GET  /conformance/federation/ledger/{wallet_id}                ledger entries for wallet (FED-EXEC)
+  GET  /conformance/federation/obligations/{rr_id}               obligation by routing_request_id (FED-EXEC/OBL)
+  GET  /conformance/federation/obligations                       all obligations (FED-EXEC/OBL)
+  GET  /conformance/federation/events                            federation events emitted by Operator A (FED-EXEC)
+  GET  /.well-known/banza/certificate.json                       serve current operator certificate
+  GET  /.well-known/banza/operator.json                          serve federation manifest (FED-DISC)
+  GET  /health                                                   sandbox health response
   *    → 404
 
 The trust engine (POST /conformance/federation/verify-peer) implements the
@@ -43,13 +45,24 @@ import urllib.request
 import urllib.error
 from datetime import datetime, timezone
 
-# ── Crypto (optional — only needed for trust engine signature verification) ───
+# ── Crypto (optional — needed for trust engine + obligation signing) ──────────
 
 try:
     import trust_root as _tr
     CRYPTO_AVAILABLE = True
 except ImportError:
     CRYPTO_AVAILABLE = False
+
+try:
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey as _Ed25519PrivateKey
+    _SIGNING_AVAILABLE = True
+except ImportError:
+    _SIGNING_AVAILABLE = False
+
+
+def _b64url_encode(data: bytes) -> str:
+    import base64
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
 
 
 # ── Static fixture loader ─────────────────────────────────────────────────────
@@ -406,6 +419,16 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
             self._handle_fed_route()
         elif self.path == "/conformance/federation/reset":
             self._handle_fed_reset()
+        elif self.path.startswith("/conformance/federation/obligations/"):
+            remainder = self.path[len("/conformance/federation/obligations/"):]
+            if remainder.endswith("/mark-in-netting"):
+                rr_id = remainder[:-len("/mark-in-netting")]
+                self._handle_obl_mark_in_netting(rr_id)
+            elif remainder.endswith("/mark-settled"):
+                rr_id = remainder[:-len("/mark-settled")]
+                self._handle_obl_mark_settled(rr_id)
+            else:
+                self._respond_json(404, {"error": "not_found", "path": self.path})
         else:
             self._respond_json(404, {"error": "not_found", "path": self.path})
 
@@ -441,6 +464,15 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
                 except Exception:
                     pass
 
+        # Decode optional Operator A signing key for obligation signing (FED-OBL-005)
+        signing_key_bytes = None
+        signing_key_b64 = payload.get("op_a_signing_key", "")
+        if signing_key_b64 and isinstance(signing_key_b64, str):
+            try:
+                signing_key_bytes = _b64url_decode(signing_key_b64)
+            except Exception:
+                pass
+
         cert_bytes = json.dumps(cert, indent=2).encode("utf-8")
         with self.server.state_lock:
             self.server.state["cert_bytes"] = cert_bytes
@@ -448,9 +480,12 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
             self.server.state["banza_root_keys"] = decoded_keys
             self.server.state["brl_url"] = payload.get("brl_url", "")
             self.server.state["key_manifest_url"] = payload.get("key_manifest_url", "")
+            if signing_key_bytes is not None:
+                self.server.state["op_a_signing_key_bytes"] = signing_key_bytes
 
         print(f"  fixture-server: setup OK — operator_id={cert.get('operator_id')!r} "
-              f"keys={list(decoded_keys.keys())} brl={bool(self.server.state['brl_url'])}")
+              f"keys={list(decoded_keys.keys())} brl={bool(self.server.state['brl_url'])} "
+              f"signing={'yes' if signing_key_bytes else 'no'}")
 
         self._respond_json(200, {
             "ok": True,
@@ -635,6 +670,11 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
                     "recorded_at": now_str,
                     "settlement_state": "pending",
                 }
+                # Sign obligation if Operator A signing key is available (FED-OBL-005)
+                signing_key_bytes = self.server.state.get("op_a_signing_key_bytes")
+                sig = _sign_obligation(obligation, signing_key_bytes)
+                if sig:
+                    obligation["obligor_signature"] = sig
                 fed["obligations"][routing_request_id] = obligation
 
                 fed["events"].append({
@@ -672,6 +712,119 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
 
         self._respond_json(200, result)
 
+    def _handle_obl_mark_in_netting(self, rr_id: str):
+        """
+        POST /conformance/federation/obligations/{rr_id}/mark-in-netting
+
+        Advance obligation from pending → in_netting.
+        Sets netting_period to today's date (YYYY-MM-DD).
+        Returns 409 if transition is invalid (not in pending state or not found).
+        """
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        netting_period = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+            obligation = fed["obligations"].get(rr_id)
+
+        if obligation is None:
+            return self._respond_json(404, {
+                "ok": False, "error": "obligation_not_found",
+                "routing_request_id": rr_id,
+            })
+
+        if obligation.get("settlement_state") != "pending":
+            return self._respond_json(409, {
+                "ok": False,
+                "error": "invalid_transition",
+                "from_state": obligation.get("settlement_state"),
+                "to_state": "in_netting",
+                "reason": "transition only valid from pending state",
+            })
+
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+            if rr_id in fed["obligations"]:
+                fed["obligations"][rr_id] = dict(fed["obligations"][rr_id])
+                fed["obligations"][rr_id]["settlement_state"] = "in_netting"
+                fed["obligations"][rr_id]["netting_period"] = netting_period
+                updated = fed["obligations"][rr_id]
+            else:
+                updated = None
+
+        if updated is None:
+            return self._respond_json(404, {"ok": False, "error": "obligation_not_found"})
+
+        self._respond_json(200, {
+            "ok": True,
+            "routing_request_id": rr_id,
+            "obligation_id": updated.get("obligation_id"),
+            "settlement_state": "in_netting",
+            "netting_period": netting_period,
+        })
+
+    def _handle_obl_mark_settled(self, rr_id: str):
+        """
+        POST /conformance/federation/obligations/{rr_id}/mark-settled
+
+        Advance obligation from in_netting → settled.
+        Body (optional): {"settlement_batch_id": "stl-..."}
+        Returns 409 if transition is invalid (not in in_netting state or not found).
+        """
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length)) if length > 0 else {}
+        except Exception:
+            body = {}
+
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        batch_id = (body.get("settlement_batch_id")
+                    if isinstance(body, dict) else None)
+        if not batch_id:
+            batch_id = f"stl-{datetime.now(timezone.utc).strftime('%Y-%m-%d')}-{uuid.uuid4().hex[:8]}"
+
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+            obligation = fed["obligations"].get(rr_id)
+
+        if obligation is None:
+            return self._respond_json(404, {
+                "ok": False, "error": "obligation_not_found",
+                "routing_request_id": rr_id,
+            })
+
+        if obligation.get("settlement_state") != "in_netting":
+            return self._respond_json(409, {
+                "ok": False,
+                "error": "invalid_transition",
+                "from_state": obligation.get("settlement_state"),
+                "to_state": "settled",
+                "reason": "transition only valid from in_netting state",
+            })
+
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+            if rr_id in fed["obligations"]:
+                fed["obligations"][rr_id] = dict(fed["obligations"][rr_id])
+                fed["obligations"][rr_id]["settlement_state"] = "settled"
+                fed["obligations"][rr_id]["settled_at"] = now_str
+                fed["obligations"][rr_id]["settlement_batch_id"] = batch_id
+                updated = fed["obligations"][rr_id]
+            else:
+                updated = None
+
+        if updated is None:
+            return self._respond_json(404, {"ok": False, "error": "obligation_not_found"})
+
+        self._respond_json(200, {
+            "ok": True,
+            "routing_request_id": rr_id,
+            "obligation_id": updated.get("obligation_id"),
+            "settlement_state": "settled",
+            "settled_at": now_str,
+            "settlement_batch_id": batch_id,
+        })
+
     def _handle_fed_reset(self):
         """
         POST /conformance/federation/reset
@@ -692,6 +845,30 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
         self.wfile.write(encoded)
+
+
+# ── Obligation signing helpers ────────────────────────────────────────────────
+
+def _obligation_canonical_bytes(obligation: dict) -> bytes:
+    """Canonical JSON for obligation signing: all fields except 'obligor_signature', sorted."""
+    payload = {k: v for k, v in obligation.items() if k != "obligor_signature"}
+    return json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def _sign_obligation(obligation: dict, signing_key_bytes: bytes) -> str:
+    """
+    Sign an obligation with the Operator A ed25519 private key.
+    Returns base64url-encoded signature (86 chars), or None if signing is unavailable.
+    """
+    if not signing_key_bytes or not _SIGNING_AVAILABLE:
+        return None
+    try:
+        priv = _Ed25519PrivateKey.from_private_bytes(signing_key_bytes)
+        canonical = _obligation_canonical_bytes(obligation)
+        sig = priv.sign(canonical)
+        return _b64url_encode(sig)
+    except Exception:
+        return None
 
 
 # ── Federation execution state ────────────────────────────────────────────────
@@ -720,6 +897,7 @@ def run_server(port: int) -> None:
         "banza_root_keys": {},
         "brl_url": "",
         "key_manifest_url": "",
+        "op_a_signing_key_bytes": None,
         "fed_exec": _initial_fed_exec_state(),
     }
 

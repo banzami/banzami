@@ -1,5 +1,5 @@
 """
-BANZA Federation Conformance Runner — Slice 6
+BANZA Federation Conformance Runner — Slice 7
 
 Implements:
   FED-CERT-001  Certificate Present at Well-Known URL                    (Slice 0)
@@ -50,16 +50,25 @@ Implements:
   FED-EXEC-006  Operator B Internal Failure Does Not Affect Obligation   (Slice 6)
   FED-EXEC-007  Provisional Completion: All 7 Criteria Met               (Slice 6)
   FED-EXEC-008  Double-Debit Prevention Via Posting Idempotency Key      (Slice 6)
+  FED-OBL-001   Obligation Created Immediately After Acceptance          (Slice 7)
+  FED-OBL-002   Obligation Amount Equals Routing Request Amount          (Slice 7)
+  FED-OBL-003   Obligation trace_id Matches Routing Request              (Slice 7)
+  FED-OBL-004   One Obligation Per routing_request_id                    (Slice 7)
+  FED-OBL-005   obligor_signature Verifies Against Operator A Public Key (Slice 7)
+  FED-OBL-006   Settlement State Transitions Are Valid                   (Slice 7)
+  FED-OBL-007   Settled Obligation Contains settled_at + batch_id        (Slice 7)
 
 Spec: FEDERATION_TEST_SUITE_SPEC.md §Suite FED-CERT, §Suite FED-DISC,
-      §Suite FED-TRUST, §Suite FED-ROUTE, §Suite FED-EXEC
+      §Suite FED-TRUST, §Suite FED-ROUTE, §Suite FED-EXEC, §Suite FED-OBL
 Contracts: contracts/federation/operator-certificate.json,
            contracts/federation/federation-manifest.json,
-           contracts/federation/federation-routing.json
+           contracts/federation/federation-routing.json,
+           contracts/federation/federation-obligation.json
 
 Requires:
   cryptography>=41.0.0  for FED-CERT-002, FED-CERT-008–011, FED-DISC-007,
-                        all FED-TRUST tests, all FED-ROUTE tests, all FED-EXEC tests
+                        all FED-TRUST tests, all FED-ROUTE tests,
+                        all FED-EXEC tests, FED-OBL-005
 """
 
 import argparse
@@ -78,7 +87,7 @@ from typing import Optional
 import trust_root as _tr
 from runner_infra import RunnerInfra
 
-RUNNER_VERSION = "0.7.0-slice6"
+RUNNER_VERSION = "0.8.0-slice7"
 
 # ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -109,6 +118,17 @@ def _find_routing_schema_path() -> Optional[str]:
     for p in [
         os.path.join(this_dir, "..", "..", "contracts", "federation", "federation-routing.json"),
         os.path.join(os.getcwd(), "contracts", "federation", "federation-routing.json"),
+    ]:
+        if os.path.isfile(p):
+            return os.path.normpath(p)
+    return None
+
+
+def _find_obligation_schema_path() -> Optional[str]:
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    for p in [
+        os.path.join(this_dir, "..", "..", "contracts", "federation", "federation-obligation.json"),
+        os.path.join(os.getcwd(), "contracts", "federation", "federation-obligation.json"),
     ]:
         if os.path.isfile(p):
             return os.path.normpath(p)
@@ -309,6 +329,75 @@ def validate_routing_response(resp: dict) -> list:
             errors.append("rejection_code required when status=rejected")
         elif resp["rejection_code"] not in _ROUTING_REJECTION_CODES:
             errors.append(f"rejection_code {resp['rejection_code']!r} not in registry")
+
+    return errors
+
+
+_OBL_ID_PATTERN = r"^ob-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+_ITX_PATTERN_OBL = r"^itx-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+_RR_PATTERN = r"^rr-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+_OBL_SIG_PATTERN = r"^[A-Za-z0-9_-]{86}$"
+
+
+def validate_obligation(obl: dict) -> list:
+    """
+    Validate a parsed obligation against federation-obligation.json constraints.
+    Returns a list of error strings. Empty list means valid.
+    """
+    if not isinstance(obl, dict):
+        return ["body is not a JSON object"]
+
+    errors = []
+    required = [
+        "schema_version", "obligation_id", "from_operator_id", "to_operator_id",
+        "amount", "routing_request_id", "interop_transfer_id", "trace_id",
+        "recorded_at", "settlement_state", "obligor_signature",
+    ]
+    for f in required:
+        if f not in obl:
+            errors.append(f"required field missing: '{f}'")
+
+    if "schema_version" in obl and obl["schema_version"] != "1":
+        errors.append(f"schema_version must be '1', got {obl['schema_version']!r}")
+
+    if "obligation_id" in obl:
+        if not re.match(_OBL_ID_PATTERN, str(obl["obligation_id"])):
+            errors.append(f"obligation_id format invalid: {obl['obligation_id']!r}")
+
+    if "routing_request_id" in obl:
+        if not re.match(_RR_PATTERN, str(obl["routing_request_id"])):
+            errors.append(f"routing_request_id format invalid: {obl['routing_request_id']!r}")
+
+    if "interop_transfer_id" in obl:
+        if not re.match(_ITX_PATTERN_OBL, str(obl["interop_transfer_id"])):
+            errors.append(f"interop_transfer_id format invalid: {obl['interop_transfer_id']!r}")
+
+    amount = obl.get("amount")
+    if amount is not None:
+        if not isinstance(amount, dict):
+            errors.append("amount must be an object")
+        else:
+            minor = amount.get("minor")
+            if not isinstance(minor, int) or isinstance(minor, bool) or minor < 1:
+                errors.append(f"amount.minor must be a positive integer, got {minor!r}")
+            currency = amount.get("currency")
+            if not isinstance(currency, str) or not re.match(r"^[A-Z]{3}$", currency):
+                errors.append(f"amount.currency must match ^[A-Z]{{3}}$, got {currency!r}")
+
+    state = obl.get("settlement_state")
+    if state is not None and state not in ("pending", "in_netting", "settled"):
+        errors.append(f"settlement_state must be pending|in_netting|settled, got {state!r}")
+
+    if state == "settled":
+        if "settled_at" not in obl:
+            errors.append("settled_at required when settlement_state=settled")
+        if "settlement_batch_id" not in obl:
+            errors.append("settlement_batch_id required when settlement_state=settled")
+
+    if "obligor_signature" in obl:
+        sig = obl["obligor_signature"]
+        if not isinstance(sig, str) or not re.match(_OBL_SIG_PATTERN, sig):
+            errors.append(f"obligor_signature format invalid (expected 86 base64url chars)")
 
     return errors
 
@@ -993,12 +1082,14 @@ def setup_operator_for_federation(
     banza_root_pub: bytes = None,
     brl_url: str = None,
     key_manifest_url: str = None,
+    op_a_signing_key_b64: str = None,
 ) -> bool:
     """
     Deliver the signed certificate + trust configuration to the operator.
 
     Extended payload (Slice 2) adds BANZA root keys, BRL URL, and key manifest URL
     so the operator's trust engine can verify remote peer certificates.
+    Slice 7 adds op_a_signing_key so the fixture server can sign obligations (FED-OBL-005).
     """
     payload: dict = {"certificate": cert}
     if banza_root_key_id and banza_root_pub:
@@ -1009,6 +1100,8 @@ def setup_operator_for_federation(
         payload["brl_url"] = brl_url
     if key_manifest_url:
         payload["key_manifest_url"] = key_manifest_url
+    if op_a_signing_key_b64:
+        payload["op_a_signing_key"] = op_a_signing_key_b64
     try:
         status, _, _ = http_post(f"{base_url}/conformance/setup", payload)
         return status in (200, 201, 204)
@@ -3388,6 +3481,18 @@ def _get_obligation_op_a(base_url: str, routing_request_id: str) -> tuple:
         raise
 
 
+def _get_obligations_all_op_a(base_url: str) -> tuple:
+    """GET /conformance/federation/obligations → (status, dict_or_None)."""
+    try:
+        status, _, raw = http_get(f"{base_url}/conformance/federation/obligations")
+        try:
+            return status, json.loads(raw)
+        except json.JSONDecodeError:
+            return status, None
+    except RuntimeError as exc:
+        raise
+
+
 def _get_events_op_a(base_url: str) -> tuple:
     """GET /conformance/federation/events → (status, dict_or_None)."""
     try:
@@ -4247,6 +4352,774 @@ def run_suite_fed_exec(
     }
 
 
+# ── FED-OBL constants ────────────────────────────────────────────────────────
+
+_OBL_RR_ID = "rr-00000000-0000-0000-0000-000000000001"
+_OBL_TRACE_ID = "tr-00000000-0000-0000-0000-000000000001"
+_OBL_AMOUNT = 50000
+_OBL_CURRENCY = "AOA"
+_OBL_SENDER_WALLET = "wallet-sender-test-001"
+_OBL_PAYEE_WALLET = "wallet-payee-test-001"
+_OBL_BATCH_ID = "stl-test-batch-001"
+
+
+# ── FED-OBL helpers ───────────────────────────────────────────────────────────
+
+def _mark_obl_in_netting(base_url: str, rr_id: str) -> tuple:
+    """POST /conformance/federation/obligations/{rr_id}/mark-in-netting. Returns (status, body)."""
+    url = f"{base_url}/conformance/federation/obligations/{rr_id}/mark-in-netting"
+    data = json.dumps({}).encode("utf-8")
+    req = urllib.request.Request(
+        url, data=data,
+        headers={"Content-Type": "application/json", "Accept": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            raw = resp.read().decode("utf-8", errors="replace")
+            return resp.status, json.loads(raw)
+    except urllib.error.HTTPError as e:
+        raw = e.read().decode("utf-8", errors="replace")
+        try:
+            return e.code, json.loads(raw)
+        except Exception:
+            return e.code, None
+    except Exception as exc:
+        raise RuntimeError(f"POST {url}: {exc}") from exc
+
+
+def _mark_obl_settled(base_url: str, rr_id: str, batch_id: str) -> tuple:
+    """POST /conformance/federation/obligations/{rr_id}/mark-settled. Returns (status, body)."""
+    url = f"{base_url}/conformance/federation/obligations/{rr_id}/mark-settled"
+    data = json.dumps({"settlement_batch_id": batch_id}).encode("utf-8")
+    req = urllib.request.Request(
+        url, data=data,
+        headers={"Content-Type": "application/json", "Accept": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            raw = resp.read().decode("utf-8", errors="replace")
+            return resp.status, json.loads(raw)
+    except urllib.error.HTTPError as e:
+        raw = e.read().decode("utf-8", errors="replace")
+        try:
+            return e.code, json.loads(raw)
+        except Exception:
+            return e.code, None
+    except Exception as exc:
+        raise RuntimeError(f"POST {url}: {exc}") from exc
+
+
+def _obligation_canonical_bytes_runner(obl: dict) -> bytes:
+    """Canonical JSON for obligation signature verification: all fields except obligor_signature."""
+    payload = {k: v for k, v in obl.items() if k != "obligor_signature"}
+    return json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+# ── FED-OBL-001 ──────────────────────────────────────────────────────────────
+
+def run_fed_obl_001(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-OBL-001 — Obligation Created Immediately After Acceptance
+
+    Obligation exists in Operator A's obligation store after routing accepted.
+    settlement_state=pending.
+
+    Pass:   Obligation found; settlement_state=pending; obligation_id present
+    Fail:   No obligation; wrong routing_request_id; settlement_state != pending
+    Severity: CRITICAL
+    Invariant: INV-FED-002
+    L3 Req: FED-L3-013
+    """
+    case = _make_case("FED-OBL-001", "Obligation Created Immediately After Acceptance")
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_OBL_RR_ID,
+        trace_id=_OBL_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        _, result = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result or result.get("routing_status") != "accepted":
+        return _fail_case(case, f"routing not accepted: {result}", ms)
+
+    try:
+        _, obligation = _get_obligation_op_a(base_url, _OBL_RR_ID)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    obl_exists = obligation is not None
+    state_pending = obligation.get("settlement_state") == "pending" if obligation else False
+    rr_id_match = obligation.get("routing_request_id") == _OBL_RR_ID if obligation else False
+    obl_id_present = (obligation.get("obligation_id", "").startswith("ob-") if obligation else False)
+    recorded_at_present = bool(obligation.get("recorded_at")) if obligation else False
+
+    assertions = [
+        _assertion("routing accepted (prerequisite)",
+                   result.get("routing_status") == "accepted", "accepted", result.get("routing_status")),
+        _assertion("obligation found in Operator A store",
+                   obl_exists, "found", "missing" if not obl_exists else "found"),
+        _assertion("obligation.settlement_state=pending",
+                   state_pending, "pending",
+                   obligation.get("settlement_state") if obligation else None),
+        _assertion("obligation.routing_request_id matches",
+                   rr_id_match, _OBL_RR_ID,
+                   obligation.get("routing_request_id") if obligation else None),
+        _assertion("obligation.obligation_id is ob-<uuid> format",
+                   obl_id_present, "ob-<uuid>",
+                   obligation.get("obligation_id") if obligation else "(missing)"),
+        _assertion("obligation.recorded_at is present",
+                   recorded_at_present, "ISO 8601",
+                   obligation.get("recorded_at") if obligation else "(missing)"),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _OBL_RR_ID,
+        "obligation": obligation,
+        "obligation_exists": obl_exists,
+        "settlement_state": obligation.get("settlement_state") if obligation else None,
+        "obligation_id": obligation.get("obligation_id") if obligation else None,
+        "recorded_at": obligation.get("recorded_at") if obligation else None,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-OBL-002 ──────────────────────────────────────────────────────────────
+
+def run_fed_obl_002(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-OBL-002 — Obligation Amount Equals Routing Request Amount (INV-FED-005)
+
+    Amount in obligation must match routing request exactly.
+
+    Pass:   obligation.amount.minor == 50000 AND obligation.amount.currency == "AOA"
+    Fail:   Any difference; rounding; currency changed
+    Severity: CRITICAL
+    Invariant: INV-FED-005
+    L3 Req: FED-L3-014
+    """
+    case = _make_case("FED-OBL-002", "Obligation Amount Equals Routing Request Amount (INV-FED-005)")
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_OBL_RR_ID,
+        trace_id=_OBL_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        _, result = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result or result.get("routing_status") != "accepted":
+        return _fail_case(case, f"routing not accepted: {result}", ms)
+
+    try:
+        _, obligation = _get_obligation_op_a(base_url, _OBL_RR_ID)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if obligation is None:
+        return _fail_case(case, "obligation not found after accepted routing", ms)
+
+    obl_amount = obligation.get("amount") or {}
+    obl_minor = obl_amount.get("minor")
+    obl_currency = obl_amount.get("currency")
+
+    minor_match = obl_minor == _OBL_AMOUNT
+    currency_match = obl_currency == _OBL_CURRENCY
+
+    assertions = [
+        _assertion("routing accepted (prerequisite)",
+                   result.get("routing_status") == "accepted", "accepted", result.get("routing_status")),
+        _assertion(f"obligation.amount.minor == {_OBL_AMOUNT}",
+                   minor_match, _OBL_AMOUNT, obl_minor),
+        _assertion(f"obligation.amount.currency == '{_OBL_CURRENCY}'",
+                   currency_match, _OBL_CURRENCY, obl_currency),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _OBL_RR_ID,
+        "routing_request_amount_minor": _OBL_AMOUNT,
+        "routing_request_currency": _OBL_CURRENCY,
+        "obligation_amount_minor": obl_minor,
+        "obligation_currency": obl_currency,
+        "amount_match": minor_match,
+        "currency_match": currency_match,
+        "obligation_amount_match": minor_match and currency_match,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-OBL-003 ──────────────────────────────────────────────────────────────
+
+def run_fed_obl_003(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-OBL-003 — Obligation trace_id Matches Routing Request (INV-FED-001)
+
+    trace_id propagated from routing request into obligation.
+
+    Pass:   obligation.trace_id === routing_request.trace_id
+    Fail:   Different value; missing
+    Severity: CRITICAL
+    Invariant: INV-FED-001
+    L3 Req: FED-L3-012
+    """
+    case = _make_case("FED-OBL-003", "Obligation trace_id Matches Routing Request (INV-FED-001)")
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_OBL_RR_ID,
+        trace_id=_OBL_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        _, result = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result or result.get("routing_status") != "accepted":
+        return _fail_case(case, f"routing not accepted: {result}", ms)
+
+    try:
+        _, obligation = _get_obligation_op_a(base_url, _OBL_RR_ID)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if obligation is None:
+        return _fail_case(case, "obligation not found after accepted routing", ms)
+
+    obl_trace_id = obligation.get("trace_id")
+    trace_match = obl_trace_id == _OBL_TRACE_ID
+
+    assertions = [
+        _assertion("routing accepted (prerequisite)",
+                   result.get("routing_status") == "accepted", "accepted", result.get("routing_status")),
+        _assertion("obligation.trace_id === routing_request.trace_id (INV-FED-001)",
+                   trace_match, _OBL_TRACE_ID, obl_trace_id),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _OBL_RR_ID,
+        "routing_request_trace_id": _OBL_TRACE_ID,
+        "obligation_trace_id": obl_trace_id,
+        "trace_id_match": trace_match,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-OBL-004 ──────────────────────────────────────────────────────────────
+
+def run_fed_obl_004(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-OBL-004 — One Obligation Per routing_request_id (INV-FED-002)
+
+    UNIQUE constraint enforced; duplicate obligation not possible via recovery path.
+
+    Pass:   Count of obligations with routing_request_id remains 1
+    Fail:   Count > 1; second obligation created
+    Severity: CRITICAL
+    Invariant: INV-FED-002
+    L3 Req: FED-L3-013
+    """
+    case = _make_case("FED-OBL-004", "One Obligation Per routing_request_id (INV-FED-002)")
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_OBL_RR_ID,
+        trace_id=_OBL_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        _, result1 = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result1 or result1.get("routing_status") != "accepted":
+        return _fail_case(case, f"first routing not accepted: {result1}", ms)
+
+    # Recovery path: call again with same routing_request_id (same body)
+    payload2 = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_OBL_RR_ID,
+        trace_id=_OBL_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+    try:
+        _, result2 = _call_fed_route(base_url, payload2)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    # Count obligations with this routing_request_id
+    try:
+        _, all_obls = _get_obligations_all_op_a(base_url)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    obligations_list = (all_obls.get("obligations") or []) if all_obls else []
+    matching = [o for o in obligations_list if o.get("routing_request_id") == _OBL_RR_ID]
+    count = len(matching)
+
+    assertions = [
+        _assertion("first routing accepted", result1.get("routing_status") == "accepted",
+                   "accepted", result1.get("routing_status")),
+        _assertion("second call succeeds (idempotent replay)",
+                   result2 is not None and result2.get("routing_status") in ("accepted", None),
+                   "accepted or cached", result2.get("routing_status") if result2 else None),
+        _assertion("obligation count for routing_request_id == 1 (INV-FED-002)",
+                   count == 1, 1, count),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _OBL_RR_ID,
+        "result_first_call": result1,
+        "result_second_call": result2,
+        "obligations_with_rr_id": count,
+        "uniqueness_enforced": count == 1,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-OBL-005 ──────────────────────────────────────────────────────────────
+
+def run_fed_obl_005(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-OBL-005 — obligor_signature Verifies Against Operator A Public Key
+
+    Obligation signed by Operator A; non-repudiable.
+
+    Pass:   ed25519_verify(op_a_public_key, canonical_obligation, obligor_signature) = true
+    Fail:   Verification = false; signature missing; wrong key used
+    Severity: STANDARD
+    """
+    case = _make_case(
+        "FED-OBL-005", "obligor_signature Verifies Against Operator A Public Key"
+    )
+
+    if not _tr.CRYPTO_AVAILABLE:
+        return _skip_case(case, "cryptography package not installed; install cryptography>=41.0.0")
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_OBL_RR_ID,
+        trace_id=_OBL_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        _, result = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result or result.get("routing_status") != "accepted":
+        return _fail_case(case, f"routing not accepted: {result}", ms)
+
+    try:
+        _, obligation = _get_obligation_op_a(base_url, _OBL_RR_ID)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if obligation is None:
+        return _fail_case(case, "obligation not found after accepted routing", ms)
+
+    sig_str = obligation.get("obligor_signature", "")
+    sig_present = bool(sig_str) and re.match(_OBL_SIG_PATTERN, sig_str)
+
+    if not sig_present:
+        return _fail_case(case,
+            f"obligor_signature missing or malformed: {sig_str!r}", ms,
+            [_assertion("obligor_signature present and 86 base64url chars",
+                        False, "86 base64url chars", repr(sig_str))])
+
+    # Fetch Operator A certificate and extract public key
+    try:
+        _, _, _, cert_a = _fetch_cert(base_url)
+    except RuntimeError as exc:
+        return _error_case(case, f"failed to fetch Operator A cert: {exc}")
+
+    if cert_a is None:
+        return _fail_case(case, "could not parse Operator A certificate", ms)
+
+    pk_str = cert_a.get("public_key", "")
+    if not pk_str.startswith("ed25519:"):
+        return _fail_case(case, f"unexpected public_key format: {pk_str!r}", ms)
+
+    try:
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+        from cryptography.exceptions import InvalidSignature
+        pub_bytes = _tr.b64url_decode(pk_str[len("ed25519:"):])
+        pub = Ed25519PublicKey.from_public_bytes(pub_bytes)
+        canonical = _obligation_canonical_bytes_runner(obligation)
+        sig_bytes = _tr.b64url_decode(sig_str)
+        try:
+            pub.verify(sig_bytes, canonical)
+            verified = True
+            verify_detail = "signature valid"
+        except InvalidSignature:
+            verified = False
+            verify_detail = "InvalidSignature: signature does not verify"
+    except Exception as exc:
+        verified = False
+        verify_detail = f"verification error: {exc}"
+
+    assertions = [
+        _assertion("routing accepted (prerequisite)",
+                   result.get("routing_status") == "accepted", "accepted", result.get("routing_status")),
+        _assertion("obligor_signature present (86 base64url chars)", sig_present,
+                   "86 base64url chars", sig_str[:20] + "…" if sig_str else "(missing)"),
+        _assertion("ed25519_verify(op_a_public_key, canonical_obligation, obligor_signature) = true",
+                   verified, "true", verify_detail),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _OBL_RR_ID,
+        "obligation_id": obligation.get("obligation_id"),
+        "obligor_signature_present": sig_present,
+        "obligor_signature_prefix": sig_str[:20] + "…" if sig_str else None,
+        "op_a_public_key": pk_str,
+        "canonical_obligation_length_bytes": len(_obligation_canonical_bytes_runner(obligation)),
+        "signature_verification_result": {"verified": verified, "detail": verify_detail},
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-OBL-006 ──────────────────────────────────────────────────────────────
+
+def run_fed_obl_006(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-OBL-006 — Settlement State Transitions Are Valid
+
+    Obligation follows state machine: pending → in_netting → settled only.
+    No backward transitions. No skipped states.
+
+    Pass:   All three states observed in order
+    Fail:   Jumped from pending to settled; backward transition
+    Severity: STANDARD
+    """
+    case = _make_case("FED-OBL-006", "Settlement State Transitions Are Valid")
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_OBL_RR_ID,
+        trace_id=_OBL_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        _, result = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result or result.get("routing_status") != "accepted":
+        return _fail_case(case, f"routing not accepted: {result}", ms)
+
+    # Checkpoint 1: state = pending
+    try:
+        _, obl_pending = _get_obligation_op_a(base_url, _OBL_RR_ID)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+    state_1 = obl_pending.get("settlement_state") if obl_pending else None
+
+    # Transition: pending → in_netting
+    try:
+        in_netting_status, in_netting_resp = _mark_obl_in_netting(base_url, _OBL_RR_ID)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    # Checkpoint 2: state = in_netting
+    try:
+        _, obl_netting = _get_obligation_op_a(base_url, _OBL_RR_ID)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+    state_2 = obl_netting.get("settlement_state") if obl_netting else None
+
+    # Transition: in_netting → settled
+    try:
+        settled_status, settled_resp = _mark_obl_settled(base_url, _OBL_RR_ID, _OBL_BATCH_ID)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    # Checkpoint 3: state = settled
+    try:
+        _, obl_settled = _get_obligation_op_a(base_url, _OBL_RR_ID)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+    state_3 = obl_settled.get("settlement_state") if obl_settled else None
+
+    # Verify invalid transition is rejected: try settled → in_netting
+    try:
+        backward_status, _ = _mark_obl_in_netting(base_url, _OBL_RR_ID)
+    except RuntimeError:
+        backward_status = None
+    backward_rejected = backward_status in (409, 400)
+
+    observed_states = [s for s in [state_1, state_2, state_3] if s is not None]
+    correct_order = observed_states == ["pending", "in_netting", "settled"]
+
+    assertions = [
+        _assertion("routing accepted (prerequisite)",
+                   result.get("routing_status") == "accepted", "accepted", result.get("routing_status")),
+        _assertion("state checkpoint 1: pending", state_1 == "pending", "pending", state_1),
+        _assertion("mark-in-netting returns HTTP 200",
+                   in_netting_status == 200, 200, in_netting_status),
+        _assertion("state checkpoint 2: in_netting", state_2 == "in_netting", "in_netting", state_2),
+        _assertion("mark-settled returns HTTP 200",
+                   settled_status == 200, 200, settled_status),
+        _assertion("state checkpoint 3: settled", state_3 == "settled", "settled", state_3),
+        _assertion("states observed in order: [pending, in_netting, settled]",
+                   correct_order, "[pending, in_netting, settled]", str(observed_states)),
+        _assertion("backward transition (settled → in_netting) returns 409",
+                   backward_rejected, "409 or 400", backward_status),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _OBL_RR_ID,
+        "obligation_id": obl_pending.get("obligation_id") if obl_pending else None,
+        "state_checkpoint_1": state_1,
+        "mark_in_netting_status": in_netting_status,
+        "state_checkpoint_2": state_2,
+        "mark_settled_status": settled_status,
+        "state_checkpoint_3": state_3,
+        "observed_states": observed_states,
+        "correct_order": correct_order,
+        "backward_transition_rejected": backward_rejected,
+        "backward_transition_status": backward_status,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-OBL-007 ──────────────────────────────────────────────────────────────
+
+def run_fed_obl_007(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-OBL-007 — Settled Obligation Contains settled_at and settlement_batch_id
+
+    Settled obligations must have audit fields.
+
+    Pass:   settlement_state=settled; settled_at present (ISO 8601); settlement_batch_id present
+    Fail:   Any field missing; settled_at not ISO 8601; settlement_batch_id empty
+    Severity: STANDARD
+    """
+    case = _make_case(
+        "FED-OBL-007",
+        "Settled Obligation Contains settled_at and settlement_batch_id",
+    )
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_OBL_RR_ID,
+        trace_id=_OBL_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        _, result = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result or result.get("routing_status") != "accepted":
+        return _fail_case(case, f"routing not accepted: {result}", ms)
+
+    # Advance: pending → in_netting
+    try:
+        _mark_obl_in_netting(base_url, _OBL_RR_ID)
+    except RuntimeError as exc:
+        return _error_case(case, f"mark-in-netting failed: {exc}")
+
+    # Advance: in_netting → settled
+    try:
+        settled_status, _ = _mark_obl_settled(base_url, _OBL_RR_ID, _OBL_BATCH_ID)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, f"mark-settled failed: {exc}")
+
+    # Fetch final obligation state
+    try:
+        _, obligation = _get_obligation_op_a(base_url, _OBL_RR_ID)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if obligation is None:
+        return _fail_case(case, "obligation not found after settlement", ms)
+
+    state = obligation.get("settlement_state")
+    settled_at = obligation.get("settled_at")
+    batch_id = obligation.get("settlement_batch_id")
+
+    state_settled = state == "settled"
+    settled_at_present = bool(settled_at)
+    settled_at_iso8601 = False
+    if settled_at_present:
+        try:
+            _parse_iso_timestamp(settled_at)
+            settled_at_iso8601 = True
+        except Exception:
+            settled_at_iso8601 = False
+    batch_id_present = bool(batch_id)
+    batch_id_matches = batch_id == _OBL_BATCH_ID
+
+    assertions = [
+        _assertion("routing accepted (prerequisite)",
+                   result.get("routing_status") == "accepted", "accepted", result.get("routing_status")),
+        _assertion("mark-settled returned HTTP 200", settled_status == 200, 200, settled_status),
+        _assertion("obligation.settlement_state=settled", state_settled, "settled", state),
+        _assertion("obligation.settled_at is present", settled_at_present,
+                   "present", "(missing)" if not settled_at_present else settled_at),
+        _assertion("obligation.settled_at is valid ISO 8601", settled_at_iso8601,
+                   "ISO 8601", settled_at or "(missing)"),
+        _assertion("obligation.settlement_batch_id is present", batch_id_present,
+                   "present", "(missing)" if not batch_id_present else batch_id),
+        _assertion(f"obligation.settlement_batch_id == '{_OBL_BATCH_ID}'",
+                   batch_id_matches, _OBL_BATCH_ID, batch_id),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _OBL_RR_ID,
+        "obligation_id": obligation.get("obligation_id"),
+        "settlement_state": state,
+        "settled_at": settled_at,
+        "settled_at_iso8601": settled_at_iso8601,
+        "settlement_batch_id": batch_id,
+        "batch_id_matches": batch_id_matches,
+        "full_obligation": obligation,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-OBL suite runner ──────────────────────────────────────────────────────
+
+def run_suite_fed_obl(
+    base_url: str,
+    infra: "RunnerInfra" = None,
+    op_a_priv=None,
+) -> dict:
+    """
+    Run all 7 FED-OBL tests.
+
+    Requires infra (Sim Op B) and op_a_priv (Operator A signing key).
+    Without both, all tests are skipped.
+    """
+    def _skip(case_id, title, reason):
+        return _skip_case(_make_case(case_id, title), reason)
+
+    obl_avail = infra is not None and op_a_priv is not None
+
+    if not obl_avail:
+        reason = "obligation infrastructure not available (install cryptography)"
+        cases = [
+            _skip(f"FED-OBL-{str(i).zfill(3)}", t, reason)
+            for i, t in [
+                (1, "Obligation Created Immediately After Acceptance"),
+                (2, "Obligation Amount Equals Routing Request Amount (INV-FED-005)"),
+                (3, "Obligation trace_id Matches Routing Request (INV-FED-001)"),
+                (4, "One Obligation Per routing_request_id (INV-FED-002)"),
+                (5, "obligor_signature Verifies Against Operator A Public Key"),
+                (6, "Settlement State Transitions Are Valid"),
+                (7, "Settled Obligation Contains settled_at and settlement_batch_id"),
+            ]
+        ]
+    else:
+        cases = [
+            run_fed_obl_001(base_url, infra, op_a_priv),
+            run_fed_obl_002(base_url, infra, op_a_priv),
+            run_fed_obl_003(base_url, infra, op_a_priv),
+            run_fed_obl_004(base_url, infra, op_a_priv),
+            run_fed_obl_005(base_url, infra, op_a_priv),
+            run_fed_obl_006(base_url, infra, op_a_priv),
+            run_fed_obl_007(base_url, infra, op_a_priv),
+        ]
+
+    passed = sum(1 for c in cases if c["status"] == "PASS")
+    failed = sum(1 for c in cases if c["status"] == "FAIL")
+    skipped = sum(1 for c in cases if c["status"] in ("SKIP", "ERROR"))
+
+    return {
+        "suite_id": "FED-OBL",
+        "suite_name": "Obligation Lifecycle",
+        "blocking": True,
+        "passed": passed,
+        "failed": failed,
+        "skipped": skipped,
+        "cases": cases,
+    }
+
+
 # ── FED-ROUTE suite runner ────────────────────────────────────────────────────
 
 def run_suite_fed_route(
@@ -4458,30 +5331,32 @@ def run_federation_mode(
     run_trust = fed_suite in (None, "trust")
     run_route = fed_suite in (None, "route")
     run_exec = fed_suite in (None, "exec")
+    run_obl = fed_suite in (None, "obl")
 
     if (fed_suite is not None
             and not run_cert and not run_disc and not run_trust
-            and not run_route and not run_exec):
+            and not run_route and not run_exec and not run_obl):
         print(f"ERROR: Unknown --fed-suite value: {fed_suite!r}. "
-              f"Available: cert, disc, trust, route, exec",
+              f"Available: cert, disc, trust, route, exec, obl",
               file=sys.stderr)
         return 2
 
     suite_label = {
         None: (
             "FED-CERT-001–011, FED-DISC-001–008, FED-TRUST-001–009, "
-            "FED-ROUTE-001–012, FED-EXEC-001–008"
+            "FED-ROUTE-001–012, FED-EXEC-001–008, FED-OBL-001–007"
         ),
         "cert": "FED-CERT-001–011",
         "disc": "FED-DISC-001–008",
         "trust": "FED-TRUST-001–009",
         "route": "FED-ROUTE-001–012",
         "exec": "FED-EXEC-001–008",
+        "obl": "FED-OBL-001–007",
     }.get(fed_suite, fed_suite)
 
     print(f"BANZA Federation Conformance Runner {RUNNER_VERSION}")
     print(f"Operator: {base_url}")
-    print(f"Slice:    6 — {suite_label}")
+    print(f"Slice:    7 — {suite_label}")
     print()
 
     schema_path = _find_schema_path()
@@ -4660,13 +5535,27 @@ def run_federation_mode(
             # Configure Sim Op B with Operator A's public key (for FED-ROUTE sig verification)
             infra.configure_routing(cert_a["operator_id"], op_a_pub)
 
-            # Extended setup: deliver cert + BANZA root key + BRL URL + key manifest URL
+            # Serialize Operator A private key bytes for fixture server obligation signing (FED-OBL-005)
+            op_a_signing_key_b64 = None
+            try:
+                from cryptography.hazmat.primitives.serialization import (
+                    Encoding, NoEncryption, PrivateFormat,
+                )
+                raw_priv = op_a_priv.private_bytes(
+                    Encoding.Raw, PrivateFormat.Raw, NoEncryption()
+                )
+                op_a_signing_key_b64 = _tr.b64url_encode(raw_priv)
+            except Exception:
+                pass
+
+            # Extended setup: deliver cert + BANZA root key + BRL URL + key manifest URL + signing key
             setup_ok = setup_operator_for_federation(
                 base_url, cert_a,
                 banza_root_key_id=key_id,
                 banza_root_pub=root_pub,
                 brl_url=infra.brl_url,
                 key_manifest_url=infra.key_manifest_url,
+                op_a_signing_key_b64=op_a_signing_key_b64,
             )
             if setup_ok:
                 print(f"Setup:    POST /conformance/setup → OK "
@@ -4749,6 +5638,16 @@ def run_federation_mode(
                 infra=infra,
                 op_a_priv=op_a_priv if _tr.CRYPTO_AVAILABLE else None,
             ))
+        if run_obl:
+            # Restore Sim Op B to valid state for obligation lifecycle tests
+            if infra and manifest_b and cert_b_valid:
+                infra.configure_sim_b(manifest_b, cert_b_valid)
+                infra.set_brl_empty()
+            suite_results.append(run_suite_fed_obl(
+                base_url,
+                infra=infra,
+                op_a_priv=op_a_priv if _tr.CRYPTO_AVAILABLE else None,
+            ))
     finally:
         if infra:
             infra.stop()
@@ -4800,6 +5699,8 @@ def run_federation_mode(
             parts.append("FED-ROUTE-001–012")
         if "FED-EXEC" in suite_ids:
             parts.append("FED-EXEC-001–008")
+        if "FED-OBL" in suite_ids:
+            parts.append("FED-OBL-001–007")
         print(f"{', '.join(parts)}: ALL PASS")
         print()
         print("What is now proven:")
@@ -4860,6 +5761,17 @@ def run_federation_mode(
             print("  ✓ Obligation persists independent of Sim Op B state     (INV-FED-002)")
             print("  ✓ All 7 provisional completion criteria satisfied       (INV-FED-001)")
             print("  ✓ Double-debit prevented via routing_request_id idempotency (INV-FED-IDEM-001)")
+        if "FED-OBL" in suite_ids:
+            print("  ✓ Obligation created immediately on routing acceptance   (INV-FED-002)")
+            print("  ✓ Obligation amount.minor == routing request amount      (INV-FED-005)")
+            print("  ✓ Obligation amount.currency == routing request currency (INV-FED-005)")
+            print("  ✓ Obligation trace_id propagated unchanged               (INV-FED-001)")
+            print("  ✓ Exactly one obligation per routing_request_id          (INV-FED-002)")
+            print("  ✓ obligor_signature verifies against Operator A public key (non-repudiable)")
+            print("  ✓ State machine: pending → in_netting → settled only")
+            print("  ✓ Backward transition (settled → in_netting) rejected    (state machine)")
+            print("  ✓ Settled obligation contains settled_at (ISO 8601)")
+            print("  ✓ Settled obligation contains settlement_batch_id")
     elif total_fail > 0:
         print(f"{', '.join(suite_ids)}: FAIL  ({total_pass} passed, {total_fail} failed, {total_skip} skipped)")
     else:
@@ -4872,7 +5784,7 @@ def run_federation_mode(
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "runner_version": RUNNER_VERSION,
         "federation_mode": True,
-        "slice": "6",
+        "slice": "7",
         "operator_url": base_url,
         "schema_path": schema_path,
         "crypto_available": _tr.CRYPTO_AVAILABLE,
@@ -4898,14 +5810,14 @@ def run_federation_mode(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="BANZA Federation Conformance Runner (FED-CERT + FED-DISC + FED-TRUST + FED-ROUTE + FED-EXEC)"
+        description="BANZA Federation Conformance Runner (FED-CERT + FED-DISC + FED-TRUST + FED-ROUTE + FED-EXEC + FED-OBL)"
     )
     parser.add_argument("--url", required=True,
                         help="Base URL of the operator (e.g. http://localhost:8099)")
     parser.add_argument("--output", help="Write JSON report to this file")
     parser.add_argument("--quiet", action="store_true", help="Suppress passing test output")
     parser.add_argument("--fed-suite", dest="fed_suite",
-                        help="Run only this suite: cert | disc | trust | route | exec (default: all)")
+                        help="Run only this suite: cert | disc | trust | route | exec | obl (default: all)")
     args = parser.parse_args()
 
     sys.exit(run_federation_mode(
