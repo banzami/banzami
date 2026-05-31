@@ -646,7 +646,14 @@ def main():
     parser.add_argument("--suite", help="Run a single suite by ID (health, wallets, transfers, traces, manifest)")
     parser.add_argument("--output", help="Write JSON report to this file")
     parser.add_argument("--quiet", action="store_true", help="Suppress per-case output")
+    parser.add_argument("--federation", action="store_true", help="Run L3 Federation conformance tests (Slice 0: FED-CERT-001)")
     args = parser.parse_args()
+
+    if args.federation:
+        import os
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from run_fed import run_federation_mode
+        sys.exit(run_federation_mode(args.url.rstrip("/"), args.output, args.quiet))
 
     base_url = args.url.rstrip("/")
     start_time = time.monotonic()

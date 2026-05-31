@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12",
+  "$id": "https://banza.network/contracts/federation/operator-certificate.json",
+  "title": "BanzaOperatorCertificate",
+  "description": "Signed certification artifact issued by BANZA to a certified operator. Used by federation peers to verify operator identity and certification level without contacting BANZA at routing time.",
+  "_spec_version": "1",
+  "_status": "canonical",
+  "_authority": "ADR-026, INV-TRUST-001",
+
+  "type": "object",
+  "required": [
+    "schema_version",
+    "operator_id",
+    "certification_level",
+    "protocol_version",
+    "capabilities",
+    "public_key",
+    "issued_at",
+    "expires_at",
+    "issuer",
+    "issuer_key_id",
+    "signature"
+  ],
+  "additionalProperties": false,
+
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1",
+      "description": "Certificate schema version. Must be '1' for this certificate format."
+    },
+    "operator_id": {
+      "type": "string",
+      "minLength": 4,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9][a-z0-9\\-]{2,62}[a-z0-9]$",
+      "description": "Stable unique operator identifier assigned by BANZA at L0. Never reused."
+    },
+    "certification_level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "Certification level at time of issuance. Level 3+ certificates have a 90-day maximum lifetime."
+    },
+    "protocol_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "BANZA protocol version this certification applies to. e.g. '1.0'."
+    },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "description": "Conformance-tested and certified capabilities. A subset of the operator's declared manifest capabilities.",
+      "examples": [["cross_operator_routing", "cross_operator_settlement"]]
+    },
+    "public_key": {
+      "type": "string",
+      "pattern": "^ed25519:[A-Za-z0-9_-]{43}$",
+      "description": "Operator's ed25519 public key in 'ed25519:<base64url>' format. Bound to operator_id by BANZA's signature."
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC timestamp when BANZA issued this certificate."
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC timestamp of certificate expiry. For certification_level >= 3: MUST be within 90 days of issued_at. INV-TRUST-002: certificates MUST NOT be accepted after this time."
+    },
+    "issuer": {
+      "type": "string",
+      "const": "BANZA",
+      "description": "Always the literal string 'BANZA'. Any other value makes this certificate invalid."
+    },
+    "issuer_key_id": {
+      "type": "string",
+      "description": "Identifier for the BANZA signing key that produced this signature. Allows BANZA to rotate its signing key without invalidating outstanding certificates."
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{86}$",
+      "description": "ed25519 signature by BANZA. Base64url-encoded (86 chars for 64 bytes). Covers the canonical JSON form of all other fields: fields sorted lexicographically, no whitespace, UTF-8 encoded."
+    }
+  }
+}
