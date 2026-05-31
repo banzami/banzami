@@ -6,7 +6,7 @@
 **Version:** 1.0  
 **Date:** 2026-05-30  
 **Status:** Official  
-**Authority:** ADR-025
+**Authority:** ADR-028 (certification level architecture), ADR-025 (ecosystem naming)
 
 ---
 
@@ -122,33 +122,42 @@ See [BANZA_REFERENCE.md §6](BANZA_REFERENCE.md) for the full monetary represent
 
 ### Level 3 — Federation Operator
 
-**Purpose:** Complete payment lifecycle including payouts and automated reconciliation.
+**Purpose:** Cross-operator routing, inter-operator settlement, and automated reconciliation. This is the federation eligibility threshold — no operator below L3 may participate in BANZA federation. *(Authority: ADR-028, ADR-026)*
 
 **Includes:** All Level 1–2 requirements.
 
 **Additional required capabilities:**
-- `payout.batch` — batch payouts to bank accounts
-- `reconciliation` — automated ledger reconciliation
+- `cross_operator_routing` — participation in BANZA federation routing
+- `reconciliation` — automated ledger reconciliation across operator boundaries
+- `payout.batch` — batch inter-operator net settlement via bank rails (EMIS/Multicaixa)
 
-**Conformance suites:** `core-payments/` + `advanced-payments/` + `full-protocol/` (all 10 files, 66 tests)
+**Required operator infrastructure:**
+- Valid BANZA-signed operator certificate (`certification_level >= 3`) served at `/.well-known/banza/certificate.json`
+- Certificate lifetime: 90 days maximum (INV-TRUST-002)
+- `supports_federation: true` declared in manifest (INV-TRUST-004)
+- `cross_operator_routing: true` declared in manifest
+- `POST /federation/route` endpoint operational
+- `GET /federation/obligations` endpoint operational
+- Operator not present in the BANZA Revocation List (BRL)
 
-**What it unlocks:** Payout rails (EMIS/Multicaixa), reconciliation reports, higher transaction volume limits.
+**Conformance suites:** All L2 suites + `federation/` (79 tests across 9 suites: FED-CERT, FED-DISC, FED-TRUST, FED-ROUTE, FED-EXEC, FED-OBL, FED-EVT, FED-SETTLE, FED-FAIL)
+
+**What it unlocks:** Cross-operator payment routing, inter-operator settlement and reconciliation, payout rails (EMIS/Multicaixa), federation registry listing, higher transaction volume limits.
 
 ---
 
 ### Level 4 — Infrastructure Operator
 
-**Purpose:** Full infrastructure capability including card acquiring and federation readiness.
+**Purpose:** Card acquiring and highest-tier network participation. Includes all Level 3 federation capabilities.
 
-**Includes:** All Level 1–3 requirements.
+**Includes:** All Level 1–3 requirements (including full federation).
 
 **Additional required capabilities:**
 - `acquiring.emis` — EMIS card acquiring integration
-- `federation_ready` — inter-operator routing capability
 
-**Conformance suites:** All suites including `infrastructure/` (all 12 files, 88 tests)
+**Conformance suites:** All L3 suites + `infrastructure/` (all 12 files, 88 tests)
 
-**What it unlocks:** Card acquiring, participation in BANZA federation (when available), highest transaction volume limits, operator network access.
+**What it unlocks:** Card acquiring, highest transaction volume limits, full infrastructure network membership.
 
 ---
 
@@ -253,13 +262,13 @@ The public operator registry lists all certified operators with:
 
 Certified operators receive a badge for each level:
 
-| Badge | Level | Label |
-|-------|-------|-------|
-| L0 | 0 | BANZA Sandbox Operator |
-| L1 | 1 | BANZA Payment Operator |
-| L2 | 2 | BANZA Settlement Operator |
-| L3 | 3 | BANZA Federation Operator |
-| L4 | 4 | BANZA Infrastructure Operator |
+| Badge | Level | Label | Federation eligible |
+|-------|-------|-------|---------------------|
+| L0 | 0 | BANZA Sandbox Operator | No |
+| L1 | 1 | BANZA Payment Operator | No |
+| L2 | 2 | BANZA Settlement Operator | No |
+| L3 | 3 | BANZA Federation Operator | **Yes** |
+| L4 | 4 | BANZA Infrastructure Operator | **Yes** |
 
 ---
 
