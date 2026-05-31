@@ -1,5 +1,5 @@
 """
-BANZA Federation Conformance Runner — Slice 2
+BANZA Federation Conformance Runner — Slice 3
 
 Implements:
   FED-CERT-001  Certificate Present at Well-Known URL                    (Slice 0)
@@ -13,17 +13,29 @@ Implements:
   FED-CERT-009  Revoked Operator Rejected by BRL Check                   (Slice 2)
   FED-CERT-010  Certificate-Manifest operator_id Binding                 (Slice 2)
   FED-CERT-011  Unknown issuer_key_id Triggers Key Fetch                 (Slice 2)
+  FED-DISC-001  Manifest Present at Well-Known URL                       (Slice 3)
+  FED-DISC-002  supports_federation == true                              (Slice 3)
+  FED-DISC-003  cross_operator_routing == true                           (Slice 3)
+  FED-DISC-004  certificate_url Accessible and Returns Valid Certificate (Slice 3)
+  FED-DISC-005  interop_endpoint Reachable                               (Slice 3)
+  FED-DISC-006  supported_currencies Non-Empty                           (Slice 3)
+  FED-DISC-007  supports_federation Cannot Be True Without Valid L3+ Cert(Slice 3)
+  FED-DISC-008  netting_interval_hours Within Bounds                     (Slice 3)
 
 FED-CERT-008 through 011 require:
   - Simulated Operator B (runner_infra.RunnerInfra)
   - Operator A trust engine (fixture_server POST /conformance/federation/verify-peer)
   - ADR-026 9-step trust protocol
 
-Spec: FEDERATION_TEST_SUITE_SPEC.md §Suite FED-CERT
-Contract: contracts/federation/operator-certificate.json
+FED-DISC-007 requires:
+  - Simulated Operator B serving a manifest with supports_federation=true + L2 cert
+
+Spec: FEDERATION_TEST_SUITE_SPEC.md §Suite FED-CERT, §Suite FED-DISC
+Contracts: contracts/federation/operator-certificate.json,
+           contracts/federation/federation-manifest.json
 
 Requires:
-  cryptography>=41.0.0  for FED-CERT-002 and FED-CERT-008–011
+  cryptography>=41.0.0  for FED-CERT-002 and FED-CERT-008–011, FED-DISC-007
 """
 
 import argparse
@@ -42,7 +54,7 @@ from typing import Optional
 import trust_root as _tr
 from runner_infra import RunnerInfra
 
-RUNNER_VERSION = "0.3.0-slice2"
+RUNNER_VERSION = "0.4.0-slice3"
 
 # ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -51,6 +63,17 @@ def _find_schema_path() -> Optional[str]:
     for p in [
         os.path.join(this_dir, "..", "..", "contracts", "federation", "operator-certificate.json"),
         os.path.join(os.getcwd(), "contracts", "federation", "operator-certificate.json"),
+    ]:
+        if os.path.isfile(p):
+            return os.path.normpath(p)
+    return None
+
+
+def _find_manifest_schema_path() -> Optional[str]:
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    for p in [
+        os.path.join(this_dir, "..", "..", "contracts", "federation", "federation-manifest.json"),
+        os.path.join(os.getcwd(), "contracts", "federation", "federation-manifest.json"),
     ]:
         if os.path.isfile(p):
             return os.path.normpath(p)
@@ -132,6 +155,76 @@ def validate_operator_certificate(cert: dict) -> list:
                 f"signature format invalid (expected 86 base64url chars): "
                 f"len={len(sig) if isinstance(sig, str) else 'N/A'}"
             )
+
+    return errors
+
+
+# ── Federation manifest validation (FED-DISC-001) ────────────────────────────
+
+def validate_federation_manifest(manifest: dict) -> list:
+    """
+    Validate a parsed manifest against the federation-manifest.json extension schema.
+    Returns a list of error strings. Empty list means valid against the extension.
+    """
+    if not isinstance(manifest, dict):
+        return ["body is not a JSON object"]
+
+    errors = []
+    required = [
+        "federation_version", "certificate_url", "interop_endpoint",
+        "supports_federation", "cross_operator_routing", "cross_operator_settlement",
+        "federation_capabilities",
+    ]
+    for f in required:
+        if f not in manifest:
+            errors.append(f"required federation field missing: '{f}'")
+
+    if "federation_version" in manifest and manifest["federation_version"] != "1":
+        errors.append(f"federation_version must be '1', got {manifest['federation_version']!r}")
+
+    if "certificate_url" in manifest and not isinstance(manifest["certificate_url"], str):
+        errors.append("certificate_url must be a string (URI)")
+
+    if "interop_endpoint" in manifest and not isinstance(manifest["interop_endpoint"], str):
+        errors.append("interop_endpoint must be a string (URI)")
+
+    for bool_field in ("supports_federation", "cross_operator_routing", "cross_operator_settlement"):
+        if bool_field in manifest and not isinstance(manifest[bool_field], bool):
+            errors.append(f"{bool_field} must be a boolean")
+
+    if manifest.get("supports_federation") is True and manifest.get("cross_operator_routing") is not True:
+        errors.append("if supports_federation is true, cross_operator_routing must also be true")
+
+    fc = manifest.get("federation_capabilities")
+    if fc is not None:
+        if not isinstance(fc, dict):
+            errors.append("federation_capabilities must be an object")
+        else:
+            for sub in ("routing_version", "settlement_version", "supported_currencies", "netting_interval_hours"):
+                if sub not in fc:
+                    errors.append(f"federation_capabilities.{sub} is required")
+
+            if fc.get("routing_version") not in (None,) and fc.get("routing_version") != "1":
+                errors.append(f"federation_capabilities.routing_version must be '1', got {fc.get('routing_version')!r}")
+
+            if fc.get("settlement_version") not in (None,) and fc.get("settlement_version") != "1":
+                errors.append(f"federation_capabilities.settlement_version must be '1', got {fc.get('settlement_version')!r}")
+
+            sc = fc.get("supported_currencies")
+            if sc is not None:
+                if not isinstance(sc, list) or len(sc) == 0:
+                    errors.append("federation_capabilities.supported_currencies must be a non-empty array")
+                else:
+                    for c in sc:
+                        if not isinstance(c, str) or not re.match(r"^[A-Z]{3}$", c):
+                            errors.append(f"supported_currencies: {c!r} does not match ^[A-Z]{{3}}$")
+
+            nih = fc.get("netting_interval_hours")
+            if nih is not None:
+                if not isinstance(nih, int) or isinstance(nih, bool) or not (1 <= nih <= 168):
+                    errors.append(
+                        f"federation_capabilities.netting_interval_hours must be integer 1–168, got {nih!r}"
+                    )
 
     return errors
 
@@ -237,6 +330,23 @@ def _fetch_cert(base_url: str) -> tuple:
     except json.JSONDecodeError:
         cert = None
     return status, headers, raw, cert
+
+
+def _fetch_manifest(base_url: str) -> tuple:
+    """
+    GET /.well-known/banza/operator.json.
+    Returns (status, headers, raw_body, parsed_manifest_or_None).
+    Raises RuntimeError on connection failure.
+    """
+    manifest_url = f"{base_url}/.well-known/banza/operator.json"
+    status, headers, raw = http_get(manifest_url)
+    try:
+        manifest = json.loads(raw) if isinstance(raw, str) else raw
+        if not isinstance(manifest, dict):
+            manifest = None
+    except json.JSONDecodeError:
+        manifest = None
+    return status, headers, raw, manifest
 
 
 def _parse_iso_timestamp(ts: str) -> datetime:
@@ -1039,6 +1149,569 @@ def run_fed_cert_011(
     return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
 
 
+# ── FED-DISC-001 ──────────────────────────────────────────────────────────────
+
+def run_fed_disc_001(base_url: str) -> dict:
+    """
+    FED-DISC-001 — Manifest Present at Well-Known URL
+
+    Pass:   HTTP 200 AND valid JSON AND validates against federation-manifest.json extension.
+    Fail:   HTTP != 200 OR schema invalid.
+    Severity: STANDARD
+    Contract: federation-manifest.json
+    L3 Req: FED-L3-003, FED-L3-004
+    """
+    case = _make_case("FED-DISC-001", "Manifest Present at Well-Known URL")
+    manifest_url = f"{base_url}/.well-known/banza/operator.json"
+
+    t0 = time.monotonic()
+    try:
+        status, headers, raw, manifest = _fetch_manifest(base_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "GET", "url": manifest_url}
+    case["response"] = {"status": status}
+
+    assertions = []
+    assertions.append(_assertion("HTTP status == 200", status == 200, 200, status))
+
+    ct = headers.get("content-type", "")
+    assertions.append(_assertion(
+        "Content-Type contains 'application/json'",
+        "application/json" in ct.lower(), "application/json", ct or "(absent)",
+    ))
+
+    if manifest is None:
+        assertions.append(_assertion("body is valid JSON object", False, "JSON object", "invalid JSON or not an object"))
+        return _fail_case(case, "response body is not a valid JSON object", ms, assertions)
+
+    assertions.append(_assertion("body is valid JSON object", True))
+
+    schema_errors = validate_federation_manifest(manifest)
+    schema_valid = len(schema_errors) == 0
+    assertions.append(_assertion(
+        "validates against federation-manifest.json extension",
+        schema_valid, "no errors", "; ".join(schema_errors) if schema_errors else "ok",
+    ))
+
+    case["evidence"] = {
+        "manifest_url": manifest_url,
+        "manifest_http_status": status,
+        "manifest_content_type": ct,
+        "manifest_schema_valid": schema_valid,
+        "manifest_schema_errors": schema_errors,
+        "manifest_operator_id": manifest.get("operator_id"),
+        "manifest_federation_version": manifest.get("federation_version"),
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-DISC-002 ──────────────────────────────────────────────────────────────
+
+def run_fed_disc_002(base_url: str) -> dict:
+    """
+    FED-DISC-002 — supports_federation == true
+
+    Pass:   manifest.supports_federation === true (boolean, not string).
+    Fail:   Missing; false; non-boolean type.
+    Severity: STANDARD
+    Invariant: INV-TRUST-004
+    Contract: federation-manifest.json
+    L3 Req: FED-L3-003
+    """
+    case = _make_case("FED-DISC-002", "supports_federation == true")
+
+    t0 = time.monotonic()
+    try:
+        status, headers, raw, manifest = _fetch_manifest(base_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "GET", "url": f"{base_url}/.well-known/banza/operator.json"}
+    case["response"] = {"status": status}
+
+    if manifest is None:
+        return _fail_case(case, "response body is not a JSON object", ms)
+
+    val = manifest.get("supports_federation")
+    is_true_bool = val is True
+
+    assertions = [
+        _assertion(
+            "supports_federation === true (boolean)",
+            is_true_bool,
+            True,
+            f"{val!r} (type={type(val).__name__})",
+        ),
+    ]
+
+    case["evidence"] = {
+        "manifest.supports_federation": val,
+        "type": type(val).__name__,
+    }
+
+    if is_true_bool:
+        return _pass_case(case, ms, assertions)
+    return _fail_case(case, f"supports_federation must be true (boolean), got {val!r}", ms, assertions)
+
+
+# ── FED-DISC-003 ──────────────────────────────────────────────────────────────
+
+def run_fed_disc_003(base_url: str) -> dict:
+    """
+    FED-DISC-003 — cross_operator_routing == true
+
+    Pass:   manifest.cross_operator_routing === true.
+    Fail:   Missing; false.
+    Severity: STANDARD
+    Invariant: INV-FED-003
+    Contract: federation-manifest.json
+    L3 Req: FED-L3-003
+    """
+    case = _make_case("FED-DISC-003", "cross_operator_routing == true")
+
+    t0 = time.monotonic()
+    try:
+        status, headers, raw, manifest = _fetch_manifest(base_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "GET", "url": f"{base_url}/.well-known/banza/operator.json"}
+    case["response"] = {"status": status}
+
+    if manifest is None:
+        return _fail_case(case, "response body is not a JSON object", ms)
+
+    val = manifest.get("cross_operator_routing")
+    is_true_bool = val is True
+
+    assertions = [
+        _assertion(
+            "cross_operator_routing === true (boolean)",
+            is_true_bool,
+            True,
+            f"{val!r} (type={type(val).__name__})",
+        ),
+    ]
+
+    case["evidence"] = {
+        "manifest.cross_operator_routing": val,
+        "type": type(val).__name__,
+    }
+
+    if is_true_bool:
+        return _pass_case(case, ms, assertions)
+    return _fail_case(case, f"cross_operator_routing must be true, got {val!r}", ms, assertions)
+
+
+# ── FED-DISC-004 ──────────────────────────────────────────────────────────────
+
+def run_fed_disc_004(base_url: str) -> dict:
+    """
+    FED-DISC-004 — certificate_url Accessible and Returns Valid Certificate
+
+    Pass:   GET certificate_url → HTTP 200 AND valid cert AND cert.operator_id == manifest.operator_id.
+    Fail:   HTTP != 200 OR cert invalid OR operator_id mismatch.
+    Severity: STANDARD
+    Invariant: INV-TRUST-001
+    Contract: federation-manifest.json
+    L3 Req: FED-L3-005
+    """
+    case = _make_case("FED-DISC-004", "certificate_url Accessible and Returns Valid Certificate")
+
+    t0 = time.monotonic()
+    try:
+        _, _, _, manifest = _fetch_manifest(base_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if manifest is None:
+        return _fail_case(case, "manifest fetch failed or returned invalid JSON", ms)
+
+    manifest_op_id = manifest.get("operator_id", "")
+    cert_url = manifest.get("certificate_url", "")
+
+    if not cert_url:
+        return _fail_case(case, "manifest.certificate_url is missing", ms)
+
+    case["request"] = {"method": "GET", "url": cert_url}
+
+    try:
+        cert_status, cert_headers, cert_raw = http_get(cert_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, f"certificate_url fetch failed: {exc}")
+
+    case["response"] = {"status": cert_status}
+
+    try:
+        cert = json.loads(cert_raw)
+        if not isinstance(cert, dict):
+            cert = None
+    except json.JSONDecodeError:
+        cert = None
+
+    assertions = []
+    assertions.append(_assertion("HTTP status == 200", cert_status == 200, 200, cert_status))
+    assertions.append(_assertion("response is valid JSON object", cert is not None, "JSON object",
+                                 "invalid" if cert is None else "ok"))
+
+    if cert is not None:
+        schema_errors = validate_operator_certificate(cert)
+        schema_valid = len(schema_errors) == 0
+        assertions.append(_assertion(
+            "certificate validates against operator-certificate.json",
+            schema_valid, "no errors", "; ".join(schema_errors) if schema_errors else "ok",
+        ))
+
+        cert_op_id = cert.get("operator_id", "")
+        id_match = cert_op_id == manifest_op_id
+        assertions.append(_assertion(
+            "cert.operator_id == manifest.operator_id",
+            id_match, manifest_op_id, cert_op_id,
+        ))
+    else:
+        assertions.append(_assertion("certificate validates against operator-certificate.json",
+                                     False, "no errors", "skipped (parse failed)"))
+        assertions.append(_assertion("cert.operator_id == manifest.operator_id",
+                                     False, manifest_op_id, "skipped (parse failed)"))
+
+    case["evidence"] = {
+        "manifest_operator_id": manifest_op_id,
+        "certificate_url": cert_url,
+        "cert_http_status": cert_status,
+        "cert_operator_id": cert.get("operator_id") if cert else None,
+        "operator_id_match": cert is not None and cert.get("operator_id") == manifest_op_id,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-DISC-005 ──────────────────────────────────────────────────────────────
+
+def run_fed_disc_005(base_url: str) -> dict:
+    """
+    FED-DISC-005 — interop_endpoint Reachable
+
+    Pass:   TCP connection succeeds AND any HTTP response received (not connection refused).
+    Fail:   Connection refused; DNS failure; no response within 10s.
+    Severity: STANDARD
+    Invariant: INV-FED-003
+    Contract: federation-manifest.json
+    L3 Req: FED-L3-004
+    """
+    case = _make_case("FED-DISC-005", "interop_endpoint Reachable")
+
+    t0 = time.monotonic()
+    try:
+        _, _, _, manifest = _fetch_manifest(base_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, f"manifest fetch failed: {exc}")
+
+    if manifest is None:
+        return _fail_case(case, "manifest fetch failed or returned invalid JSON", ms)
+
+    interop_endpoint = manifest.get("interop_endpoint", "")
+    if not interop_endpoint:
+        return _fail_case(case, "manifest.interop_endpoint is missing", ms)
+
+    probe_url = f"{interop_endpoint}/federation/route"
+    case["request"] = {"method": "GET", "url": probe_url}
+
+    try:
+        probe_status, _, _ = http_get(probe_url, timeout=10)
+        tcp_ok = True
+    except RuntimeError:
+        tcp_ok = False
+        probe_status = None
+
+    ms = int((time.monotonic() - t0) * 1000)
+    case["response"] = {"status": probe_status}
+
+    assertions = [
+        _assertion("manifest.interop_endpoint is present", bool(interop_endpoint),
+                   "non-empty string", interop_endpoint or "(missing)"),
+        _assertion(
+            "TCP connection succeeds (any HTTP response received)",
+            tcp_ok, "any HTTP response",
+            f"HTTP {probe_status}" if probe_status else "connection refused",
+        ),
+    ]
+
+    case["evidence"] = {
+        "interop_endpoint": interop_endpoint,
+        "probe_url": probe_url,
+        "tcp_reachable": tcp_ok,
+        "probe_http_status": probe_status,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-DISC-006 ──────────────────────────────────────────────────────────────
+
+def run_fed_disc_006(base_url: str) -> dict:
+    """
+    FED-DISC-006 — supported_currencies Non-Empty
+
+    Pass:   Array with ≥ 1 ISO 4217 code; each code matches ^[A-Z]{3}$.
+    Fail:   Missing; empty array; any element fails pattern.
+    Severity: STANDARD
+    Contract: federation-manifest.json
+    L3 Req: FED-L3-003
+    """
+    case = _make_case("FED-DISC-006", "supported_currencies Non-Empty")
+
+    t0 = time.monotonic()
+    try:
+        _, _, _, manifest = _fetch_manifest(base_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if manifest is None:
+        return _fail_case(case, "manifest fetch failed or returned invalid JSON", ms)
+
+    fc = manifest.get("federation_capabilities") or {}
+    currencies = fc.get("supported_currencies")
+
+    assertions = []
+
+    if currencies is None:
+        assertions.append(_assertion(
+            "federation_capabilities.supported_currencies present", False, "non-empty array", "(absent)"))
+        return _fail_case(case, "federation_capabilities.supported_currencies missing", ms, assertions)
+
+    non_empty = isinstance(currencies, list) and len(currencies) >= 1
+    assertions.append(_assertion(
+        "supported_currencies is a non-empty array",
+        non_empty, "non-empty array",
+        f"[] (empty)" if (isinstance(currencies, list) and len(currencies) == 0) else str(currencies),
+    ))
+
+    if non_empty:
+        invalid = [c for c in currencies if not isinstance(c, str) or not re.match(r"^[A-Z]{3}$", c)]
+        all_iso = len(invalid) == 0
+        assertions.append(_assertion(
+            "all currencies match ^[A-Z]{3}$ (ISO 4217)",
+            all_iso, "all match", str(invalid) if invalid else "ok",
+        ))
+
+    case["evidence"] = {
+        "manifest.federation_capabilities.supported_currencies": currencies,
+        "currency_count": len(currencies) if isinstance(currencies, list) else 0,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-DISC-007 ──────────────────────────────────────────────────────────────
+
+def run_fed_disc_007(
+    base_url: str,
+    infra: "RunnerInfra",
+    manifest_b: dict,
+    cert_b_l2: dict,
+) -> dict:
+    """
+    FED-DISC-007 — supports_federation Cannot Be True Without Valid L3+ Certificate
+
+    Sim Op B declares supports_federation=true but holds a level-2 certificate.
+    Operator A's trust engine must reject at Step 2.5 (level_check) — enforcing INV-TRUST-004.
+
+    Pass:   trusted=false AND step 2.5 or 2.8 fails (certification_level_insufficient
+            or cross_operator_routing_missing_from_cert_capabilities).
+    Fail:   trusted=true OR no step failure at 2.5/2.8.
+    Severity: CRITICAL
+    Invariant: INV-TRUST-004
+    Contract: federation-manifest.json
+    """
+    case = _make_case(
+        "FED-DISC-007",
+        "supports_federation Cannot Be True Without Valid L3+ Certificate",
+    )
+
+    infra.configure_sim_b(manifest_b, cert_b_l2)
+    infra.set_brl_empty()
+
+    peer_url = f"{infra.sim_b_url}/.well-known/banza/operator.json"
+    t0 = time.monotonic()
+    try:
+        status, result = _call_verify_peer(base_url, peer_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {
+        "method": "POST",
+        "url": f"{base_url}/conformance/federation/verify-peer",
+        "body": {"peer_manifest_url": peer_url},
+    }
+    case["response"] = {"status": status}
+
+    if result is None:
+        return _fail_case(case, "verify-peer response not valid JSON", ms)
+
+    trusted = result.get("trusted")
+    rejection = result.get("rejection_reason", "")
+    steps_by_id = {s.get("step"): s for s in result.get("steps", [])}
+    step_25 = steps_by_id.get("2.5", {})
+    step_28 = steps_by_id.get("2.8", {})
+
+    # INV-TRUST-004: trust must fail at level_check (2.5) or routing_capability_check (2.8)
+    level_or_cap_fail = (
+        step_25.get("status") == "fail" or step_28.get("status") == "fail"
+    )
+
+    assertions = [
+        _assertion("Operator A returns trusted=false", trusted is False, False, trusted),
+        _assertion(
+            "trust fails at step 2.5 (level_check) or step 2.8 (routing_capability_check)",
+            level_or_cap_fail,
+            "step 2.5 or 2.8 = fail",
+            f"2.5={step_25.get('status','absent')}, 2.8={step_28.get('status','absent')}",
+        ),
+    ]
+
+    case["evidence"] = {
+        "peer_manifest_url": peer_url,
+        "cert_b_level": cert_b_l2.get("certification_level"),
+        "trusted": trusted,
+        "rejection_reason": rejection,
+        "step_2.5": step_25,
+        "step_2.8": step_28,
+        "trust_step_results": result.get("steps", []),
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-DISC-008 ──────────────────────────────────────────────────────────────
+
+def run_fed_disc_008(base_url: str) -> dict:
+    """
+    FED-DISC-008 — netting_interval_hours Within Bounds
+
+    Pass:   Integer in range [1, 168].
+    Fail:   Out of range; not integer; missing.
+    Severity: STANDARD
+    Contract: federation-manifest.json
+    """
+    case = _make_case("FED-DISC-008", "netting_interval_hours Within Bounds")
+
+    t0 = time.monotonic()
+    try:
+        _, _, _, manifest = _fetch_manifest(base_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if manifest is None:
+        return _fail_case(case, "manifest fetch failed or returned invalid JSON", ms)
+
+    fc = manifest.get("federation_capabilities") or {}
+    nih = fc.get("netting_interval_hours")
+
+    assertions = []
+
+    if nih is None:
+        assertions.append(_assertion(
+            "federation_capabilities.netting_interval_hours present", False, "integer 1–168", "(absent)"))
+        return _fail_case(case, "netting_interval_hours missing from federation_capabilities", ms, assertions)
+
+    is_int = isinstance(nih, int) and not isinstance(nih, bool)
+    assertions.append(_assertion("netting_interval_hours is an integer", is_int, "integer", type(nih).__name__))
+
+    if is_int:
+        in_range = 1 <= nih <= 168
+        assertions.append(_assertion(
+            "netting_interval_hours is in range [1, 168]",
+            in_range, "[1, 168]", nih,
+        ))
+
+    case["evidence"] = {
+        "manifest.federation_capabilities.netting_interval_hours": nih,
+        "type": type(nih).__name__,
+        "in_range": is_int and 1 <= nih <= 168 if is_int else False,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-DISC suite runner ─────────────────────────────────────────────────────
+
+def run_suite_fed_disc(
+    base_url: str,
+    infra: "RunnerInfra" = None,
+    cert_b_l2: dict = None,
+    manifest_b: dict = None,
+) -> dict:
+    """
+    Run all 8 FED-DISC tests.
+
+    Tests 001–006, 008: manifest endpoint validation — no infrastructure required.
+    Test 007: trust rejection of L2 cert — requires infra + cert_b_l2 + manifest_b.
+    """
+    def _skip(case_id, title, reason):
+        return _skip_case(_make_case(case_id, title), reason)
+
+    trust_007_available = infra is not None and cert_b_l2 is not None and manifest_b is not None
+
+    cases = [
+        run_fed_disc_001(base_url),
+        run_fed_disc_002(base_url),
+        run_fed_disc_003(base_url),
+        run_fed_disc_004(base_url),
+        run_fed_disc_005(base_url),
+        run_fed_disc_006(base_url),
+        run_fed_disc_007(base_url, infra, manifest_b, cert_b_l2)
+            if trust_007_available else
+            _skip("FED-DISC-007",
+                  "supports_federation Cannot Be True Without Valid L3+ Certificate",
+                  "infra not available"),
+        run_fed_disc_008(base_url),
+    ]
+
+    passed = sum(1 for c in cases if c["status"] == "PASS")
+    failed = sum(1 for c in cases if c["status"] == "FAIL")
+    skipped = sum(1 for c in cases if c["status"] in ("SKIP", "ERROR"))
+
+    return {
+        "suite_id": "FED-DISC",
+        "suite_name": "Discovery and Manifest Validation",
+        "blocking": True,
+        "passed": passed,
+        "failed": failed,
+        "skipped": skipped,
+        "cases": cases,
+    }
+
+
 # ── Suite runner ──────────────────────────────────────────────────────────────
 
 def run_suite_fed_cert(
@@ -1123,29 +1796,48 @@ def run_federation_mode(
     fed_suite: str = None,
 ) -> int:
     """
-    Execute federation conformance tests (FED-CERT-001 through FED-CERT-011).
+    Execute federation conformance tests (FED-CERT-001 through FED-DISC-008).
     Returns: 0 = all pass, 1 = failures/skips, 2 = runner error.
     """
     from datetime import timedelta
 
+    run_cert = fed_suite in (None, "cert")
+    run_disc = fed_suite in (None, "disc")
+
+    if fed_suite is not None and not run_cert and not run_disc:
+        print(f"ERROR: Unknown --fed-suite value: {fed_suite!r}. Available: cert, disc", file=sys.stderr)
+        return 2
+
+    suite_label = {
+        None: "FED-CERT-001–011, FED-DISC-001–008",
+        "cert": "FED-CERT-001–011",
+        "disc": "FED-DISC-001–008",
+    }.get(fed_suite, fed_suite)
+
     print(f"BANZA Federation Conformance Runner {RUNNER_VERSION}")
     print(f"Operator: {base_url}")
-    print(f"Slice:    2 — FED-CERT-001 through FED-CERT-011")
+    print(f"Slice:    3 — {suite_label}")
     print()
 
     schema_path = _find_schema_path()
     if schema_path is None:
         print("ERROR: contracts/federation/operator-certificate.json not found.", file=sys.stderr)
         return 2
-    print(f"Schema:   {schema_path}")
+    manifest_schema_path = _find_manifest_schema_path()
+    if manifest_schema_path is None:
+        print("ERROR: contracts/federation/federation-manifest.json not found.", file=sys.stderr)
+        return 2
+    print(f"CertSchema:     {schema_path}")
+    print(f"ManifestSchema: {manifest_schema_path}")
 
-    # ── Start runner infrastructure (Slice 2) ─────────────────────────────────
+    # ── Start runner infrastructure (Slices 2–3) ──────────────────────────────
     infra = None
     manifest_b = None
     cert_b_valid = None
     cert_b_expired = None
     cert_b_mismatched = None
     cert_b_secondary = None
+    cert_b_l2 = None
     secondary_key_id = None
     secondary_pub = None
     root_public_key_bytes = None
@@ -1236,6 +1928,15 @@ def run_federation_mode(
                 operator_public_key_bytes=op_b_pub,
             )
 
+            # CERT-B-L2: L2 cert for FED-DISC-007 (INV-TRUST-004 — level too low)
+            cert_b_l2 = _tr.generate_test_certificate(
+                operator_id="operator-b-test",
+                certification_level=2,
+                root_private_key=root_priv,
+                issuer_key_id=key_id,
+                operator_public_key_bytes=op_b_pub,
+            )
+
             # Operator A cert
             cert_a = _tr.generate_test_certificate(
                 root_private_key=root_priv,
@@ -1276,10 +1977,11 @@ def run_federation_mode(
 
     # ── Run suites ────────────────────────────────────────────────────────────
     start = time.monotonic()
+    suite_results = []
 
     try:
-        if fed_suite is None or fed_suite == "cert":
-            suite_result = run_suite_fed_cert(
+        if run_cert:
+            suite_results.append(run_suite_fed_cert(
                 base_url,
                 root_public_key_bytes=root_public_key_bytes,
                 infra=infra,
@@ -1290,13 +1992,14 @@ def run_federation_mode(
                 cert_b_secondary=cert_b_secondary,
                 secondary_key_id=secondary_key_id,
                 secondary_pub=secondary_pub,
-            )
-            suite_results = [suite_result]
-        else:
-            print(f"ERROR: Unknown --fed-suite value: {fed_suite!r}. Available: cert", file=sys.stderr)
-            if infra:
-                infra.stop()
-            return 2
+            ))
+        if run_disc:
+            suite_results.append(run_suite_fed_disc(
+                base_url,
+                infra=infra,
+                cert_b_l2=cert_b_l2,
+                manifest_b=manifest_b,
+            ))
     finally:
         if infra:
             infra.stop()
@@ -1334,28 +2037,45 @@ def run_federation_mode(
     total_fail = sum(s["failed"] for s in suite_results)
     total_skip = sum(s["skipped"] for s in suite_results)
 
+    suite_ids = [s["suite_id"] for s in suite_results]
     print("=" * 60)
     if total_fail == 0 and total_skip == 0:
-        print("FED-CERT-001 through FED-CERT-011: ALL PASS")
+        if "FED-CERT" in suite_ids and "FED-DISC" in suite_ids:
+            print("FED-CERT-001–011 and FED-DISC-001–008: ALL PASS")
+        elif "FED-CERT" in suite_ids:
+            print("FED-CERT-001 through FED-CERT-011: ALL PASS")
+        elif "FED-DISC" in suite_ids:
+            print("FED-DISC-001 through FED-DISC-008: ALL PASS")
         print()
         print("What is now proven:")
-        print("  ✓ Certificate endpoint exists and returns HTTP 200")
-        print("  ✓ Content-Type is application/json")
-        print("  ✓ Response is valid JSON satisfying operator-certificate.json")
-        print("  ✓ ed25519 signature verifies against test BANZA root  (INV-TRUST-001)")
-        print("  ✓ Certificate is not expired                           (INV-TRUST-002)")
-        print("  ✓ operator_id matches declared format")
-        print("  ✓ public_key is 32-byte ed25519 in base64url format")
-        print("  ✓ issuer is exactly 'BANZA'                           (INV-TRUST-001)")
-        print("  ✓ Lifetime ≤ 90 days for L3 certificate               (INV-FED-006)")
-        print("  ✓ Operator rejects expired peer cert at Step 2.4      (INV-TRUST-002)")
-        print("  ✓ Operator rejects BRL-revoked peer at Step 2.6       (INV-TRUST-003)")
-        print("  ✓ Operator rejects cert/manifest mismatch at Step 2.9 (INV-TRUST-001)")
-        print("  ✓ Operator fetches new key on unknown issuer_key_id   (F-604)")
+        if "FED-CERT" in suite_ids:
+            print("  ✓ Certificate endpoint exists and returns HTTP 200")
+            print("  ✓ Content-Type is application/json")
+            print("  ✓ Response is valid JSON satisfying operator-certificate.json")
+            print("  ✓ ed25519 signature verifies against test BANZA root  (INV-TRUST-001)")
+            print("  ✓ Certificate is not expired                           (INV-TRUST-002)")
+            print("  ✓ operator_id matches declared format")
+            print("  ✓ public_key is 32-byte ed25519 in base64url format")
+            print("  ✓ issuer is exactly 'BANZA'                           (INV-TRUST-001)")
+            print("  ✓ Lifetime ≤ 90 days for L3 certificate               (INV-FED-006)")
+            print("  ✓ Operator rejects expired peer cert at Step 2.4      (INV-TRUST-002)")
+            print("  ✓ Operator rejects BRL-revoked peer at Step 2.6       (INV-TRUST-003)")
+            print("  ✓ Operator rejects cert/manifest mismatch at Step 2.9 (INV-TRUST-001)")
+            print("  ✓ Operator fetches new key on unknown issuer_key_id   (F-604)")
+        if "FED-DISC" in suite_ids:
+            print("  ✓ Manifest endpoint exists and returns HTTP 200")
+            print("  ✓ Manifest validates against federation-manifest.json")
+            print("  ✓ supports_federation is true")
+            print("  ✓ cross_operator_routing is true                       (INV-FED-003)")
+            print("  ✓ certificate_url accessible, cert valid, operator_id bound  (INV-TRUST-001)")
+            print("  ✓ interop_endpoint TCP-reachable                       (INV-FED-003)")
+            print("  ✓ supported_currencies non-empty, all ISO 4217")
+            print("  ✓ L2 cert rejected at trust step 2.5                   (INV-TRUST-004)")
+            print("  ✓ netting_interval_hours integer in [1, 168]")
     elif total_fail > 0:
-        print(f"FED-CERT: FAIL  ({total_pass} passed, {total_fail} failed, {total_skip} skipped)")
+        print(f"{', '.join(suite_ids)}: FAIL  ({total_pass} passed, {total_fail} failed, {total_skip} skipped)")
     else:
-        print(f"FED-CERT: PARTIAL  ({total_pass} passed, {total_fail} failed, {total_skip} skipped)")
+        print(f"{', '.join(suite_ids)}: PARTIAL  ({total_pass} passed, {total_fail} failed, {total_skip} skipped)")
     print("=" * 60)
 
     # ── Report ────────────────────────────────────────────────────────────────
@@ -1364,7 +2084,7 @@ def run_federation_mode(
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "runner_version": RUNNER_VERSION,
         "federation_mode": True,
-        "slice": "1",
+        "slice": "3",
         "operator_url": base_url,
         "schema_path": schema_path,
         "crypto_available": _tr.CRYPTO_AVAILABLE,
@@ -1390,14 +2110,14 @@ def run_federation_mode(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="BANZA Federation Conformance Runner (FED-CERT-001 through FED-CERT-007)"
+        description="BANZA Federation Conformance Runner (FED-CERT + FED-DISC)"
     )
     parser.add_argument("--url", required=True,
                         help="Base URL of the operator (e.g. http://localhost:8099)")
     parser.add_argument("--output", help="Write JSON report to this file")
     parser.add_argument("--quiet", action="store_true", help="Suppress passing test output")
     parser.add_argument("--fed-suite", dest="fed_suite",
-                        help="Run only this suite (default: cert)")
+                        help="Run only this suite: cert | disc (default: both)")
     args = parser.parse_args()
 
     sys.exit(run_federation_mode(

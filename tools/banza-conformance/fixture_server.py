@@ -7,6 +7,7 @@ Routes:
   POST /conformance/setup                      accept cert + trust config from runner
   POST /conformance/federation/verify-peer     run ADR-026 trust protocol against a peer
   GET  /.well-known/banza/certificate.json     serve current operator certificate
+  GET  /.well-known/banza/operator.json        serve federation manifest (FED-DISC)
   GET  /health                                 sandbox health response
   *    → 404
 
@@ -234,6 +235,8 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/.well-known/banza/certificate.json":
             self._serve_cert()
+        elif self.path == "/.well-known/banza/operator.json":
+            self._serve_manifest()
         elif self.path == "/health":
             self._serve_health()
         else:
@@ -241,6 +244,51 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
 
     def _serve_cert(self):
         body = self.server.state["cert_bytes"]
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _serve_manifest(self):
+        with self.server.state_lock:
+            cert = self.server.state.get("cert") or {}
+
+        op_id = cert.get("operator_id", "operator-a-test")
+        cert_level = cert.get("certification_level", 3)
+
+        host = self.headers.get("Host", "localhost")
+        base_url = f"http://{host}"
+
+        manifest = {
+            "operator_id": op_id,
+            "environment": "sandbox",
+            "simulated": True,
+            "production_allowed": False,
+            "protocol_version": "1.0",
+            "certification_level": cert_level,
+            "capabilities": {
+                "supports_wallets": True,
+                "supports_qr": True,
+                "supports_settlement": True,
+            },
+            "operator_name": "Operator A (Conformance Test)",
+            "operator_url": base_url,
+            "federation_version": "1",
+            "certificate_url": f"{base_url}/.well-known/banza/certificate.json",
+            "interop_endpoint": base_url,
+            "supports_federation": True,
+            "cross_operator_routing": True,
+            "cross_operator_settlement": True,
+            "federation_capabilities": {
+                "routing_version": "1",
+                "settlement_version": "1",
+                "supported_currencies": ["AOA"],
+                "netting_interval_hours": 24,
+            },
+        }
+
+        body = json.dumps(manifest, indent=2).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -383,6 +431,7 @@ def run_server(port: int) -> None:
 
     print(f"BANZA Federation Fixture Server")
     print(f"Port:         {port}")
+    print(f"Manifest:     http://localhost:{port}/.well-known/banza/operator.json")
     print(f"Cert:         http://localhost:{port}/.well-known/banza/certificate.json")
     print(f"Setup:        POST http://localhost:{port}/conformance/setup")
     print(f"Verify peer:  POST http://localhost:{port}/conformance/federation/verify-peer")
