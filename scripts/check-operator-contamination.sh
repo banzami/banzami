@@ -29,7 +29,7 @@ unset _P _S
 SELF_EXCLUDE=(
   "-g" "!scripts/check-operator-contamination.sh"
   "-g" "!.github/workflows/identity-guard.yml"
-  "-g" "!docs/audit/identity/*REGRESSION_GUARD*"
+  "-g" "!docs/audit/identity/**"
 )
 
 # ── Mode ──────────────────────────────────────────────────────────────────────

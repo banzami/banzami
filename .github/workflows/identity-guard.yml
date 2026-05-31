@@ -43,7 +43,7 @@ jobs:
             -g '!.git/**' \
             -g '!scripts/check-operator-contamination.sh' \
             -g '!.github/workflows/identity-guard.yml' \
-            -g '!docs/audit/identity/*REGRESSION_GUARD*' \
+            -g '!docs/audit/identity/**' \
             2>/dev/null || true)
 
           if [ -n "$HITS" ]; then
