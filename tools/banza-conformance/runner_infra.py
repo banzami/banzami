@@ -337,23 +337,40 @@ def _make_sim_b_handler(state: dict, lock: threading.Lock):
                 "interop_transfer_id": itx_id,
                 "recorded_at": now_str,
             }
+            from_op_id = req.get("from_operator_id", "operator-a-test")
             with lock:
                 state["wallets"][recipient_id]["balance_minor"] += amount_minor
                 state["routing_store"][routing_id] = {"body_hash": body_hash, "response": resp}
                 state["ledger"].append(ledger_entry)
                 state["events"].append({
+                    "id": f"evt-{uuid.uuid4()}",
                     "event_type": "federation.routing.accepted",
+                    "aggregate_type": "federation_payment",
+                    "aggregate_id": routing_id,
+                    "trace_id": trace_id,
+                    "correlation_id": routing_id,
+                    "payload": {},
+                    "created_at": now_str,
+                    "federation_version": "1",
+                    "origin_operator_id": my_op_id,
+                    "destination_operator_id": from_op_id,
                     "routing_request_id": routing_id,
                     "interop_transfer_id": itx_id,
-                    "trace_id": trace_id,
-                    "emitted_at": now_str,
                 })
                 state["events"].append({
+                    "id": f"evt-{uuid.uuid4()}",
                     "event_type": "federation.payment.completed",
+                    "aggregate_type": "federation_payment",
+                    "aggregate_id": routing_id,
+                    "trace_id": trace_id,
+                    "correlation_id": routing_id,
+                    "payload": {},
+                    "created_at": now_str,
+                    "federation_version": "1",
+                    "origin_operator_id": my_op_id,
+                    "destination_operator_id": from_op_id,
                     "routing_request_id": routing_id,
                     "interop_transfer_id": itx_id,
-                    "trace_id": trace_id,
-                    "emitted_at": now_str,
                 })
             self._json(200, resp)
 

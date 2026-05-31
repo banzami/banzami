@@ -14,7 +14,7 @@ Routes:
   GET  /conformance/federation/ledger/{wallet_id}                ledger entries for wallet (FED-EXEC)
   GET  /conformance/federation/obligations/{rr_id}               obligation by routing_request_id (FED-EXEC/OBL)
   GET  /conformance/federation/obligations                       all obligations (FED-EXEC/OBL)
-  GET  /conformance/federation/events                            federation events emitted by Operator A (FED-EXEC)
+  GET  /conformance/federation/events                            federation events emitted by Operator A (FED-EXEC, FED-EVT)
   GET  /.well-known/banza/certificate.json                       serve current operator certificate
   GET  /.well-known/banza/operator.json                          serve federation manifest (FED-DISC)
   GET  /health                                                   sandbox health response
@@ -678,11 +678,35 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
                 fed["obligations"][routing_request_id] = obligation
 
                 fed["events"].append({
+                    "id": f"evt-{uuid.uuid4()}",
                     "event_type": "federation.payment.initiated",
+                    "aggregate_type": "federation_payment",
+                    "aggregate_id": routing_request_id,
+                    "trace_id": trace_id,
+                    "correlation_id": routing_request_id,
+                    "payload": {"amount_minor": amount_minor, "currency": currency},
+                    "created_at": now_str,
+                    "federation_version": "1",
+                    "origin_operator_id": from_operator_id,
+                    "destination_operator_id": to_operator_id,
                     "routing_request_id": routing_request_id,
                     "interop_transfer_id": interop_transfer_id,
+                })
+                fed["events"].append({
+                    "id": f"evt-{uuid.uuid4()}",
+                    "event_type": "federation.obligation.recorded",
+                    "aggregate_type": "federation_payment",
+                    "aggregate_id": routing_request_id,
                     "trace_id": trace_id,
-                    "emitted_at": now_str,
+                    "correlation_id": routing_request_id,
+                    "payload": {},
+                    "created_at": now_str,
+                    "federation_version": "1",
+                    "origin_operator_id": from_operator_id,
+                    "destination_operator_id": to_operator_id,
+                    "routing_request_id": routing_request_id,
+                    "interop_transfer_id": interop_transfer_id,
+                    "obligation_id": obligation_id,
                 })
 
                 result = {

@@ -1,5 +1,5 @@
 """
-BANZA Federation Conformance Runner — Slice 7
+BANZA Federation Conformance Runner — Slice 8
 
 Implements:
   FED-CERT-001  Certificate Present at Well-Known URL                    (Slice 0)
@@ -57,18 +57,26 @@ Implements:
   FED-OBL-005   obligor_signature Verifies Against Operator A Public Key (Slice 7)
   FED-OBL-006   Settlement State Transitions Are Valid                   (Slice 7)
   FED-OBL-007   Settled Obligation Contains settled_at + batch_id        (Slice 7)
+  FED-EVT-001   federation.routing.accepted Emitted on Operator B        (Slice 8)
+  FED-EVT-002   federation.payment.initiated Emitted on Operator A       (Slice 8)
+  FED-EVT-003   federation.payment.completed Emitted on Operator B       (Slice 8)
+  FED-EVT-004   federation.obligation.recorded Emitted on Operator A     (Slice 8)
+  FED-EVT-005   All Federation Events Share trace_id (INV-FED-001)       (Slice 8)
+  FED-EVT-006   Federation Events Validate Against Schema                (Slice 8)
 
 Spec: FEDERATION_TEST_SUITE_SPEC.md §Suite FED-CERT, §Suite FED-DISC,
-      §Suite FED-TRUST, §Suite FED-ROUTE, §Suite FED-EXEC, §Suite FED-OBL
+      §Suite FED-TRUST, §Suite FED-ROUTE, §Suite FED-EXEC, §Suite FED-OBL,
+      §Suite FED-EVT
 Contracts: contracts/federation/operator-certificate.json,
            contracts/federation/federation-manifest.json,
            contracts/federation/federation-routing.json,
-           contracts/federation/federation-obligation.json
+           contracts/federation/federation-obligation.json,
+           contracts/federation/federation-event.json
 
 Requires:
   cryptography>=41.0.0  for FED-CERT-002, FED-CERT-008–011, FED-DISC-007,
                         all FED-TRUST tests, all FED-ROUTE tests,
-                        all FED-EXEC tests, FED-OBL-005
+                        all FED-EXEC tests, FED-OBL-005, all FED-EVT tests
 """
 
 import argparse
@@ -87,7 +95,7 @@ from typing import Optional
 import trust_root as _tr
 from runner_infra import RunnerInfra
 
-RUNNER_VERSION = "0.8.0-slice7"
+RUNNER_VERSION = "0.9.0-slice8"
 
 # ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -129,6 +137,17 @@ def _find_obligation_schema_path() -> Optional[str]:
     for p in [
         os.path.join(this_dir, "..", "..", "contracts", "federation", "federation-obligation.json"),
         os.path.join(os.getcwd(), "contracts", "federation", "federation-obligation.json"),
+    ]:
+        if os.path.isfile(p):
+            return os.path.normpath(p)
+    return None
+
+
+def _find_event_schema_path() -> Optional[str]:
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    for p in [
+        os.path.join(this_dir, "..", "..", "contracts", "federation", "federation-event.json"),
+        os.path.join(os.getcwd(), "contracts", "federation", "federation-event.json"),
     ]:
         if os.path.isfile(p):
             return os.path.normpath(p)
@@ -398,6 +417,91 @@ def validate_obligation(obl: dict) -> list:
         sig = obl["obligor_signature"]
         if not isinstance(sig, str) or not re.match(_OBL_SIG_PATTERN, sig):
             errors.append(f"obligor_signature format invalid (expected 86 base64url chars)")
+
+    return errors
+
+
+# ── Federation event validation (FED-EVT-006) ────────────────────────────────
+
+_EVT_TYPE_ENUM = frozenset({
+    "federation.routing.received",
+    "federation.routing.accepted",
+    "federation.routing.rejected",
+    "federation.payment.initiated",
+    "federation.payment.completed",
+    "federation.payment.failed",
+    "federation.obligation.recorded",
+    "federation.obligation.settled",
+    "federation.settlement.initiated",
+    "federation.settlement.completed",
+})
+_EVT_ROUTING_TYPES = frozenset({
+    "federation.routing.received",
+    "federation.routing.accepted",
+    "federation.routing.rejected",
+    "federation.payment.initiated",
+    "federation.payment.completed",
+    "federation.payment.failed",
+})
+_EVT_OBLIGATION_TYPES = frozenset({
+    "federation.obligation.recorded",
+    "federation.obligation.settled",
+    "federation.settlement.initiated",
+    "federation.settlement.completed",
+})
+_EVT_ID_PATTERN = r"^evt-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+
+
+def validate_federation_event(evt: dict) -> list:
+    """
+    Validate a parsed federation event against federation-event.json requirements.
+    Checks base envelope fields + federation extension fields.
+    Returns list of error strings. Empty = valid.
+    """
+    if not isinstance(evt, dict):
+        return ["body is not a JSON object"]
+
+    errors = []
+
+    # Base envelope required fields
+    for f in ("id", "event_type", "aggregate_type", "aggregate_id",
+              "trace_id", "correlation_id", "payload", "created_at"):
+        if f not in evt:
+            errors.append(f"required field missing: '{f}'")
+
+    if "id" in evt:
+        if not isinstance(evt["id"], str) or not re.match(_EVT_ID_PATTERN, str(evt["id"])):
+            errors.append(f"id must match ^evt-<uuid>$, got {evt.get('id')!r}")
+
+    if "aggregate_type" in evt and evt["aggregate_type"] != "federation_payment":
+        errors.append(
+            f"aggregate_type must be 'federation_payment', got {evt['aggregate_type']!r}"
+        )
+
+    evt_type = evt.get("event_type", "")
+    if evt_type and evt_type not in _EVT_TYPE_ENUM:
+        errors.append(f"event_type {evt_type!r} not in federation event type registry")
+
+    if "payload" in evt and not isinstance(evt["payload"], dict):
+        errors.append("payload must be an object")
+
+    # Federation extension required fields
+    for f in ("federation_version", "origin_operator_id", "destination_operator_id"):
+        if f not in evt:
+            errors.append(f"required federation field missing: '{f}'")
+
+    if "federation_version" in evt and evt["federation_version"] != "1":
+        errors.append(
+            f"federation_version must be '1', got {evt['federation_version']!r}"
+        )
+
+    # Conditional: routing_request_id required for routing.* and payment.* events
+    if evt_type in _EVT_ROUTING_TYPES and "routing_request_id" not in evt:
+        errors.append(f"routing_request_id required for event_type '{evt_type}'")
+
+    # Conditional: obligation_id required for obligation.* and settlement.* events
+    if evt_type in _EVT_OBLIGATION_TYPES and "obligation_id" not in evt:
+        errors.append(f"obligation_id required for event_type '{evt_type}'")
 
     return errors
 
@@ -3505,6 +3609,18 @@ def _get_events_op_a(base_url: str) -> tuple:
         raise
 
 
+def _get_sim_b_events_http(sim_b_url: str) -> tuple:
+    """GET /federation/events on Simulated Operator B → (status, dict_or_None)."""
+    try:
+        status, _, raw = http_get(f"{sim_b_url}/federation/events")
+        try:
+            return status, json.loads(raw)
+        except json.JSONDecodeError:
+            return status, None
+    except RuntimeError as exc:
+        raise
+
+
 def _reset_exec_state(base_url: str) -> bool:
     """POST /conformance/federation/reset → True if OK."""
     try:
@@ -4362,6 +4478,11 @@ _OBL_SENDER_WALLET = "wallet-sender-test-001"
 _OBL_PAYEE_WALLET = "wallet-payee-test-001"
 _OBL_BATCH_ID = "stl-test-batch-001"
 
+# ── FED-EVT constants ─────────────────────────────────────────────────────────
+
+_EVT_RR_ID = "rr-00000000-0000-0000-0000-000000000002"
+_EVT_TRACE_ID = "tr-00000000-0000-0000-0000-000000000002"
+
 
 # ── FED-OBL helpers ───────────────────────────────────────────────────────────
 
@@ -5120,6 +5241,591 @@ def run_suite_fed_obl(
     }
 
 
+# ── FED-EVT-001 ──────────────────────────────────────────────────────────────
+
+def run_fed_evt_001(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-EVT-001 — federation.routing.accepted Emitted on Operator B
+
+    Operator B emits routing.accepted event when routing request is accepted.
+
+    Pass:   Event found; routing_request_id present; trace_id matches
+    Fail:   Event missing; routing_request_id or trace_id absent
+    Severity: STANDARD
+    Contract: federation-event.json
+    """
+    case = _make_case("FED-EVT-001", "federation.routing.accepted Emitted on Operator B")
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_EVT_RR_ID,
+        trace_id=_EVT_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        _, result = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result or result.get("routing_status") != "accepted":
+        return _fail_case(case, f"routing not accepted: {result}", ms)
+
+    try:
+        _, events_b_body = _get_sim_b_events_http(infra.sim_b_url)
+    except RuntimeError as exc:
+        return _error_case(case, f"failed to fetch Operator B events: {exc}")
+
+    events_b = (events_b_body.get("events") or []) if isinstance(events_b_body, dict) else []
+    accepted_evts = [
+        e for e in events_b
+        if e.get("event_type") == "federation.routing.accepted"
+        and e.get("routing_request_id") == _EVT_RR_ID
+    ]
+    found = len(accepted_evts) >= 1
+    evt = accepted_evts[0] if found else {}
+
+    rr_id_present = bool(evt.get("routing_request_id")) if found else False
+    trace_id_correct = evt.get("trace_id") == _EVT_TRACE_ID if found else False
+
+    assertions = [
+        _assertion("routing accepted (prerequisite)",
+                   result.get("routing_status") == "accepted", "accepted", result.get("routing_status")),
+        _assertion("federation.routing.accepted event found on Operator B",
+                   found, "found", "missing" if not found else "found"),
+        _assertion("event.routing_request_id is present",
+                   rr_id_present, _EVT_RR_ID,
+                   evt.get("routing_request_id") if found else "(no event)"),
+        _assertion("event.trace_id matches routing request trace_id",
+                   trace_id_correct, _EVT_TRACE_ID,
+                   evt.get("trace_id") if found else "(no event)"),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _EVT_RR_ID,
+        "operator_b_events_count": len(events_b),
+        "routing_accepted_event_found": found,
+        "event": evt if found else None,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-EVT-002 ──────────────────────────────────────────────────────────────
+
+def run_fed_evt_002(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-EVT-002 — federation.payment.initiated Emitted on Operator A
+
+    Operator A emits payment.initiated after debit and obligation commit.
+
+    Pass:   Event found; trace_id, routing_request_id, interop_transfer_id present
+    Fail:   Event missing; any required field absent
+    Severity: STANDARD
+    Contract: federation-event.json
+    """
+    case = _make_case("FED-EVT-002", "federation.payment.initiated Emitted on Operator A")
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_EVT_RR_ID,
+        trace_id=_EVT_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        _, result = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result or result.get("routing_status") != "accepted":
+        return _fail_case(case, f"routing not accepted: {result}", ms)
+
+    try:
+        _, events_a_body = _get_events_op_a(base_url)
+    except RuntimeError as exc:
+        return _error_case(case, f"failed to fetch Operator A events: {exc}")
+
+    events_a = (events_a_body.get("events") or []) if isinstance(events_a_body, dict) else []
+    initiated_evts = [
+        e for e in events_a
+        if e.get("event_type") == "federation.payment.initiated"
+        and e.get("routing_request_id") == _EVT_RR_ID
+    ]
+    found = len(initiated_evts) >= 1
+    evt = initiated_evts[0] if found else {}
+
+    trace_id_correct = evt.get("trace_id") == _EVT_TRACE_ID if found else False
+    rr_id_present = bool(evt.get("routing_request_id")) if found else False
+    itx_present = bool(evt.get("interop_transfer_id")) if found else False
+
+    assertions = [
+        _assertion("routing accepted (prerequisite)",
+                   result.get("routing_status") == "accepted", "accepted", result.get("routing_status")),
+        _assertion("federation.payment.initiated event found on Operator A",
+                   found, "found", "missing" if not found else "found"),
+        _assertion("event.trace_id == routing request trace_id (INV-FED-001)",
+                   trace_id_correct, _EVT_TRACE_ID,
+                   evt.get("trace_id") if found else "(no event)"),
+        _assertion("event.routing_request_id is present",
+                   rr_id_present, _EVT_RR_ID,
+                   evt.get("routing_request_id") if found else "(no event)"),
+        _assertion("event.interop_transfer_id is present",
+                   itx_present, "itx-<uuid>",
+                   evt.get("interop_transfer_id") if found else "(missing)"),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _EVT_RR_ID,
+        "operator_a_events_count": len(events_a),
+        "payment_initiated_event_found": found,
+        "event": evt if found else None,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-EVT-003 ──────────────────────────────────────────────────────────────
+
+def run_fed_evt_003(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-EVT-003 — federation.payment.completed Emitted on Operator B
+
+    Operator B emits payment.completed after crediting payee.
+
+    Pass:   Event found; trace_id and interop_transfer_id present
+    Fail:   Event missing
+    Severity: STANDARD
+    Contract: federation-event.json
+    L3 Req: FED-L3-011
+    """
+    case = _make_case("FED-EVT-003", "federation.payment.completed Emitted on Operator B")
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_EVT_RR_ID,
+        trace_id=_EVT_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        _, result = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result or result.get("routing_status") != "accepted":
+        return _fail_case(case, f"routing not accepted: {result}", ms)
+
+    try:
+        _, events_b_body = _get_sim_b_events_http(infra.sim_b_url)
+    except RuntimeError as exc:
+        return _error_case(case, f"failed to fetch Operator B events: {exc}")
+
+    events_b = (events_b_body.get("events") or []) if isinstance(events_b_body, dict) else []
+    completed_evts = [
+        e for e in events_b
+        if e.get("event_type") == "federation.payment.completed"
+        and e.get("routing_request_id") == _EVT_RR_ID
+    ]
+    found = len(completed_evts) >= 1
+    evt = completed_evts[0] if found else {}
+
+    trace_id_correct = evt.get("trace_id") == _EVT_TRACE_ID if found else False
+    itx_present = bool(evt.get("interop_transfer_id")) if found else False
+
+    assertions = [
+        _assertion("routing accepted (prerequisite)",
+                   result.get("routing_status") == "accepted", "accepted", result.get("routing_status")),
+        _assertion("federation.payment.completed event found on Operator B",
+                   found, "found", "missing" if not found else "found"),
+        _assertion("event.trace_id == routing request trace_id",
+                   trace_id_correct, _EVT_TRACE_ID,
+                   evt.get("trace_id") if found else "(no event)"),
+        _assertion("event.interop_transfer_id is present",
+                   itx_present, "itx-<uuid>",
+                   evt.get("interop_transfer_id") if found else "(missing)"),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _EVT_RR_ID,
+        "operator_b_events_count": len(events_b),
+        "payment_completed_event_found": found,
+        "event": evt if found else None,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-EVT-004 ──────────────────────────────────────────────────────────────
+
+def run_fed_evt_004(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-EVT-004 — federation.obligation.recorded Emitted on Operator A
+
+    Operator A emits obligation.recorded after recording the obligation.
+    obligation_id must match the recorded obligation.
+
+    Pass:   Event found; obligation_id present and matches; trace_id correct
+    Fail:   Event missing; wrong obligation_id
+    Severity: STANDARD
+    Contract: federation-event.json
+    """
+    case = _make_case("FED-EVT-004", "federation.obligation.recorded Emitted on Operator A")
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_EVT_RR_ID,
+        trace_id=_EVT_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        _, result = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result or result.get("routing_status") != "accepted":
+        return _fail_case(case, f"routing not accepted: {result}", ms)
+
+    try:
+        _, obligation = _get_obligation_op_a(base_url, _EVT_RR_ID)
+    except RuntimeError as exc:
+        return _error_case(case, f"failed to fetch obligation: {exc}")
+
+    recorded_obligation_id = obligation.get("obligation_id") if obligation else None
+
+    try:
+        _, events_a_body = _get_events_op_a(base_url)
+    except RuntimeError as exc:
+        return _error_case(case, f"failed to fetch Operator A events: {exc}")
+
+    events_a = (events_a_body.get("events") or []) if isinstance(events_a_body, dict) else []
+    obl_evts = [
+        e for e in events_a
+        if e.get("event_type") == "federation.obligation.recorded"
+        and e.get("routing_request_id") == _EVT_RR_ID
+    ]
+    found = len(obl_evts) >= 1
+    evt = obl_evts[0] if found else {}
+
+    trace_id_correct = evt.get("trace_id") == _EVT_TRACE_ID if found else False
+    obl_id_present = bool(evt.get("obligation_id")) if found else False
+    obl_id_matches = (
+        evt.get("obligation_id") == recorded_obligation_id
+        if (found and recorded_obligation_id) else False
+    )
+
+    assertions = [
+        _assertion("routing accepted (prerequisite)",
+                   result.get("routing_status") == "accepted", "accepted", result.get("routing_status")),
+        _assertion("federation.obligation.recorded event found on Operator A",
+                   found, "found", "missing" if not found else "found"),
+        _assertion("event.trace_id == routing request trace_id",
+                   trace_id_correct, _EVT_TRACE_ID,
+                   evt.get("trace_id") if found else "(no event)"),
+        _assertion("event.obligation_id is present",
+                   obl_id_present, "ob-<uuid>",
+                   evt.get("obligation_id") if found else "(missing)"),
+        _assertion("event.obligation_id matches recorded obligation",
+                   obl_id_matches,
+                   recorded_obligation_id or "ob-<uuid>",
+                   evt.get("obligation_id") if found else "(no event)"),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _EVT_RR_ID,
+        "recorded_obligation_id": recorded_obligation_id,
+        "operator_a_events_count": len(events_a),
+        "obligation_recorded_event_found": found,
+        "event": evt if found else None,
+        "obligation_id_matches": obl_id_matches,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-EVT-005 ──────────────────────────────────────────────────────────────
+
+def run_fed_evt_005(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-EVT-005 — All Federation Events for Same Payment Share trace_id (INV-FED-001)
+
+    Every federation event for the same payment carries the identical trace_id
+    on both Operator A and Operator B.
+
+    Pass:   All trace_ids identical across both operator event streams
+    Fail:   Any event has a different trace_id
+    Severity: CRITICAL
+    Invariant: INV-FED-001
+    Contract: federation-event.json
+    L3 Req: FED-L3-012
+    """
+    case = _make_case(
+        "FED-EVT-005",
+        "All Federation Events for Same Payment Share trace_id (INV-FED-001)",
+    )
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_EVT_RR_ID,
+        trace_id=_EVT_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        _, result = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result or result.get("routing_status") != "accepted":
+        return _fail_case(case, f"routing not accepted: {result}", ms)
+
+    try:
+        _, events_a_body = _get_events_op_a(base_url)
+    except RuntimeError as exc:
+        return _error_case(case, f"failed to fetch Operator A events: {exc}")
+
+    try:
+        _, events_b_body = _get_sim_b_events_http(infra.sim_b_url)
+    except RuntimeError as exc:
+        return _error_case(case, f"failed to fetch Operator B events: {exc}")
+
+    events_a = (events_a_body.get("events") or []) if isinstance(events_a_body, dict) else []
+    events_b = (events_b_body.get("events") or []) if isinstance(events_b_body, dict) else []
+
+    payment_evts_a = [
+        e for e in events_a
+        if e.get("routing_request_id") == _EVT_RR_ID
+        or e.get("trace_id") == _EVT_TRACE_ID
+    ]
+    payment_evts_b = [
+        e for e in events_b
+        if e.get("routing_request_id") == _EVT_RR_ID
+        or e.get("trace_id") == _EVT_TRACE_ID
+    ]
+    all_evts = payment_evts_a + payment_evts_b
+
+    all_trace_ids = [e.get("trace_id") for e in all_evts]
+    unique_trace_ids = list(set(all_trace_ids))
+    all_match = len(all_trace_ids) > 0 and all(t == _EVT_TRACE_ID for t in all_trace_ids)
+    mismatched_count = sum(1 for t in all_trace_ids if t != _EVT_TRACE_ID)
+
+    assertions = [
+        _assertion("routing accepted (prerequisite)",
+                   result.get("routing_status") == "accepted", "accepted", result.get("routing_status")),
+        _assertion("events collected from both operators",
+                   len(payment_evts_a) > 0 and len(payment_evts_b) > 0,
+                   ">0 each", f"A:{len(payment_evts_a)} B:{len(payment_evts_b)}"),
+        _assertion("all federation events share identical trace_id (INV-FED-001)",
+                   all_match, _EVT_TRACE_ID,
+                   str(unique_trace_ids) if not all_match else _EVT_TRACE_ID),
+        _assertion("zero events with mismatched trace_id",
+                   mismatched_count == 0, "0", mismatched_count),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _EVT_RR_ID,
+        "expected_trace_id": _EVT_TRACE_ID,
+        "operator_a_payment_events": len(payment_evts_a),
+        "operator_b_payment_events": len(payment_evts_b),
+        "all_trace_ids": all_trace_ids,
+        "unique_trace_ids": unique_trace_ids,
+        "all_match": all_match,
+        "trace_id_cross_check": {"all_match": all_match, "trace_id": _EVT_TRACE_ID},
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-EVT-006 ──────────────────────────────────────────────────────────────
+
+def run_fed_evt_006(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-EVT-006 — Federation Events Validate Against Schema
+
+    All collected federation events comply with federation-event.json schema.
+
+    Pass:   All events validate
+    Fail:   Any event fails validation
+    Severity: STANDARD
+    Contract: federation-event.json
+    """
+    case = _make_case("FED-EVT-006", "Federation Events Validate Against Schema")
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_EVT_RR_ID,
+        trace_id=_EVT_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        _, result = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result or result.get("routing_status") != "accepted":
+        return _fail_case(case, f"routing not accepted: {result}", ms)
+
+    try:
+        _, events_a_body = _get_events_op_a(base_url)
+    except RuntimeError as exc:
+        return _error_case(case, f"failed to fetch Operator A events: {exc}")
+
+    try:
+        _, events_b_body = _get_sim_b_events_http(infra.sim_b_url)
+    except RuntimeError as exc:
+        return _error_case(case, f"failed to fetch Operator B events: {exc}")
+
+    events_a = (events_a_body.get("events") or []) if isinstance(events_a_body, dict) else []
+    events_b = (events_b_body.get("events") or []) if isinstance(events_b_body, dict) else []
+    all_evts = events_a + events_b
+
+    if not all_evts:
+        return _fail_case(case, "no events collected from either operator", ms)
+
+    validation_results = []
+    for evt in all_evts:
+        evt_id = evt.get("id") or evt.get("event_type") or "(unknown)"
+        errors = validate_federation_event(evt)
+        validation_results.append({
+            "event_id": evt_id,
+            "event_type": evt.get("event_type"),
+            "valid": len(errors) == 0,
+            "errors": errors,
+        })
+
+    all_valid = all(r["valid"] for r in validation_results)
+    failed_events = [r for r in validation_results if not r["valid"]]
+
+    assertions = [
+        _assertion("routing accepted (prerequisite)",
+                   result.get("routing_status") == "accepted", "accepted", result.get("routing_status")),
+        _assertion(f"{len(all_evts)} events collected from both operators",
+                   len(all_evts) > 0, ">0", len(all_evts)),
+        _assertion("all federation events validate against federation-event.json",
+                   all_valid,
+                   "all valid",
+                   f"{len(failed_events)} failed" if failed_events else "all valid"),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _EVT_RR_ID,
+        "total_events": len(all_evts),
+        "operator_a_events": len(events_a),
+        "operator_b_events": len(events_b),
+        "schema_validation_results": validation_results,
+        "all_valid": all_valid,
+        "failed_events": failed_events,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-EVT suite runner ──────────────────────────────────────────────────────
+
+def run_suite_fed_evt(
+    base_url: str,
+    infra: "RunnerInfra" = None,
+    op_a_priv=None,
+) -> dict:
+    """
+    Run all 6 FED-EVT tests.
+
+    Requires infra (Sim Op B) and op_a_priv (Operator A signing key).
+    Without both, all tests are skipped.
+    """
+    def _skip(case_id, title, reason):
+        return _skip_case(_make_case(case_id, title), reason)
+
+    evt_avail = infra is not None and op_a_priv is not None
+
+    if not evt_avail:
+        reason = "event infrastructure not available (install cryptography)"
+        cases = [
+            _skip(f"FED-EVT-{str(i).zfill(3)}", t, reason)
+            for i, t in [
+                (1, "federation.routing.accepted Emitted on Operator B"),
+                (2, "federation.payment.initiated Emitted on Operator A"),
+                (3, "federation.payment.completed Emitted on Operator B"),
+                (4, "federation.obligation.recorded Emitted on Operator A"),
+                (5, "All Federation Events for Same Payment Share trace_id (INV-FED-001)"),
+                (6, "Federation Events Validate Against Schema"),
+            ]
+        ]
+    else:
+        cases = [
+            run_fed_evt_001(base_url, infra, op_a_priv),
+            run_fed_evt_002(base_url, infra, op_a_priv),
+            run_fed_evt_003(base_url, infra, op_a_priv),
+            run_fed_evt_004(base_url, infra, op_a_priv),
+            run_fed_evt_005(base_url, infra, op_a_priv),
+            run_fed_evt_006(base_url, infra, op_a_priv),
+        ]
+
+    passed = sum(1 for c in cases if c["status"] == "PASS")
+    failed = sum(1 for c in cases if c["status"] == "FAIL")
+    skipped = sum(1 for c in cases if c["status"] in ("SKIP", "ERROR"))
+
+    return {
+        "suite_id": "FED-EVT",
+        "suite_name": "Federation Event Emission",
+        "blocking": True,
+        "passed": passed,
+        "failed": failed,
+        "skipped": skipped,
+        "cases": cases,
+    }
+
+
 # ── FED-ROUTE suite runner ────────────────────────────────────────────────────
 
 def run_suite_fed_route(
@@ -5332,19 +6038,20 @@ def run_federation_mode(
     run_route = fed_suite in (None, "route")
     run_exec = fed_suite in (None, "exec")
     run_obl = fed_suite in (None, "obl")
+    run_evt = fed_suite in (None, "evt")
 
     if (fed_suite is not None
             and not run_cert and not run_disc and not run_trust
-            and not run_route and not run_exec and not run_obl):
+            and not run_route and not run_exec and not run_obl and not run_evt):
         print(f"ERROR: Unknown --fed-suite value: {fed_suite!r}. "
-              f"Available: cert, disc, trust, route, exec, obl",
+              f"Available: cert, disc, trust, route, exec, obl, evt",
               file=sys.stderr)
         return 2
 
     suite_label = {
         None: (
             "FED-CERT-001–011, FED-DISC-001–008, FED-TRUST-001–009, "
-            "FED-ROUTE-001–012, FED-EXEC-001–008, FED-OBL-001–007"
+            "FED-ROUTE-001–012, FED-EXEC-001–008, FED-OBL-001–007, FED-EVT-001–006"
         ),
         "cert": "FED-CERT-001–011",
         "disc": "FED-DISC-001–008",
@@ -5352,11 +6059,12 @@ def run_federation_mode(
         "route": "FED-ROUTE-001–012",
         "exec": "FED-EXEC-001–008",
         "obl": "FED-OBL-001–007",
+        "evt": "FED-EVT-001–006",
     }.get(fed_suite, fed_suite)
 
     print(f"BANZA Federation Conformance Runner {RUNNER_VERSION}")
     print(f"Operator: {base_url}")
-    print(f"Slice:    7 — {suite_label}")
+    print(f"Slice:    8 — {suite_label}")
     print()
 
     schema_path = _find_schema_path()
@@ -5648,6 +6356,16 @@ def run_federation_mode(
                 infra=infra,
                 op_a_priv=op_a_priv if _tr.CRYPTO_AVAILABLE else None,
             ))
+        if run_evt:
+            # Restore Sim Op B to valid state for federation event tests
+            if infra and manifest_b and cert_b_valid:
+                infra.configure_sim_b(manifest_b, cert_b_valid)
+                infra.set_brl_empty()
+            suite_results.append(run_suite_fed_evt(
+                base_url,
+                infra=infra,
+                op_a_priv=op_a_priv if _tr.CRYPTO_AVAILABLE else None,
+            ))
     finally:
         if infra:
             infra.stop()
@@ -5701,6 +6419,8 @@ def run_federation_mode(
             parts.append("FED-EXEC-001–008")
         if "FED-OBL" in suite_ids:
             parts.append("FED-OBL-001–007")
+        if "FED-EVT" in suite_ids:
+            parts.append("FED-EVT-001–006")
         print(f"{', '.join(parts)}: ALL PASS")
         print()
         print("What is now proven:")
@@ -5772,6 +6492,13 @@ def run_federation_mode(
             print("  ✓ Backward transition (settled → in_netting) rejected    (state machine)")
             print("  ✓ Settled obligation contains settled_at (ISO 8601)")
             print("  ✓ Settled obligation contains settlement_batch_id")
+        if "FED-EVT" in suite_ids:
+            print("  ✓ federation.routing.accepted event on Operator B")
+            print("  ✓ federation.payment.initiated event on Operator A")
+            print("  ✓ federation.payment.completed event on Operator B")
+            print("  ✓ federation.obligation.recorded event on Operator A with obligation_id")
+            print("  ✓ All 4 event types carry identical trace_id            (INV-FED-001)")
+            print("  ✓ All federation events validate against federation-event.json schema")
     elif total_fail > 0:
         print(f"{', '.join(suite_ids)}: FAIL  ({total_pass} passed, {total_fail} failed, {total_skip} skipped)")
     else:
@@ -5784,7 +6511,7 @@ def run_federation_mode(
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "runner_version": RUNNER_VERSION,
         "federation_mode": True,
-        "slice": "7",
+        "slice": "8",
         "operator_url": base_url,
         "schema_path": schema_path,
         "crypto_available": _tr.CRYPTO_AVAILABLE,
@@ -5810,14 +6537,15 @@ def run_federation_mode(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="BANZA Federation Conformance Runner (FED-CERT + FED-DISC + FED-TRUST + FED-ROUTE + FED-EXEC + FED-OBL)"
+        description="BANZA Federation Conformance Runner "
+                    "(FED-CERT + FED-DISC + FED-TRUST + FED-ROUTE + FED-EXEC + FED-OBL + FED-EVT)"
     )
     parser.add_argument("--url", required=True,
                         help="Base URL of the operator (e.g. http://localhost:8099)")
     parser.add_argument("--output", help="Write JSON report to this file")
     parser.add_argument("--quiet", action="store_true", help="Suppress passing test output")
     parser.add_argument("--fed-suite", dest="fed_suite",
-                        help="Run only this suite: cert | disc | trust | route | exec | obl (default: all)")
+                        help="Run only this suite: cert | disc | trust | route | exec | obl | evt (default: all)")
     args = parser.parse_args()
 
     sys.exit(run_federation_mode(
