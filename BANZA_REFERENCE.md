@@ -495,31 +495,315 @@ O BanzAI guia operadores no processo de certificação. Não concede a certifica
 
 ## 10. Federação
 
-A federação é uma camada de primeira classe na arquitectura BANZA. Define como operadores certificados comunicam, encaminham pagamentos e liquidam entre si.
+A federação é o mecanismo pelo qual operadores certificados BANZA formam uma rede — permitindo que um cliente com carteira num operador pague um comerciante com carteira noutro operador, sem acordos bilaterais, sem intermediários adicionais, e com as mesmas garantias financeiras de qualquer pagamento intra-operador.
 
-### Estado Actual
+---
 
-A federação encontra-se na fase de desenho. Todos os pagamentos são actualmente processados pelo operador de referência the reference operator. O kernel foi desenhado com os primitivos necessários:
-- Propagação de `trace_id` através de fronteiras de serviço
-- Declaração de manifesto de operador com capacidades de encaminhamento
-- Arquitectura de encaminhamento baseada em capacidades
-- Isolamento de liquidação entre operadores
+### Por que a Federação Existe
 
-### Requisitos para Federação
+Sem federação, cada operador é uma ilha.
 
-- Ambos os operadores com Certificação Nível 3+ (Federation Operator)
-- Conta de liquidação partilhada com BANZA
-- Manifesto de federação com capacidades de encaminhamento
-- Propagação cross-operador de trace_id
-- Liquidação atómica cross-operador no ledger
+Um cliente com carteira no Operador A pode pagar comerciantes no Operador A. Ponto final. O comerciante no Operador B está fora do alcance — a menos que exista um acordo bilateral explícito entre os dois operadores, negociado caso a caso, fora do protocolo.
 
-### Roadmap de Federação
+Isto não é uma limitação técnica. É uma limitação de confiança. O Operador A não tem como saber, de forma verificável, que o Operador B é um participante legítimo da rede. E sem confiança verificável, não existe encaminhamento seguro.
 
-| Marco | Descrição | Alvo |
-|---|---|---|
-| RFC de federação | Definir protocolo inter-operadores | H1 2027 |
+A federação resolve este problema ao nível do protocolo — sem acordos bilaterais, sem intermediários, sem negociação. A confiança é provada por certificados emitidos pelo BANZA. O encaminhamento segue os contratos do protocolo. A liquidação é executada por regras abertas.
+
+---
+
+### Antes da Federação
+
+```
+Cliente A                    Cliente B
+    ↓                            ↓
+Operador A                   Operador B
+(rede fechada)               (rede fechada)
+
+O Cliente A não pode pagar o Comerciante B.
+O Comerciante B não pode receber do Cliente A.
+```
+
+Dois operadores certificados. Duas redes isoladas. Nenhuma ligação entre elas.
+
+---
+
+### Com Federação
+
+```
+Cliente A                                      Comerciante B
+    ↓                                               ↑
+Operador A  ←——— protocolo BANZA ———→  Operador B
+    ↓                                               ↑
+  (debita                                    (credita
+  Cliente A)                              Comerciante B)
+
+O pagamento cruza a fronteira do operador.
+As garantias do protocolo aplicam-se em toda a cadeia.
+```
+
+Um cliente de qualquer operador pode pagar um comerciante em qualquer operador. Cada novo operador certificado que entra na rede torna todos os outros operadores mais úteis.
+
+---
+
+### Como Funciona a Federação
+
+A federação ocorre em cinco momentos distintos:
+
+**1. Confiança**
+
+Antes de qualquer pagamento, o Operador A verifica que o Operador B é um participante legítimo da rede BANZA. Esta verificação é criptográfica — não depende de uma chamada ao BANZA em tempo real.
+
+O BANZA emite um certificado a cada operador certificado. O certificado está assinado com a chave do BANZA e declara: "Este operador foi certificado ao nível X, com estas capacidades, válido até esta data." Qualquer operador pode verificar qualquer certificado sem contactar o BANZA.
+
+O BANZA mantém uma Lista de Revogação (BRL — BANZA Revocation List), publicada a cada seis horas. Antes de encaminhar um pagamento, o Operador A verifica que o Operador B não está revogado ou suspenso.
+
+A confiança é sempre bidireccional: o Operador B também verifica o Operador A antes de aceitar um pedido de encaminhamento.
+
+**2. Encaminhamento**
+
+O Operador A envia um pedido de encaminhamento ao Operador B, assinado com a sua chave privada:
+
+```
+"Quero encaminhar um pagamento de 5.000 AOA do Cliente A para o Comerciante B."
+```
+
+O pedido inclui o identificador único da transacção (`trace_id`) que será partilhado por todos os artefactos do pagamento em ambos os operadores.
+
+**3. Aceitação e Execução**
+
+Quando o Operador B aceita o pedido, o pagamento é executado nesse preciso momento. A aceitação e a execução são simultâneas — não dois momentos separados.
+
+No instante em que o Operador B responde "aceite", a carteira do Comerciante B já foi creditada. O Comerciante B recebe o dinheiro imediatamente.
+
+**4. Obrigação**
+
+O Operador A recebe a confirmação de aceitação e, de forma atómica (numa única operação da base de dados), faz duas coisas:
+
+- Debita a carteira do Cliente A
+- Regista uma obrigação: "O Operador A deve 5.000 AOA ao Operador B"
+
+A obrigação está assinada pelo Operador A. É não-repudiável. O Operador A não pode mais tarde negar que deve ao Operador B.
+
+**5. Liquidação**
+
+As obrigações acumulam-se ao longo de um ciclo de compensação (tipicamente 24 horas). No fim do ciclo, os dois operadores calculam independentemente a posição líquida:
+
+```
+O Operador A deve ao Operador B:  150.000 AOA  (múltiplos pagamentos)
+O Operador B deve ao Operador A:   40.000 AOA  (pagamentos no sentido inverso)
+─────────────────────────────────────────────
+Posição líquida:                  110.000 AOA  (o Operador A deve ao Operador B)
+```
+
+Uma única transferência bancária liquida todos os pagamentos do ciclo. Não uma transferência por pagamento — uma por ciclo. A eficiência de liquidação escala com o volume.
+
+---
+
+### Exemplo Prático
+
+**Situação:** O Cliente Ana tem carteira no Operador A. O Comerciante Bento tem carteira no Operador B. A Ana quer pagar 2.000 AOA ao Bento.
+
+```
+1. A Ana inicia o pagamento na aplicação do Operador A.
+   → O Operador A identifica que o Bento está no Operador B.
+
+2. O Operador A verifica o certificado do Operador B.
+   → O certificado está válido. O Operador B não está revogado.
+   → O Operador B é um membro legítimo da rede BANZA.
+
+3. O Operador A envia um pedido de encaminhamento ao Operador B (assinado):
+   "Pedido rr-abc: pagar 2.000 AOA ao Bento (trace: tr-xyz)"
+
+4. O Operador B verifica o certificado do Operador A (confiança bidireccional).
+   → Identifica a carteira do Bento. A carteira está activa.
+   → Credita 2.000 AOA na carteira do Bento.
+   → Responde: "Aceite. Transfer ID: itx-def"
+
+5. O Operador A recebe a confirmação (numa operação atómica):
+   → Debita 2.000 AOA da carteira da Ana.
+   → Regista obrigação: "Operador A deve 2.000 AOA ao Operador B (rr-abc)"
+
+6. O Bento recebe notificação de pagamento. O saldo subiu 2.000 AOA.
+   A Ana recebe confirmação. O saldo baixou 2.000 AOA.
+
+7. No fim do ciclo de 24 horas:
+   → Os operadores calculam a posição líquida bilateral.
+   → O Operador A executa uma única transferência bancária ao Operador B.
+   → Todas as obrigações do ciclo são marcadas como liquidadas.
+```
+
+Em toda a cadeia, o mesmo `trace_id` (tr-xyz) aparece em todos os artefactos: no pedido de encaminhamento, na resposta, na obrigação, nas entradas de ledger de ambos os operadores, e nos eventos emitidos. Qualquer auditor pode reconstruir o pagamento completo a partir do `trace_id` — nos dois operadores — sem cooperação de nenhum deles.
+
+---
+
+### Obrigações
+
+Uma obrigação é o registo formal de que um operador deve dinheiro a outro.
+
+Quando o Operador B aceita um pagamento de encaminhamento, está a assumir um risco: creditou o comerciante mas ainda não recebeu o dinheiro. A obrigação do Operador A — assinada criptograficamente — é o compromisso de que o pagamento será liquidado.
+
+Obrigações têm ciclo de vida:
+
+```
+pendente → em compensação → liquidada
+```
+
+Uma obrigação não pode transitar de "liquidada" para "pendente". A imutabilidade é uma propriedade do protocolo, não da base de dados de cada operador.
+
+O invariante fundamental: o montante na obrigação é sempre igual ao montante no pedido de encaminhamento. Nenhuma taxa, nenhum desconto, nenhum arredondamento é aplicado dentro do montante transferido entre operadores. Taxas são entradas de ledger separadas.
+
+---
+
+### Compensação (Netting)
+
+A compensação é o processo pelo qual os operadores calculam e liquidam as posições líquidas ao fim de cada ciclo.
+
+Sem compensação, cada pagamento exigiria uma transferência bancária imediata. Com compensação bilateral, centenas de pagamentos em sentidos opostos colapsam numa única transferência.
+
+```
+Exemplo de ciclo de 24 horas entre o Operador A e o Operador B:
+
+  Operador A → Operador B:  842 pagamentos  →  4.210.000 AOA brutos
+  Operador B → Operador A:  318 pagamentos  →  1.590.000 AOA brutos
+  ─────────────────────────────────────────────────────────────────
+  Posição líquida:                           →  2.620.000 AOA
+  Transferências bancárias executadas:        →  1 (não 1.160)
+```
+
+A compensação é sempre bilateral e independente: cada operador calcula a posição líquida de forma autónoma. Ambos devem chegar ao mesmo resultado antes de qualquer transferência ser executada. Se os resultados divergem, a liquidação é suspensa até a discrepância ser identificada e resolvida.
+
+---
+
+### O Papel do BanzAI na Federação
+
+O BanzAI é o Sistema Operativo do Protocolo. Na federação, o BanzAI observa, verifica e analisa. Nunca decide, nunca executa.
+
+**O BanzAI não:**
+
+```
+✗ Executa pagamentos
+✗ Aprova pagamentos
+✗ Encaminha pagamentos
+✗ Detém fundos
+✗ Emite certificados (isso é o BANZA)
+✗ Aprova certificações (isso é o BANZA)
+✗ Governa a federação (isso é o BANZA via protocolo)
+```
+
+**O BanzAI faz:**
+
+```
+✓ Avalia a prontidão de um operador para certificação
+✓ Executa o conformance suite (79 testes de federação)
+✓ Verifica asserções de confiança (a 9 etapas do protocolo de trust)
+✓ Monitoriza a saúde da rede de federação
+✓ Gera relatórios de reconciliação cross-operador
+✓ Auditoria de cadeias de pagamento via trace_id
+✓ Identifica discrepâncias de obrigações antes da compensação
+```
+
+A distinção é fundamental: o BanzAI é infraestrutura de observabilidade e avaliação. A federação ocorre entre operadores. O BANZA é a autoridade. O BanzAI é o instrumento de verificação.
+
+---
+
+### Modelo de Autoridade
+
+```
+       BANZA
+       (Protocolo — Autoridade)
+         │
+         │  emite certificados
+         │  mantém lista de revogação
+         │  aprova certificação
+         │  define as regras
+         ▼
+       BanzAI
+       (Sistema Operativo do Protocolo)
+         │
+         │  avalia conformidade
+         │  verifica trust
+         │  audita payments
+         │  nunca decide
+         ▼
+      Operadores
+      (Participantes)
+         │
+         │  implementam o protocolo
+         │  processam pagamentos
+         │  liquidam obrigações
+         ↕
+      Operadores
+      (entre si, via protocolo)
+```
+
+Nenhum operador tem autoridade sobre outro operador. A autoridade reside no protocolo — nas regras abertas, nos contratos publicados, nos invariantes verificáveis. O BANZA é a entidade de governança que mantém essas regras.
+
+---
+
+### Cadeia de Confiança
+
+```
+BANZA
+  │  assina com chave privada do BANZA
+  ▼
+Certificado do Operador B
+  │  "Este operador é certificado ao nível 3. Chave pública: ed25519:xxx. Válido até: 2026-08-29."
+  ▼
+Verificado pelo Operador A
+  │  usando a chave pública do BANZA (distribuída com o SDK)
+  │  sem contactar o BANZA em tempo real
+  ▼
+Confiança estabelecida
+  │  Operador B é um participante legítimo
+  ▼
+Encaminhamento seguro
+```
+
+A confiança é sempre transitiva através do BANZA, nunca bilateral. O Operador A não precisa de conhecer o Operador B. Ambos conhecem o BANZA. O certificado do BANZA é a ponte.
+
+---
+
+### Por que a Federação Importa
+
+**Para comerciantes**
+
+Um comerciante certificado num operador pode receber pagamentos de clientes em qualquer outro operador. Não precisa de estar em múltiplas redes. Não precisa de acordos com múltiplos operadores. A sua carteira num único operador torna-se acessível a toda a rede.
+
+**Para clientes**
+
+Um cliente pode pagar qualquer comerciante em qualquer operador certificado, usando apenas a aplicação do seu operador. A fragmentação da rede — onde a aplicação A só funciona com comerciantes A — deixa de existir.
+
+**Para operadores**
+
+Cada novo operador certificado torna todos os outros operadores mais úteis. Um operador com 100.000 clientes que entra na rede com um parceiro de 500.000 clientes não soma 600.000 clientes à rede — multiplica a capacidade de pagamento de todos. Este é o efeito de rede de Metcalfe: o valor de uma rede cresce com o quadrado dos seus participantes.
+
+**Para reguladores**
+
+A federação é auditável por design. O `trace_id` de qualquer pagamento cross-operador existe em ambos os operadores, em todos os artefactos: pedido de encaminhamento, obrigação, entradas de ledger, eventos. Um regulador pode reconstruir qualquer pagamento federado completo, em ambos os operadores, sem cooperação de nenhum deles. Nenhuma informação é privada ao protocolo — apenas ao operador específico.
+
+**Para investidores e bancos**
+
+A federação transforma o BANZA de um conjunto de operadores isolados numa rede de pagamentos unificada. O valor da rede não pertence a nenhum operador — pertence ao protocolo. Cada operador que entra aumenta o valor de todos os outros. Este modelo de crescimento é estruturalmente diferente do modelo proprietário, onde o valor fica capturado no operador dominante.
+
+---
+
+### Estado da Especificação e Roadmap
+
+A especificação completa de federação foi concluída em Maio de 2026. A arquitectura está definida. Os contratos estão especificados. O modelo de conformance tem 79 testes definidos.
+
+| Fase | Descrição | Estado |
+|------|-----------|--------|
+| Especificação de arquitectura (ADR-026) | Modelo de trust, certificados, BRL | ✓ Concluído |
+| Contratos de federação | operator-certificate, federation-routing, federation-obligation, federation-event, federation-manifest | ✓ Concluído |
+| Invariantes de federação (18) | INV-TRUST-*, INV-FED-*, INV-FED-LEDGER-* | ✓ Concluído |
+| Fluxo de protocolo (10 fases) | Da descoberta à liquidação final | ✓ Concluído |
+| Modelo de conformance (79 testes) | Suites FED-CERT a FED-FAIL | ✓ Concluído |
+| Implementação do runner | Extensão do banza-conformance com modo --federation | H1 2027 |
+| Implementação do kernel | InteropRoutingEngine, CrossOperatorSettlementProvider | H1 2027 |
 | Operadores piloto | Dois operadores em federação controlada | H2 2027 |
-| Federação aberta | Qualquer operador Nível 4 pode federar | 2028 |
+| Federação aberta | Qualquer operador certificado pode federar | 2028 |
+
+A implementação segue a especificação — não o inverte. Nenhum código de federação será escrito antes de a especificação estar validada. A especificação está validada.
 
 ---
 
