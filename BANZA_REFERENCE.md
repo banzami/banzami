@@ -1,871 +1,1023 @@
-# BANZA — Documento de Referência do Protocolo
+# BANZA — Protocol Reference
 
 **Version:** 1.0  
-**Date:** 2026-05-30  
+**Date:** 2026-06-01  
 **Status:** Official  
-**Authority:** ADR-025
+**Authority:** ADR-025, ADR-026, ADR-028, ADR-029
 
 ---
 
-## Ecosystem Hierarchy
+## Table of Contents
+
+1. [Introduction](#1-introduction)
+2. [Why BANZA Exists](#2-why-banza-exists)
+3. [Core Principles](#3-core-principles)
+4. [Certification](#4-certification)
+5. [Federation](#5-federation)
+6. [Trust](#6-trust)
+7. [BanzAI](#7-banzai)
+8. [Operators](#8-operators)
+9. [Developer Resources](#9-developer-resources)
+10. [Governance](#10-governance)
+11. [Roadmap](#11-roadmap)
+12. [FAQ](#12-faq)
+
+---
+
+## 1. Introduction
+
+**BANZA is the open financial infrastructure protocol for Angola** — the rules, contracts, and certification framework that any operator can implement to process payments, and that any operator can use to exchange payments with any other operator.
+
+BANZA is not a bank. Not a product. Not an API. It is the protocol layer beneath all of those: the set of open rules that make interoperability possible without bilateral agreements.
+
+### The Four Protocol Properties
+
+| Property | What the protocol guarantees |
+|----------|------------------------------|
+| **Public rules** | The specification — RFCs, ADRs, conformance suite — is publicly available. No documentation is behind an NDA. |
+| **Open certification** | Any legal entity that passes the conformance suite becomes a certified BANZA operator. No institutional approval required. No bilateral agreement. |
+| **Verifiable invariants** | Financial properties are enforced by the Rust kernel and verifiable by any independent auditor. Instant settlement is not a contractual promise — it is a kernel invariant. |
+| **Federation** | Certified operators can route payments between each other without bilateral agreements, because both implement the same open protocol. |
+
+### Ecosystem Hierarchy
 
 ```
 BANZA    = open financial infrastructure protocol        ← THIS DOCUMENT
 BanzAI   = Protocol Operating System
-the reference operator  = reference operator implementation
+Operators = certified entities that implement the protocol
 ```
 
-## Scope
+The dependency runs in one direction only: operators depend on BANZA; BANZA never depends on any operator.
 
-This document defines only: **the BANZA open financial infrastructure protocol** — its rules, invariants, governance, certification, and federation model.
+### Scope of This Document
 
-Anything outside this scope is defined in:
-- [BANZAI_REFERENCE.md](../banzai/BANZAI_REFERENCE.md) — The BanzAI Protocol OS
-- [BANZA_REFERENCE.md](../banza/BANZA_REFERENCE.md) — The the reference operator reference operator
+This document defines the BANZA open financial infrastructure protocol — its rules, invariants, governance, certification, and federation model. It is the primary source for the `banza.network` website and the onboarding reference for operators, developers, and regulators.
 
----
-
-## Índice
-
-### Parte I — O Problema e a Solução
-1. O Problema: Angola Tem as Peças
-2. A Camada que Falta
-3. O que é o BANZA
-
-### Parte II — Arquitectura do Protocolo
-4. Princípios Fundamentais
-5. Arquitectura do Ecossistema
-6. Representação Monetária (Normativa)
-7. Invariantes Financeiros
-
-### Parte III — Governança e Certificação
-8. Governança do Protocolo
-9. Modelo de Certificação
-10. Federação
-
-### Parte IV — Visão
-11. Roadmap do Protocolo
-12. Declaração de Visão
+For the BanzAI Protocol OS: see `BANZAI_REFERENCE.md`.
 
 ---
 
-## 1. O Problema: Angola Tem as Peças
+## 2. Why BANZA Exists
 
-Angola tem bancos. Vinte e três instituições financeiras licenciadas. Um sistema de liquidação interbancária — o EMIS. Redes de caixas automáticos. Aplicações de homebanking. O Multicaixa. Dezasseis milhões de pessoas com telemóvel.
+### The Problem
 
-Angola tem as peças. O que Angola não tem é a camada que as conecta.
+Angola has banks — twenty-three licensed financial institutions. A national interbank settlement system: EMIS. ATM networks. Homebanking apps. Multicaixa. Sixteen million people with a mobile phone.
 
-### O que existe não é suficiente
+Angola has the pieces. What Angola does not have is the layer that connects them.
 
-Para integrar pagamentos, uma empresa tem de estabelecer um acordo bilateral com um banco. O processo pode demorar meses. A documentação é privada. Os termos são negociados caso a caso. O acesso é discricionário — não existe um conjunto de regras públicas que qualquer entidade possa ler e implementar.
+To integrate payments, a company must establish a bilateral agreement with a bank. The process takes months. Documentation is private. Terms are negotiated case by case. Access is discretionary — there is no set of public rules that any entity can read and implement.
 
-Para processar pagamentos de forma independente, uma fintech tem de se tornar banco. Para que carteiras de operadores diferentes comuniquem entre si, não existe mecanismo — cada rede é fechada sobre si mesma.
+For a fintech to process payments independently, it must become a bank. For wallets on different operators to communicate with each other, no mechanism exists — each network is closed.
 
-### Os sintomas visíveis
+The symptoms are visible:
 
-**Comprovativo por WhatsApp.** Capturas de ecrã de transferências bancárias como prova de pagamento — porque não existe alternativa com garantia de protocolo.
+- **WhatsApp receipts.** Screenshots of bank transfers as proof of payment — because no protocol-guaranteed alternative exists.
+- **Closed integrations.** A company integrates with one bank's system. That integration does not work with any other bank.
+- **Small business exclusion.** A POS terminal requires an acquiring contract, hardware, and monthly fees.
+- **Proprietary network dependency.** Each platform runs on its own rules. An operator can change fees, disable features, or shut down without warning.
 
-**Integração fechada.** Uma empresa integra-se com o sistema de um banco específico. Essa integração não funciona com outro banco. Não existe uma interface standard que qualquer banco respeite — porque não existe um protocolo que o exija.
+The root cause: Angola has settlement rails — EMIS moves money between banks. EMIS does not resolve who can access the payment system, under what conditions, and according to what verifiable rules.
 
-**Exclusão da pequena empresa.** Um terminal POS exige contrato de aquisição, hardware e taxas mensais. Uma mercearia de bairro não tem condições.
+This layer has a name: **the protocol layer**. That is the gap BANZA fills. Not as a bank. Not as a fintech product. As a protocol.
 
-**Dependência de redes proprietárias.** Cada plataforma funciona segundo as suas próprias regras. Um operador pode alterar taxas, desligar funcionalidades, ou encerrar sem aviso.
+### Two Models
 
-**Ausência de garantias de protocolo.** A liquidação instantânea é uma promessa contratual — não um invariante verificável por auditores independentes.
+**The closed model: M-Pesa**
 
-### A causa
+M-Pesa belongs to Safaricom. The rules are the operator's rules. When Safaricom changes prices, all users are subject. When it exits a country, the service exits. A startup building on M-Pesa must accept whatever terms the operator decides.
 
-Angola tem rails de liquidação — o EMIS resolve o movimento final entre bancos. Não resolve: quem pode aceder ao sistema de pagamentos, em que condições, e segundo que regras verificáveis.
+M-Pesa is a remarkable product. But it is a product — not a protocol. The network belongs to the operator.
 
-Esta camada tem um nome: **camada de protocolo**.
+**The open model: Pix and UPI**
 
-> Esse é o vazio que o BANZA preenche. Não como banco. Não como produto fintech. Como protocolo.
+The Central Bank of Brazil did not create a product — it created a protocol. Nubank implements Pix. Itaú implements Pix. Google Pay implements Pix. Hundreds of entities implement Pix — each with its own product, experience, and business model — but all under the same open rules. None of them owns Pix.
 
----
+In under two years, Pix became the most widely used payment method in Brazil.
 
-## 2. A Camada que Falta
-
-Uma camada de protocolo não é um produto. Não é uma aplicação. Não é uma empresa. É um conjunto de regras abertas — definidas por uma entidade de governança, publicadas para qualquer entidade ler, implementáveis por qualquer entidade que passe a certificação.
-
-### Dois modelos
-
-**O modelo fechado: M-Pesa**
-
-O M-Pesa pertence à Safaricom. As regras são do operador. Quando a Safaricom decide alterar preços, todos os utilizadores ficam sujeitos. Quando decide encerrar o serviço num país, o serviço encerra. Uma startup que quer construir sobre o M-Pesa precisa de um acordo nas condições que o operador decidir.
-
-O M-Pesa é um produto extraordinário. Mas é um produto — não um protocolo. A rede pertence ao operador.
-
-**O modelo aberto: Pix e UPI**
-
-O Banco Central do Brasil não criou um produto — criou um protocolo. O Nubank implementa o Pix. O Itaú implementa o Pix. O Google Pay implementa o Pix. Centenas de entidades implementam o Pix — cada uma com o seu produto, a sua experiência, o seu modelo de negócio — mas todas segundo as mesmas regras abertas. Nenhuma delas é dona do Pix.
-
-Em menos de dois anos, o Pix tornou-se o método de pagamento mais utilizado no Brasil.
-
-A India Payments Corporation seguiu o mesmo modelo com o UPI em 2016. Em 2024, o UPI processava mais de 15 mil milhões de transacções mensais.
-
-### A diferença estrutural
+India followed the same model with UPI in 2016. By 2024, UPI was processing over 15 billion transactions per month.
 
 | | M-Pesa | Pix / UPI | BANZA |
 |---|---|---|---|
-| **Quem define as regras** | O operador | Entidade de governança | Protocolo aberto (RFCs e ADRs) |
-| **Quem pode participar** | Entidades com acordo com o operador | Qualquer entidade certificada | Qualquer entidade certificada |
-| **Pode um terceiro tornar-se operador independente?** | Não | Sim | Sim |
+| **Who defines the rules** | The operator | Governance entity | Open protocol (RFCs + ADRs) |
+| **Who can participate** | Entities with operator agreement | Any certified entity | Any certified entity |
+| **Can a third party become an independent operator?** | No | Yes | Yes |
 
-### O que acontece se um operador desaparecer?
+### The Disappearing Operator Test
 
-Este é o teste definitivo.
+This is the definitive test.
 
-No modelo fechado: se o operador principal desaparece, o sistema desaparece.
+In the closed model: if the primary operator disappears, the system disappears.
 
-No modelo aberto: se um operador desaparece, os outros continuam. O Pix não pertence ao Nubank. Se o Nubank desaparecesse amanhã, o Pix continuaria.
+In the open model: if one operator disappears, the others continue. Pix does not belong to Nubank. If Nubank disappeared tomorrow, Pix would continue.
 
-**O BANZA segue o modelo aberto.**
+**BANZA follows the open model.**
 
-As regras do protocolo BANZA são públicas. O operador é o primeiro operador certificado e a implementação de referência — mas não é o dono do protocolo. Se o operador desaparecesse amanhã: as regras do protocolo BANZA continuariam a existir. Os outros operadores certificados continuariam a operar. A infraestrutura permaneceria.
+The BANZA protocol rules are public. The reference operator is the first certified operator and the reference implementation — but it does not own the protocol. If every current operator disappeared tomorrow, the protocol rules, specification, and conformance suite would continue to exist. Other certified operators would continue to operate. The infrastructure would remain.
 
-Isto não é uma propriedade acidental. É uma decisão de arquitectura deliberada.
-
----
-
-## 3. O que é o BANZA
-
-O BANZA é o protocolo aberto de pagamentos digitais que Angola não tinha — a camada de infraestrutura certificada que qualquer programador, operador ou instituição pode implementar, da mesma forma que o Pix construiu o ecossistema de pagamentos do Brasil e o UPI construiu o da Índia.
-
-### Arquitectura de três níveis
-
-```
-BANZA
-│  O protocolo. Regras abertas. Certificação acessível. Invariantes verificáveis.
-│  Define como o dinheiro se move digitalmente em Angola.
-│  Qualquer entidade certificada pode implementar e operar sobre ele.
-│
-├── BanzAI
-│   O Sistema Operativo do protocolo.
-│   Torna o BANZA acessível a operadores, programadores, reguladores e auditores.
-│   Não é um chatbot. É infraestrutura cognitiva do protocolo.
-│   Ver: BANZAI_REFERENCE.md
-│
-└── the reference operator
-    A implementação de referência.
-    O primeiro operador certificado BANZA.
-    Um operador entre futuros muitos — não o dono do protocolo.
-    Ver: BANZA_REFERENCE.md
-```
-
-Esta arquitectura está definida no ADR-025 (2026-05-29), que supersede o ADR-016.
-
-### O que é o BANZA — quatro propriedades concretas
-
-**Regras públicas.** A especificação do BANZA — os RFCs, os ADRs, o conformance suite — está disponível para qualquer programador ler, qualquer operador implementar, e qualquer auditor inspeccionar. Nenhuma documentação está fechada atrás de um acordo de confidencialidade.
-
-**Certificação aberta.** Qualquer entidade legal que passe o conformance suite torna-se um operador certificado BANZA. Não existe processo de acreditação institucional. Não existe acordo bilateral. O acesso à certificação é definido pelas regras do protocolo.
-
-**Invariantes verificáveis.** As propriedades financeiras do protocolo são impostas pelo kernel e verificáveis por qualquer auditor independentemente de qualquer operador. A liquidação em T+0 é um invariante do kernel Rust: o código não pode completar uma transacção que viole esta propriedade.
-
-**Federação.** Operadores certificados podem encaminhar pagamentos entre si sem acordos bilaterais — porque ambos implementam o mesmo protocolo aberto.
-
-### O que o BANZA não é
-
-| O BANZA não é | Porquê a distinção importa |
-|---|---|
-| **Um banco** | O BANZA define regras que operadores seguem. Não detém dinheiro de ninguém. |
-| **Um produto fintech** | Um produto pertence ao seu operador. O protocolo pertence à infraestrutura. |
-| **Uma API fechada** | A especificação do BANZA é pública. Nenhum operador pode alterá-la unilateralmente. |
-| **O operador** | O operador é um operador — o primeiro e a implementação de referência. Não é o protocolo. |
-
-### Os quatro princípios do protocolo
-
-Qualquer operador certificado BANZA implementa estes quatro princípios. Não são funcionalidades do operador. São invariantes do protocolo — propriedades que qualquer implementação deve garantir para ser certificada.
-
-| Princípio | O que o protocolo garante |
-|---|---|
-| **Wallet-native** | Cada conta é uma carteira. Pagamentos são transferências directas — sem IBAN, sem intermediário de liquidação adicional. |
-| **QR-native** | O QR é a superfície primária de pagamento definida pelo protocolo. Um operador certificado que não exponha a superfície QR não está em conformidade. |
-| **Programmable** | A integração programática via SDK é um requisito do protocolo — não uma funcionalidade opcional. |
-| **Instant settlement** | A liquidação em T+0 é um invariante do protocolo — verificável no kernel, não dependente da política de nenhum operador. |
-
-### A distinção fundamental: protocolo ≠ operador
-
-O protocolo define as regras. O operador implementa-as.
-
-O protocolo existe independentemente de qualquer operador. Se todos os operadores actuais desaparecessem amanhã, o protocolo — as regras, a especificação, o conformance suite — continuaria a existir.
-
-A relação é exactamente a que existe entre o Pix e o Nubank. O Nubank é o maior utilizador do Pix no Brasil — mas o Pix não pertence ao Nubank.
-
-### O nome
-
-**Banza** e **the reference operator** são palavras enraizadas nas tradições linguísticas bantu de Angola, especialmente no universo Kikongo, onde *mbanza* designa um lugar de encontro — um centro de vida comunitária. Nomes distintamente angolanos — não palavras emprestadas de outro continente.
+This is not an accidental property. It is a deliberate architectural decision.
 
 ---
 
-## 4. Princípios Fundamentais
+## 3. Core Principles
 
-### A correcção financeira não é negociável
+### Financial correctness is non-negotiable
 
-Cada decisão de engenharia é avaliada contra: "Isto preserva a correcção financeira?" A simplicidade operacional e a auditabilidade superam funcionalidades.
+Every engineering decision is evaluated against: "Does this preserve financial correctness?" Operational simplicity and auditability take precedence over convenience. A payment that cannot be fully audited by an independent party is not a valid payment under BANZA.
 
-### O protocolo é o produto
+### The protocol is the product
 
-O operador (o produto de consumo) é a implementação de referência do protocolo BANZA. O protocolo é o que escala. O operador é o que prova que funciona.
+Operators prove the protocol works. They are not the protocol. The reference operator is the reference implementation — it demonstrates every protocol capability. But it does not own the protocol any more than Nubank owns Pix. The protocol is what scales. Operators are what demonstrate it.
 
-### Os operadores implementam política. O Kernel implementa o protocolo.
+### The kernel implements the protocol. Operators implement policy.
 
-O Kernel BANZA impõe os invariantes financeiros. Os operadores aplicam as suas políticas de negócio dentro das restrições que o kernel impõe. Estas camadas nunca se colapsam.
+The BANZA kernel enforces financial invariants. Operators apply their own business policies within the constraints the kernel imposes. These two layers never collapse. An operator cannot override a kernel invariant; the kernel never encodes an operator's business logic.
 
-### Rastreabilidade por defeito
+### Traceability by default
 
-Cada evento financeiro carrega um `trace_id`. Cada cadeia causal é reconstituível. Nenhum dinheiro se move sem uma entrada de ledger. Nenhuma entrada de ledger é alguma vez modificada.
+Every financial event carries a `trace_id`. Every causal chain is reconstructible. No money moves without a ledger entry. No ledger entry is ever modified. Any auditor — independent of any operator — can reconstruct any payment from its `trace_id` alone.
 
-### Angola primeiro
+### Open access
 
-O protocolo foi desenhado em torno do Kwanza, da lei comercial angolana, dos carris EMIS e do sector informal que representa a maioria do comércio angolano.
+Certification is determined by the conformance suite — not by institutional access, not by bilateral agreements, not by minimum transaction volumes. Any legal entity that passes the suite becomes a certified BANZA operator.
 
----
+### Protocol independence
 
-## 5. Arquitectura do Ecossistema
-
-### Kernel BANZA
-
-O Kernel BANZA é o núcleo financeiro escrito em Rust. É composto por crates com responsabilidades rigorosamente separadas:
-
-| Crate | Responsabilidade |
-|---|---|
-| `ledger` | Motor de ledger de dupla entrada — append-only, balanceado, atómico |
-| `wallets` | Ciclo de vida de carteiras de comerciantes |
-| `consumer-wallets` | Ciclo de vida de carteiras de consumidores |
-| `transactions` | Estado de máquina de transacções |
-| `transfers` | Transferências wallet-to-wallet |
-| `settlement` | Liquidação T+0 e ciclos de payout |
-| `reconciliation` | Reconciliação automatizada |
-| `payouts` | Saídas para contas bancárias |
-| `qr` | Sistema QR estático e dinâmico |
-| `identity` | Handle @banza, registo e unicidade |
-| `risk` | Motor de avaliação de risco |
-| `compliance` | Regras de conformidade regulatória |
-| `routing` | Encaminhamento de pagamentos |
-
-### Operadores
-
-Um Operador é qualquer entidade que implementa o protocolo BANZA para processar pagamentos. Os operadores:
-- Declaram capacidades num Manifesto de Operador
-- Implementam os requisitos de conformidade para o seu nível de certificação
-- Operam dentro do framework de invariantes
-- Estão sujeitos a verificação de certificação periódica
-
-**Operador de Referência:** The reference operator do protocolo completo. Ver [BANZA_REFERENCE.md](../banza/BANZA_REFERENCE.md).
-
-**Operadores Certificados:** Qualquer entidade que obtenha certificação BANZA pode implementar o protocolo. Operadores certificados são o resultado intencional do protocolo — não um conceito futuro.
-
-### Stack Tecnológico do Protocolo
-
-| Camada | Tecnologia | Justificação |
-|---|---|---|
-| Núcleo financeiro | Rust | Segurança de memória, performance determinística |
-| Orquestração | Go | Simplicidade operacional, concorrência |
-| Persistência (referência) | PostgreSQL | Garantias ACID — implementação de referência; o protocolo é agnóstico ao storage |
-| Cache / coordenação | Redis | Rate limiting, idempotência, sessões |
-| Observabilidade | OpenTelemetry | Traces, métricas e logs vendor-neutral |
+The protocol exists independently of any operator. No single operator can shut it down, modify its rules, or restrict access to it. The specification, the conformance suite, and the certification framework remain available to all operators regardless of what any individual operator does.
 
 ---
 
-## 6. Representação Monetária (Normativa)
+## 4. Certification
 
-> **Esta secção é normativa.** Todos os operadores, SDKs e implementações do protocolo BANZA DEVEM conformar com estas regras.
+### Why Certification Exists
 
-### Regra de Inteiros
+Open protocols require open verification. Any entity claiming to implement BANZA must be able to prove it. The conformance suite is that proof — a set of deterministic tests that any operator must pass to receive a BANZA certificate. No conformance, no certification. No exceptions.
 
-**Todos os valores monetários no protocolo BANZA DEVEM ser representados como inteiros.**
+### Certification Levels
 
-Valores monetários em vírgula flutuante são proibidos em toda a superfície do protocolo, incluindo: APIs, traces e logs, manifestos de operador, saldos de carteiras, entradas de ledger, batches de liquidação, contratos de SDK.
+| Level | Name | What it certifies |
+|-------|------|-------------------|
+| **L0** | Sandbox Operator | Sandbox environment operational; basic wallet and transfer operations |
+| **L1** | Payment Operator | Consumer wallets, static QR, P2P transfers, merchant wallets |
+| **L2** | Settlement Operator | All L1 + dynamic QR, payment links, instant (T+0) settlement |
+| **L3** | Federation Operator | All L2 + cross-operator routing, reconciliation, bank-rail payouts, valid BANZA certificate, BRL compliance |
+| **L4** | Infrastructure Operator | All L3 + EMIS card acquiring (`acquiring.emis`) |
 
-**Exemplos proibidos:**
+Each level is cumulative. L3 requires everything in L2, which requires everything in L1.
+
+**L3 — Federation Operator — full requirements:**
+- Valid BANZA-signed operator certificate at `/.well-known/banza/certificate.json`
+- Certificate lifetime: 90 days maximum (INV-TRUST-002)
+- Operator not present in the BANZA Revocation List (BRL)
+- `supports_federation: true` declared in operator manifest (INV-TRUST-004)
+- `POST /federation/route` endpoint operational
+- `GET /federation/obligations` endpoint operational
+- Certificate `issuer_key_id` must appear in the published BANZA Key Manifest (INV-TRUST-006)
+- Federation conformance suite: 79 tests across 9 suites (FED-CERT through FED-FAIL)
+
+**L4 note:** The L4 conformance suite (card acquiring) is defined and will be available in Protocol v1.1. L4 is defined but not yet certifiable in v1.0.
+
+### The Open Access Principle
+
+Certification access is defined by the protocol rules alone. There is no institutional approval process. No bilateral agreement with BANZA. No minimum transaction volume. Any legal entity that:
+1. Implements the required capabilities
+2. Passes the conformance suite for its target level
+3. Submits the conformance results
+
+becomes a certified BANZA operator.
+
+### How to Get Certified
+
+1. **Prepare your manifest.** Create a valid Operator Manifest declaring your certification level and capabilities. Use the BanzAI Manifest Validator to verify it passes structural validation.
+2. **Implement the capabilities.** Build your operator against the protocol specification and SDK. See [Developer Resources](#9-developer-resources).
+3. **Run the conformance suite.** Run all required tests for your target level. All tests must pass — a single failure blocks certification.
+   ```bash
+   python3 tools/banza-conformance/run.py --url https://your-operator.example --level 2
+   ```
+4. **Submit your results.** Send your conformance results and manifest to BANZA.
+5. **BANZA review.** BANZA verifies conformance result authenticity, manifest consistency, and invariant status. Review completes within 5 business days.
+6. **Certificate issued.** On approval: signed certificate artifact, certification badge, live API keys, registry listing.
+
+### Operator Manifest
+
+The operator manifest declares capabilities and certification level. It must be served at `/.well-known/banza/operator.json`.
+
 ```json
+{
+  "operator_id": "your-operator-id",
+  "protocol_version": "1.0",
+  "certification_level": 2,
+  "environment": "production",
+  "capabilities": {
+    "supports_wallets": true,
+    "supports_qr": true,
+    "supports_payment_requests": true,
+    "supports_traces": true,
+    "supports_settlement": true
+  }
+}
+```
+
+### Certification Maintenance
+
+- Certifications expire after 12 months without re-verification
+- Protocol major version updates require re-certification
+- Automated invariant spot-checks: monthly
+- Conformance spot-checks: quarterly
+- L3+ certificates expire after 90 days (must be renewed)
+
+### BanzAI and Certification
+
+BanzAI can guide you through the certification process: analyze your manifest, simulate conformance runs, identify gaps, and generate a certification readiness score. BanzAI does not grant certification. The conformance suite is the arbiter — deterministic tests, not AI inference. See [BanzAI](#7-banzai).
+
+---
+
+## 5. Federation
+
+### Why Federation Exists
+
+Without federation, each operator is an island.
+
+A customer with a wallet on Operator A can pay merchants on Operator A. That is all. A merchant on Operator B is out of reach — unless Operator A and Operator B negotiate a bilateral agreement, case by case, outside the protocol.
+
+This is not a technical limitation. It is a trust limitation. Operator A has no way to know, verifiably, that Operator B is a legitimate network participant. Without verifiable trust, there is no secure routing.
+
+Federation solves this at the protocol level — without bilateral agreements, without intermediaries, without negotiation. Trust is proven by certificates issued by BANZA. Routing follows protocol contracts. Settlement is executed by open rules.
+
+### Before Federation
+
+```
+Customer A               Customer B
+    ↓                        ↓
+Operator A               Operator B
+(closed network)         (closed network)
+
+Customer A cannot pay Merchant B.
+Merchant B cannot receive from Customer A.
+```
+
+Two certified operators. Two isolated networks. No connection between them.
+
+### With Federation
+
+```
+Customer A                              Merchant B
+    ↓                                       ↑
+Operator A  ←—— BANZA protocol ——→  Operator B
+    ↓                                       ↑
+  (debits                            (credits
+  Customer A)                       Merchant B)
+
+The payment crosses the operator boundary.
+Protocol guarantees apply across the entire chain.
+```
+
+A customer on any operator can pay a merchant on any operator. Every new certified operator that joins the network makes all others more useful.
+
+### How Federation Works
+
+Federation occurs in five distinct moments:
+
+**1. Trust**
+
+Before any payment, Operator A verifies that Operator B is a legitimate BANZA network participant. This verification is cryptographic — it does not require a real-time call to BANZA.
+
+BANZA issues a certificate to each certified operator. The certificate is signed with BANZA's key and states: "This operator was certified at level X, with these capabilities, valid until this date." Any operator can verify any certificate without contacting BANZA.
+
+BANZA maintains a Revocation List (BRL — BANZA Revocation List), published every six hours. Before routing a payment, Operator A verifies that Operator B is not revoked or suspended.
+
+Trust is always bidirectional: Operator B also verifies Operator A before accepting a routing request.
+
+**2. Routing**
+
+Operator A sends a routing request to Operator B, signed with its private key:
+
+```
+"I want to route a payment of 5,000 AOA from Customer A to Merchant B."
+```
+
+The request includes the unique transaction identifier (`trace_id`) that will be shared by all payment artifacts across both operators.
+
+**3. Acceptance and Execution**
+
+When Operator B accepts the request, the payment executes at that exact moment. Acceptance and execution are simultaneous — not two separate steps.
+
+At the instant Operator B responds "accepted", Merchant B's wallet has already been credited. Merchant B receives the funds immediately.
+
+**4. Obligation**
+
+Operator A receives the acceptance confirmation and, atomically (in a single database operation), does two things:
+- Debits Customer A's wallet
+- Records an obligation: "Operator A owes 5,000 AOA to Operator B"
+
+The obligation is signed by Operator A. It is non-repudiable. Operator A cannot later deny owing Operator B.
+
+**5. Settlement**
+
+Obligations accumulate over a compensation cycle (typically 24 hours). At the end of the cycle, both operators independently calculate the net position:
+
+```
+Operator A owes Operator B:  150,000 AOA  (multiple payments)
+Operator B owes Operator A:   40,000 AOA  (reverse-direction payments)
+────────────────────────────────────────
+Net position:                 110,000 AOA  (Operator A owes Operator B)
+```
+
+A single bank transfer settles all payments in the cycle. Not one transfer per payment — one per cycle. Settlement efficiency scales with volume.
+
+### Step-by-Step Example
+
+**Situation:** Customer Ana has a wallet on Operator A. Merchant Bento has a wallet on Operator B. Ana wants to pay Bento 2,000 AOA.
+
+```
+1. Ana initiates the payment in Operator A's app.
+   → Operator A identifies that Bento is on Operator B.
+
+2. Operator A verifies Operator B's certificate.
+   → Certificate valid. Operator B not revoked.
+   → Operator B is a legitimate BANZA network member.
+
+3. Operator A sends a routing request to Operator B (signed):
+   "Request rr-abc: pay 2,000 AOA to Bento (trace: tr-xyz)"
+
+4. Operator B verifies Operator A's certificate (bidirectional trust).
+   → Identifies Bento's wallet. Wallet active.
+   → Credits 2,000 AOA to Bento's wallet.
+   → Responds: "Accepted. Transfer ID: itx-def"
+
+5. Operator A receives confirmation (atomic operation):
+   → Debits 2,000 AOA from Ana's wallet.
+   → Records obligation: "Operator A owes 2,000 AOA to Operator B (rr-abc)"
+
+6. Bento receives payment notification. Balance up 2,000 AOA.
+   Ana receives confirmation. Balance down 2,000 AOA.
+
+7. At end of 24-hour cycle:
+   → Both operators independently calculate bilateral net position.
+   → Operator A executes a single bank transfer to Operator B.
+   → All cycle obligations marked as settled.
+```
+
+Throughout the entire chain, the same `trace_id` (tr-xyz) appears on every artifact: the routing request, the response, the obligation, the ledger entries on both operators, and all emitted events. Any auditor can reconstruct the complete cross-operator payment from the `trace_id` — on both operators — without the cooperation of either.
+
+### Obligations
+
+An obligation is the formal record that one operator owes money to another.
+
+When Operator B accepts a routing payment, it assumes a risk: it has credited the merchant but has not yet received the funds. Operator A's obligation — cryptographically signed — is the commitment that the payment will be settled.
+
+Obligations have a lifecycle:
+
+```
+pending → in-compensation → settled
+```
+
+An obligation cannot transition from "settled" to "pending". Immutability is a protocol property, not a database property of any individual operator.
+
+The fundamental invariant: the amount in the obligation always equals the amount in the routing request. No fees, no discounts, no rounding are applied within the inter-operator transfer amount. Fees are separate ledger entries.
+
+### Compensation (Netting)
+
+Compensation is the process by which operators calculate and settle net positions at the end of each cycle.
+
+Without netting, every payment would require an immediate bank transfer. With bilateral netting, hundreds of opposing payments collapse into a single transfer.
+
+```
+Example 24-hour cycle between Operator A and Operator B:
+
+  Operator A → Operator B:  842 payments  →  4,210,000 AOA gross
+  Operator B → Operator A:  318 payments  →  1,590,000 AOA gross
+  ──────────────────────────────────────────────────────────────
+  Net position:                            →  2,620,000 AOA
+  Bank transfers executed:                 →  1 (not 1,160)
+```
+
+Netting is always bilateral and independent: each operator calculates the net position autonomously. Both must arrive at the same result before any transfer executes. If they diverge, settlement is suspended until the discrepancy is identified and resolved.
+
+### Why Federation Matters
+
+**For merchants:** A certified merchant on any one operator can receive payments from customers on any other operator. No multiple networks, no multiple agreements. One wallet, full network reach.
+
+**For customers:** A customer can pay any merchant on any certified operator using only their own operator's app. The fragmentation where App A only works with merchants using App A is gone.
+
+**For operators:** Each new certified operator that joins the network makes all others more valuable. An operator with 100,000 customers that joins a network with a 500,000-customer partner does not add 600,000 to the network — it multiplies the payment capability of everyone. This is Metcalfe's law: network value grows with the square of its participants.
+
+**For regulators:** Federation is auditable by design. The `trace_id` of any cross-operator payment exists on both operators, on all artifacts: routing request, obligation, ledger entries, events. A regulator can reconstruct any federated payment in full — on both operators — without the cooperation of either operator.
+
+**For investors and banks:** Federation transforms BANZA from a set of isolated operators into a unified payment network. The value of the network belongs to the protocol — not to any single operator. Each operator that joins increases the value of all others. This growth model is structurally different from the proprietary model where value is captured by the dominant operator.
+
+### Federation Status
+
+The federation specification was completed and verified in 2026. It is not a future feature.
+
+| Item | Status |
+|------|--------|
+| Architecture specification (ADR-026) | COMPLETE |
+| Federation contracts (5 schemas) | COMPLETE |
+| Federation invariants (18: INV-TRUST-*, INV-FED-*) | COMPLETE |
+| Conformance suite (79 tests, 9 suites: FED-CERT through FED-FAIL) | COMPLETE |
+| Two-operator interoperability verification (14/14 scenarios) | COMPLETE |
+| M1 Protocol Complete | ACHIEVED — 2026-06-01 |
+| First production operator federated (M3) | Pending M2 |
+
+Federation is ready. The remaining work is operational: completing the root key ceremony (M2), certifying the first production operator (M3).
+
+---
+
+## 6. Trust
+
+### Why Trust Infrastructure Exists
+
+Operators in the federation verify each other's certificates. This verification must be:
+- **Cryptographic** — not based on a phone call or email
+- **Offline** — not requiring a real-time call to BANZA on every payment
+- **Unforgeable** — a certificate must be impossible to fabricate without BANZA's private key
+
+This requires a trust hierarchy with a root of trust that every operator pins once and uses to verify all subsequent certificates.
+
+### The Trust Hierarchy
+
+```
+BANZA Root Key (offline, ed25519, 24-month validity)
+    │
+    │  signs Key Manifests only
+    ▼
+Key Manifest (published at banza.network/.well-known/banza/key-manifest.json)
+    │
+    │  lists three active issuing keys
+    │
+    ├── Cert-Issuing Key (banza-cert-YYYYMM)    → signs operator certificates
+    ├── BRL-Issuing Key  (banza-brl-YYYYMM)     → signs BANZA Revocation Lists
+    └── Evidence-Issuing Key (banza-evidence-YYYYMM) → signs conformance evidence
+```
+
+**The root key signs only Key Manifests** — it never directly signs certificates, BRLs, or evidence. This limits the blast radius if an issuing key is ever compromised: only the Key Manifest (the root key's single product) is authoritative.
+
+### The Key Manifest
+
+The Key Manifest is a signed JSON document listing all active BANZA issuing keys. It is published at:
+
+```
+https://banza.network/.well-known/banza/key-manifest.json
+```
+
+It is signed by the root key. Any operator can verify its authenticity using the root public key, which SDKs pin at release time.
+
+The Key Manifest contains:
+- `root_key_id` — identity of the root key that signed this manifest
+- `root_public_key` — root public key (ed25519, base64url)
+- `expires_at` — manifest expiry (24 months from issuance)
+- `manifest_signature` — ed25519 signature over the canonical JSON
+- `keys` — array of active issuing keys, each with `key_id`, `domain` (certification / revocation / conformance-evidence), `public_key`, `active_since`, `expires_at`, `status`
+
+SDKs pin the Key Manifest at release time. An expired Key Manifest causes the SDK to reject all certificates until the manifest is refreshed.
+
+### Operator Certificates
+
+Each certified operator is issued a certificate signed by the cert-issuing key. Operators serve their certificate at:
+
+```
+/.well-known/banza/certificate.json
+```
+
+A certificate contains:
+- `operator_id` — must match the `operator_id` in the operator manifest
+- `certification_level` — the certified level (0–4)
+- `issuer_key_id` — the cert-issuing key that signed this certificate
+- `issued_at`, `expires_at` — certificate lifetime (maximum 90 days for L3+)
+- `signature` — ed25519 over the canonical JSON
+
+Any peer operator can verify a certificate without contacting BANZA:
+1. Fetch the certificate from the target operator's `/.well-known/banza/certificate.json`
+2. Fetch the Key Manifest from `banza.network/.well-known/banza/key-manifest.json`
+3. Verify that `issuer_key_id` appears in the Key Manifest and is active
+4. Verify the certificate signature with the issuing key's public key
+5. Verify the operator is not in the current BRL
+
+### The BRL — BANZA Revocation List
+
+The BRL is a signed list of revoked or suspended operator certificates. It is published at:
+
+```
+https://banza.network/federation/revocation-list.json
+```
+
+Updated every 6 hours. Signed by the BRL-issuing key.
+
+Before routing any federated payment, the sending operator must verify that the receiving operator is not in the current BRL. An operator on the BRL cannot receive routed payments from any other operator, regardless of certificate validity.
+
+### Root Key Invariants (in plain language)
+
+| Invariant | What it means |
+|-----------|---------------|
+| INV-ROOT-001 | Production key IDs must not start with `test-`. Test keys are rejected in production. |
+| INV-ROOT-002 | The Key Manifest must be root-signed. An unsigned manifest is invalid. |
+| INV-ROOT-003 | An expired Key Manifest is invalid. SDKs must detect and reject stale manifests. |
+| INV-ROOT-004 | The root key signs only Key Manifests. It never signs certificates or BRLs directly. |
+| INV-ROOT-005 | The BRL must be signed by the designated BRL-issuing key. |
+| INV-ROOT-006 | Issuing keys have a maximum validity of 184 days. The root key has a maximum validity of 24 months. |
+
+### The Root Key Ceremony
+
+The root key is generated in an **offline ceremony** on an air-gapped machine with no network connectivity, in the presence of a Ceremony Officer and an independent Witness. The private key never touches a networked machine. It is stored on two separate encrypted USB drives held by independent custodians.
+
+This procedure ensures that no single person and no networked system ever has access to the root private key alone.
+
+The ceremony automation script (`tools/root-ceremony/ceremony_script.py`) automates all deterministic cryptographic steps and enforces all six INV-ROOT-* invariants. It was verified with a dry run: 10/10 verifications pass.
+
+**Production status:** The root key ceremony is scheduled. M2 Production Trust (Key Manifest + BRL live at `banza.network`) is the active milestone. See [Roadmap](#11-roadmap).
+
+---
+
+## 7. BanzAI
+
+### What BanzAI Is
+
+BanzAI is the BANZA Protocol Operating System — the cognitive layer that makes the protocol accessible to operators, developers, and auditors. It is not a chatbot. It is infrastructure.
+
+BanzAI runs alongside the protocol to provide:
+- **Certification support** — readiness analysis, manifest validation, level gap assessment
+- **Federation intelligence** — operator compatibility scoring, digital twin simulation
+- **Knowledge engine** — RAG-backed Q&A over all BANZA specification documents
+- **Evaluation pipeline** — benchmark, citation, retrieval, and adversarial evaluation of its own answers
+- **Governance intelligence** — ADR/RFC lookup, invariant explanation
+- **Operational intelligence** — trace reconstruction, protocol simulation, event analysis
+
+### The Non-Negotiable BanzAI Boundary
+
+| Action | BanzAI | BANZA |
+|--------|:------:|:-----:|
+| Run the authoritative conformance suite | No | **Yes** |
+| Issue production certificates | No | **Yes** |
+| Sign Key Manifests or BRLs | No | **Yes** |
+| Hold production private keys | No | **Yes** |
+| Analyze certification readiness | **Yes** | No |
+| Guide operators toward compliance | **Yes** | No |
+| Simulate protocol scenarios | **Yes** | No |
+| Explain protocol rules in plain language | **Yes** | No |
+| Assess federation compatibility between operators | **Yes** | No |
+
+**This boundary is an architectural invariant.** BanzAI evaluates. BANZA certifies. These roles never merge.
+
+When BanzAI says a certification readiness score is 87%, that is guidance — not a certificate. Only the deterministic conformance suite result, followed by BANZA review, produces a certificate.
+
+### BanzAI in the Ecosystem
+
+```
+       BANZA
+       (Protocol — Authority)
+         │
+         │  issues certificates
+         │  maintains revocation list
+         │  approves certification
+         │  defines the rules
+         ▼
+       BanzAI
+       (Protocol Operating System)
+         │
+         │  evaluates readiness
+         │  verifies trust assertions
+         │  audits payment traces
+         │  never decides
+         ▼
+      Operators
+      (Participants)
+         │
+         │  implement the protocol
+         │  process payments
+         │  settle obligations
+         ↕
+      Operators
+      (inter-operator, via protocol)
+```
+
+No operator has authority over another operator. Authority rests in the protocol — in open rules, published contracts, and verifiable invariants. BANZA is the governance entity that maintains those rules. BanzAI is the instrument of evaluation.
+
+---
+
+## 8. Operators
+
+### What an Operator Is
+
+An operator is any entity that implements the BANZA protocol to process payments. Operators:
+- Declare their capabilities in an Operator Manifest
+- Implement the requirements for their target certification level
+- Operate within the protocol's invariant framework
+- Are subject to periodic certification verification (every 12 months; every 90 days at L3+)
+
+There is no such thing as a privileged operator. Every certified operator — including the first and the reference — is subject to exactly the same rules and the same certification process.
+
+### What Operators Implement
+
+The protocol defines capabilities by certification level. Each level is cumulative.
+
+| Level | What you build |
+|-------|---------------|
+| L0 | Health endpoint, basic wallet operations, sandbox environment |
+| L1 | Consumer wallets, merchant wallets, static QR, P2P transfers |
+| L2 | Dynamic QR, payment links, T+0 settlement, webhooks, trace propagation |
+| L3 | Federation routing, obligations, reconciliation, bank-rail payouts, BANZA-signed certificate |
+| L4 | All L3 + EMIS card acquiring (v1.1 scope) |
+
+At L3, the operator must also serve:
+- `/.well-known/banza/operator.json` — operator manifest
+- `/.well-known/banza/certificate.json` — BANZA-signed certificate
+- `POST /federation/route` — accept routing requests
+- `GET /federation/obligations` — expose outstanding obligations
+
+### How to Become an Operator
+
+The certification path has six steps. See [Certification](#4-certification) for details.
+
+The conformance suite is open source. There is no fee to run it. Certification review completes within 5 business days. The first operators to certify will be listed in the public operator registry.
+
+### Network Effects
+
+Every certified operator that joins the BANZA network makes every other operator more valuable. A 100,000-customer operator that joins a network with a 500,000-customer operator does not add 600,000 — it multiplies the payment capability of everyone in the network.
+
+This is the structural difference between an open protocol network and a proprietary platform. In a proprietary platform, value accumulates with the dominant operator. In an open protocol network, value belongs to the network — and every participant benefits from every other participant's growth.
+
+---
+
+## 9. Developer Resources
+
+### SDKs
+
+Official BANZA SDKs are available in:
+
+| Language | Package | Status |
+|----------|---------|--------|
+| TypeScript | `@banza/sdk` | `sdk/typescript/` |
+| Python | `banza-sdk` | `sdk/python/` |
+| Go | `github.com/banza-protocol/go-sdk` | `sdk/go/` |
+| PHP | `banza/php-sdk` | `sdk/php/` |
+| Flutter | `banza_sdk` | (via Dart pub) |
+| Checkout Web | `@banza/checkout-web` | `sdk/checkout-web/` |
+
+All SDKs will include Key Manifest pinning and production `issuer_key_id` verification at v1.0 release (OPS-005).
+
+### Contracts
+
+All canonical protocol contracts live in `contracts/`:
+
+| Area | Location | Contents |
+|------|----------|----------|
+| OpenAPI | `contracts/openapi/` | reference-operator.yaml, transfers.yaml, wallet-onboarding.yaml, activity.yaml |
+| Federation | `contracts/federation/` | operator-certificate.json, federation-routing.json, federation-obligation.json, federation-event.json, federation-manifest.json |
+| Events | `contracts/events/` | envelope.schema.json, types.json, webhook-types.json |
+| Webhooks | `contracts/webhooks/` | envelope.schema.json, signature.json |
+| QR | `contracts/qr/` | payload-format.json, lifecycle.json |
+| SDK certification | `contracts/sdk-certification/` | Compliance vectors |
+
+### Conformance Runner
+
+```bash
+# Run L0–L2 conformance suite
+python3 tools/banza-conformance/run.py \
+  --url http://localhost:3000 \
+  --level 2 \
+  --output report.json
+
+# Run L3 federation conformance suite
+python3 tools/banza-conformance/run_fed.py \
+  --url http://localhost:3000 \
+  --peer-url http://peer-operator:3001
+
+# Run two-operator interoperability scenarios
+python3 tools/banza-conformance/run_interop.py \
+  --operator-a http://operator-a:3000 \
+  --operator-b http://operator-b:3001
+```
+
+### Kernel Architecture (Rust)
+
+The BANZA kernel is the core financial engine. It is composed of crates with rigorously separated responsibilities:
+
+| Crate | Responsibility |
+|-------|----------------|
+| `banza-ledger` | Double-entry ledger engine — append-only, balanced, atomic |
+| `banza-wallets` | Merchant wallet lifecycle |
+| `banza-consumer-wallets` | Consumer wallet lifecycle |
+| `banza-transactions` | Transaction state machine |
+| `banza-transfers` | Wallet-to-wallet transfers |
+| `banza-settlement` | T+0 settlement and payout cycles |
+| `banza-reconciliation` | Automated reconciliation |
+| `banza-payouts` | Outbound to bank accounts |
+| `banza-qr` | Static and dynamic QR system |
+| `banza-identity` | @handle identity, registration, uniqueness |
+| `banza-risk` | Risk evaluation engine |
+| `banza-compliance` | Regulatory compliance rules |
+| `banza-routing` | Payment routing |
+
+### Normative: Monetary Representation
+
+> **This section is normative.** All operators, SDKs, and protocol implementations MUST conform to these rules.
+
+**The Integer Rule**
+
+All monetary values in the BANZA protocol MUST be represented as integers. Floating-point monetary values are prohibited across the entire protocol surface: APIs, traces and logs, operator manifests, wallet balances, ledger entries, settlement batches, SDK contracts.
+
+```json
+// PROHIBITED
 { "amount": 10.50 }
-```
 
-**Exemplos válidos:**
-```json
+// VALID
 { "amount_minor": 1050 }
 ```
 
-### Convenção `*_minor`
+**The `*_minor` convention**
 
-O protocolo BANZA adopta a convenção `*_minor` para todos os campos monetários:
+| Field | Meaning |
+|-------|---------|
+| `amount_minor` | Generic payment amount |
+| `gross_minor` | Gross amount paid by consumer |
+| `fee_minor` | Fee retained by operator |
+| `net_minor` | Net amount delivered to recipient |
+| `available_minor` | Immediately available balance |
+| `reserved_minor` | Temporarily held balance |
+| `balance_minor` | Total wallet balance |
 
-| Campo | Significado |
-|---|---|
-| `amount_minor` | Valor genérico de pagamento |
-| `gross_minor` | Montante bruto pago pelo consumidor |
-| `fee_minor` | Taxa retida pelo operador |
-| `net_minor` | Montante líquido entregue ao receptor |
-| `available_minor` | Saldo disponível imediatamente |
-| `reserved_minor` | Saldo temporariamente bloqueado |
-| `balance_minor` | Saldo total da carteira |
-
-### Semântica de Montantes de Liquidação
-
-Todo o fluxo de pagamento BANZA produz três montantes com semântica exacta:
-
-**Invariante normativo (INV-STL-001):**
-
+**Settlement amount invariant (INV-STL-001):**
 ```
 gross_minor = net_minor + fee_minor
 ```
 
-### Semântica de Saldo de Carteira
-
-**Invariante normativo (INV-WALLET-001):**
-
+**Wallet balance invariant (INV-WALLET-001):**
 ```
 balance_minor = available_minor + reserved_minor
 ```
 
-Os saldos de carteiras são sempre derivados de entradas de ledger — nunca directamente mutados. Um saldo de carteira nunca pode ser negativo (INV-STL-002).
+Wallet balances are always derived from ledger entries — never directly mutated. A wallet balance can never be negative.
 
-### Registo de Moedas
+**Certification rule MON-001:**
 
-| Moeda | Código ISO 4217 | Minor units | Status |
-|---|---|---|---|
-| Kwanza Angolano | `AOA` | 100 (1 AOA = 100 minor units) | Moeda oficial BANZA |
-| Dólar Americano | `USD` | 100 | Suportado (traces de demonstração) |
-| Euro | `EUR` | 100 | Suportado (traces de demonstração) |
+| Violation | Result |
+|-----------|--------|
+| Float values in API requests/responses | Certification FAIL |
+| Float values in traces or logs | Certification FAIL |
+| `gross_minor ≠ net_minor + fee_minor` | Certification FAIL |
+| `balance_minor ≠ available_minor + reserved_minor` | Certification FAIL |
 
-Qualquer alteração à política de precisão requer um RFC aprovado.
+**Currency registry:**
 
-### Regra de Certificação MON-001
+| Currency | ISO 4217 | Minor units | Status |
+|----------|----------|-------------|--------|
+| Angolan Kwanza | AOA | 100 (1 AOA = 100 minor units) | Official BANZA currency |
+| US Dollar | USD | 100 | Supported (test traces) |
+| Euro | EUR | 100 | Supported (test traces) |
 
-**MON-001 — Representação Monetária em Inteiros**
+Any change to the precision policy requires an approved RFC.
 
-| Violação | Resultado |
-|---|---|
-| Valores float em APIs | FAIL de certificação |
-| Valores float em traces | FAIL de certificação |
-| `gross_minor ≠ net_minor + fee_minor` | FAIL de certificação |
-| `balance_minor ≠ available_minor + reserved_minor` | FAIL de certificação |
+### Financial Invariants
 
----
+Financial invariants are non-negotiable assertions that can never be violated. They are enforced simultaneously at multiple layers.
 
-## 7. Invariantes Financeiros
+#### Invariant Families
 
-Os invariantes financeiros são afirmações não negociáveis que nunca podem ser violadas. São impostos em múltiplas camadas simultaneamente.
+| Family | Scope |
+|--------|-------|
+| `INV-LEDGER-*` | Double-entry, immutability, no floating-point, atomicity |
+| `INV-WALLET-*` | Consistent balance, no negatives |
+| `INV-STL-*` | gross = net + fee, no money creation |
+| `INV-IDEM-*` | Idempotency key scope, replay safety |
+| `INV-TRACE-*` | Traceability completeness |
+| `INV-QR-*` | QR lifecycle, uniqueness of resolution |
+| `INV-IDENT-*` | Handle uniqueness |
+| `INV-TRUST-*` | Certificate validity, BRL compliance, manifest verification |
+| `INV-FED-*` | Federation routing, settlement, reconciliation |
+| `INV-ROOT-*` | Root key architecture, key manifest, production key validation |
 
-### Famílias de Invariantes
+#### Critical Invariants
 
-| Família | Exemplos |
-|---|---|
-| `INV-LEDGER-*` | Dupla entrada, imutabilidade, sem vírgula flutuante, atomicidade |
-| `INV-WALLET-*` | Saldo consistente, sem negativos |
-| `INV-STL-*` | gross = net + fee, sem criação de dinheiro |
-| `INV-TRACE-*` | Completude da rastreabilidade |
-| `INV-QR-*` | Ciclo de vida do QR, unicidade de resolução |
-| `INV-IDENT-*` | Unicidade de handle |
-
-### Invariantes Críticos
-
-| Invariante | Descrição | Gravidade |
-|---|---|---|
-| INV-LEDGER-001 | Débitos = Créditos em cada posting | CRITICAL |
-| INV-LEDGER-002 | Entradas de ledger são imutáveis | CRITICAL |
-| INV-LEDGER-003 | Montantes são i64, nunca float | CRITICAL |
-| INV-LEDGER-004 | Postings parciais nunca persistem | CRITICAL |
-| INV-STL-001 | gross = net + fee (sem criação de dinheiro) | CRITICAL |
-| INV-STL-002 | Saldos nunca negativos | CRITICAL |
+| Invariant | Description | Severity |
+|-----------|-------------|----------|
+| INV-LEDGER-001 | Debits = Credits on every posting | CRITICAL |
+| INV-LEDGER-002 | Ledger entries are immutable | CRITICAL |
+| INV-LEDGER-003 | Amounts are i64 — never float | CRITICAL |
+| INV-LEDGER-004 | Partial postings never persist (atomic) | CRITICAL |
+| INV-STL-001 | gross = net + fee (no money creation) | CRITICAL |
+| INV-STL-002 | No negative balances | CRITICAL |
 | INV-WALLET-001 | balance = available + reserved | CRITICAL |
-| INV-IDENT-001 | @banza handles são únicos globalmente | CRITICAL |
+| INV-IDENT-001 | @handle uniqueness is global | CRITICAL |
+| INV-TRUST-001 | Certificate must be BANZA-signed | CRITICAL |
+| INV-TRUST-002 | Certificate lifetime ≤ 90 days (L3+) | CRITICAL |
+| INV-TRUST-003 | Certificate must not appear in BRL | CRITICAL |
+| INV-TRUST-006 | Certificate `issuer_key_id` must appear in Key Manifest | CRITICAL |
+| INV-ROOT-001 | Production key IDs must not start with `test-` | CRITICAL |
+| INV-ROOT-002 | Key Manifest must be root-signed | CRITICAL |
+| MON-001 | All monetary values as integer minor units | CRITICAL |
 
-### O Ledger de Dupla Entrada
+#### The Double-Entry Ledger
 
-O ledger é:
-- **Append-only** — as entradas nunca são modificadas ou eliminadas
-- **Balanceado** — cada posting tem débitos e créditos iguais
-- **Integer-only** — os montantes são armazenados como i64 minor units, nunca vírgula flutuante
-- **Atómico** — postings parciais nunca persistem
+The ledger is:
+- **Append-only** — entries are never modified or deleted
+- **Balanced** — every posting has equal debits and credits
+- **Integer-only** — amounts are stored as `i64` minor units, never floating-point
+- **Atomic** — partial postings never persist
 
-O fluxo canónico de um pagamento QR:
-
-```text
-Carteira consumidor (DÉBITO)
-    ├── Carteira comerciante (CRÉDITO) — montante líquido
-    └── Carteira de taxas (CRÉDITO)   — taxa
+Canonical QR payment posting:
+```
+Consumer wallet (DEBIT)
+    ├── Merchant wallet (CREDIT) — net amount
+    └── Fee wallet    (CREDIT) — fee
 
 gross_minor = net_minor + fee_minor  [INV-STL-001]
 ```
 
-### Rastreabilidade
+### Technology Stack
 
-Cada fluxo de pagamento produz um `trace_id`. O trace captura todos os eventos: `qr.created` → `payment.initiated` → `ledger.posted` → `wallet.updated` → `webhook.dispatched`.
-
-Os traces são a ferramenta de auditoria primária. O BanzAI inclui um módulo Trace Explainer que reconstrói e verifica qualquer trace interactivamente. Ver [BANZAI_REFERENCE.md](../banzai/BANZAI_REFERENCE.md).
-
----
-
-## 8. Governança do Protocolo
-
-### RFCs (Request for Comments)
-
-Os RFCs governam decisões ao nível do protocolo: invariantes financeiros, fluxos de pagamento, contratos de API, requisitos de operadores, protocolos de federação.
-
-Um RFC é obrigatório para:
-- Qualquer alteração ao conjunto de invariantes financeiros
-- Qualquer alteração ao protocolo de fluxo de pagamento
-- Qualquer novo nível de certificação
-- Qualquer nova moeda no registo oficial
-- Design do protocolo de federação
-
-Os RFCs são numerados sequencialmente e imutáveis após aceitação.
-
-### ADRs (Architecture Decision Records)
-
-Os ADRs governam decisões de implementação: escolhas tecnológicas, fronteiras de serviços, arquitectura de SDK, arquitectura de marca, modelo de identidade.
-
-ADR-025 é o ADR canónico que define a hierarquia de três níveis (BANZA / BanzAI / the reference operator). ADR-016 foi supersedido por ADR-025.
-
-### Validation Matrix
-
-O `docs/validation/BANZA_IMPLEMENTATION_MATRIX.json` é a fonte de verdade para o progresso de implementação do operador de referência. Alterações à matrix requerem frases de governança com verificação de fingerprint.
-
-### Domínios de Validação
-
-| Domínio | Âmbito |
-|---|---|
-| `DOM-FIN` | Integridade financeira (ledger, wallets, liquidação) |
-| `DOM-IDENTITY` | Carteira e identidade de consumidor |
-| `DOM-CONSUMER` | Experiência do consumidor |
-| `DOM-MERCHANT` | Experiência do comerciante |
-| `DOM-DEVELOPER` | Experiência do programador (SDK, API) |
-| `DOM-INFRA` | Infraestrutura operacional |
-| `DOM-SECURITY` | Segurança e autenticação |
-| `DOM-COMPLIANCE` | Conformidade regulatória |
+| Layer | Technology | Rationale |
+|-------|-----------|-----------|
+| Financial kernel | Rust | Memory safety, deterministic behavior, infrastructure-grade reliability |
+| API orchestration | Go | Simplicity, concurrency, operational reliability |
+| Database (reference) | PostgreSQL | Single source of financial truth — transactional guarantees |
+| Cache / coordination | Redis | Idempotency, distributed locking, rate limiting |
+| Observability | OpenTelemetry + Prometheus + Grafana | No black boxes |
 
 ---
 
-## 9. Modelo de Certificação
+## 10. Governance
 
-### Níveis de Certificação
+### How BANZA Evolves
 
-| Nível | Nome | Capacidades necessárias |
-|---|---|---|
-| **L0** | Sandbox Operator | Operações básicas sandbox |
-| **L1** | Payment Operator | wallet.consumer, wallet.merchant, qr.static, p2p.transfer |
-| **L2** | Settlement Operator | L1 + qr.dynamic, payment_links, settlement.t0 |
-| **L3** | Federation Operator | L2 + payout.batch, reconciliation |
-| **L4** | Infrastructure Operator | L3 + acquiring.emis, federation_ready |
+BANZA uses two complementary governance mechanisms:
 
-**Princípio de acesso aberto:** Qualquer entidade legal que passe o conformance suite torna-se um operador certificado. Sem acesso institucional. Sem acordo bilateral. Sem volume mínimo de transacções.
+**RFCs (Requests for Comments)** govern protocol decisions: financial invariants, payment flows, API contracts, operator requirements, federation protocols. An RFC is required before any implementation that changes the protocol. RFCs are proposed, discussed, accepted, and then immutable.
 
-### Manifesto de Operador
+An RFC is required for:
+- Changes to financial invariants
+- Changes to payment flow protocols
+- New certification levels
+- New currencies in the official registry
+- Federation protocol design
 
-```json
-{
-  "operator_id": "op_example_001",
-  "version": "1.0.0",
-  "certification_level": 2,
-  "capabilities": [
-    "wallet.consumer",
-    "wallet.merchant",
-    "qr.static",
-    "qr.dynamic",
-    "p2p.transfer",
-    "payment_links",
-    "settlement.t0"
-  ],
-  "invariants_asserted": [
-    "INV-LEDGER-001",
-    "INV-LEDGER-002",
-    "INV-STL-001",
-    "INV-STL-002"
-  ],
-  "environment": "LIVE",
-  "sandbox_available": true
-}
+**ADRs (Architecture Decision Records)** record decisions after they are made: technology choices, service boundaries, SDK architecture, naming. ADRs are numbered sequentially and immutable after acceptance. ADR-025 defines the canonical BANZA/BanzAI/Operators hierarchy. ADR-026 defines the federation trust model. ADR-028 defines the certification level architecture. ADR-029 defines the production root architecture.
+
+### No Single Operator Governs BANZA
+
+Operator independence is an architectural invariant:
+- BANZA is not owned by the reference operator
+- BANZA is not governed by the reference operator
+- The reference operator does not control the certification framework
+- Any operator can contribute to the protocol via the ADR/RFC process, on equal footing with any other operator
+
+The dependency graph is permanent:
+
+```
+     Operators   (any certified operator)
+         ↑
+       BanzAI    (Protocol Operating System)
+         ↑
+       BANZA     (the protocol itself)
 ```
 
-### Manutenção de Certificação
+BANZA and BanzAI never depend on operators. Operators depend on both.
 
-- Actualizações major do protocolo requerem re-certificação
-- Verificação automática de invariantes mensal
-- Spot-checks de conformidade trimestrais
-- As certificações expiram após 12 meses sem re-verificação
+### Protocol Development Status
 
-### O BanzAI e a Certificação
+Protocol design is frozen at M1 (achieved 2026-06-01). No new ADRs are required before production. No new contracts are required. Any operator can implement BANZA correctly today using only this document and the public specification.
 
-O BanzAI guia operadores no processo de certificação. Não concede a certificação — o conformance suite é o árbitro, porque ferramentas determinam a verdade. Ver [BANZAI_REFERENCE.md](../banzai/BANZAI_REFERENCE.md).
+Active work is now operational (M2–M6), not specification. See [Roadmap](#11-roadmap).
 
 ---
 
-## 10. Federação
+## 11. Roadmap
 
-A federação é o mecanismo pelo qual operadores certificados BANZA formam uma rede — permitindo que um cliente com carteira num operador pague um comerciante com carteira noutro operador, sem acordos bilaterais, sem intermediários adicionais, e com as mesmas garantias financeiras de qualquer pagamento intra-operador.
+### Completed
 
----
+| Milestone | Achieved | Evidence |
+|-----------|:--------:|---------|
+| M1 — Protocol Complete | **2026-06-01** | 79/79 federation tests, 14/14 interoperability scenarios, ADR-026/028/029 accepted |
+| M5 (partial) — Validation Studio | **2026-06-01** | Three-matrix validation architecture established |
 
-### Por que a Federação Existe
+### Active
 
-Sem federação, cada operador é uma ilha.
+| Milestone | Status | Blocking |
+|-----------|--------|---------|
+| **M2 — Production Trust** | ACTIVE | Root key ceremony scheduled; Key Manifest + BRL endpoints pending. OPS-001 is the first unblocked action. |
 
-Um cliente com carteira no Operador A pode pagar comerciantes no Operador A. Ponto final. O comerciante no Operador B está fora do alcance — a menos que exista um acordo bilateral explícito entre os dois operadores, negociado caso a caso, fora do protocolo.
+### Planned
 
-Isto não é uma limitação técnica. É uma limitação de confiança. O Operador A não tem como saber, de forma verificável, que o Operador B é um participante legítimo da rede. E sem confiança verificável, não existe encaminhamento seguro.
+| Milestone | Blocked by | Description |
+|-----------|-----------|-------------|
+| M3 — First Operator Certified | M2 | First production certificate issued; first operator serving live certificate |
+| M4 — BanzAI Operational | Nothing (parallel) | Qdrant + vLLM production deployment; knowledge indexed |
+| M5 — Validation Studio Complete | GOV-001/002/003 | RFC status updates, roadmap accuracy, closure declaration |
+| M6 — BANZA v1.0 Public Launch | M2 + M3 + M5 | Public announcement; external operators can begin L1–L3 certification |
 
-A federação resolve este problema ao nível do protocolo — sem acordos bilaterais, sem intermediários, sem negociação. A confiança é provada por certificados emitidos pelo BANZA. O encaminhamento segue os contratos do protocolo. A liquidação é executada por regras abertas.
+### Future Versions
 
----
-
-### Antes da Federação
-
-```
-Cliente A                    Cliente B
-    ↓                            ↓
-Operador A                   Operador B
-(rede fechada)               (rede fechada)
-
-O Cliente A não pode pagar o Comerciante B.
-O Comerciante B não pode receber do Cliente A.
-```
-
-Dois operadores certificados. Duas redes isoladas. Nenhuma ligação entre elas.
-
----
-
-### Com Federação
-
-```
-Cliente A                                      Comerciante B
-    ↓                                               ↑
-Operador A  ←——— protocolo BANZA ———→  Operador B
-    ↓                                               ↑
-  (debita                                    (credita
-  Cliente A)                              Comerciante B)
-
-O pagamento cruza a fronteira do operador.
-As garantias do protocolo aplicam-se em toda a cadeia.
-```
-
-Um cliente de qualquer operador pode pagar um comerciante em qualquer operador. Cada novo operador certificado que entra na rede torna todos os outros operadores mais úteis.
+| Version | Scope |
+|---------|-------|
+| **v1.1** | L4 conformance suite (card acquiring), ADR-030 Key Manifest Contract, ADR-031 Multi-Sig Root, DNS discovery mode (RFC-0005), Protocol Version Negotiation (ADR-032) |
+| **v1.2** | RFC-0006 Offline Payment Support, multi-operator registry |
+| **v2.0** | Cross-border settlement (AOA ↔ other African currencies), advanced fee models |
 
 ---
 
-### Como Funciona a Federação
+## 12. FAQ
 
-A federação ocorre em cinco momentos distintos:
+**Is BANZA a bank?**
 
-**1. Confiança**
-
-Antes de qualquer pagamento, o Operador A verifica que o Operador B é um participante legítimo da rede BANZA. Esta verificação é criptográfica — não depende de uma chamada ao BANZA em tempo real.
-
-O BANZA emite um certificado a cada operador certificado. O certificado está assinado com a chave do BANZA e declara: "Este operador foi certificado ao nível X, com estas capacidades, válido até esta data." Qualquer operador pode verificar qualquer certificado sem contactar o BANZA.
-
-O BANZA mantém uma Lista de Revogação (BRL — BANZA Revocation List), publicada a cada seis horas. Antes de encaminhar um pagamento, o Operador A verifica que o Operador B não está revogado ou suspenso.
-
-A confiança é sempre bidireccional: o Operador B também verifica o Operador A antes de aceitar um pedido de encaminhamento.
-
-**2. Encaminhamento**
-
-O Operador A envia um pedido de encaminhamento ao Operador B, assinado com a sua chave privada:
-
-```
-"Quero encaminhar um pagamento de 5.000 AOA do Cliente A para o Comerciante B."
-```
-
-O pedido inclui o identificador único da transacção (`trace_id`) que será partilhado por todos os artefactos do pagamento em ambos os operadores.
-
-**3. Aceitação e Execução**
-
-Quando o Operador B aceita o pedido, o pagamento é executado nesse preciso momento. A aceitação e a execução são simultâneas — não dois momentos separados.
-
-No instante em que o Operador B responde "aceite", a carteira do Comerciante B já foi creditada. O Comerciante B recebe o dinheiro imediatamente.
-
-**4. Obrigação**
-
-O Operador A recebe a confirmação de aceitação e, de forma atómica (numa única operação da base de dados), faz duas coisas:
-
-- Debita a carteira do Cliente A
-- Regista uma obrigação: "O Operador A deve 5.000 AOA ao Operador B"
-
-A obrigação está assinada pelo Operador A. É não-repudiável. O Operador A não pode mais tarde negar que deve ao Operador B.
-
-**5. Liquidação**
-
-As obrigações acumulam-se ao longo de um ciclo de compensação (tipicamente 24 horas). No fim do ciclo, os dois operadores calculam independentemente a posição líquida:
-
-```
-O Operador A deve ao Operador B:  150.000 AOA  (múltiplos pagamentos)
-O Operador B deve ao Operador A:   40.000 AOA  (pagamentos no sentido inverso)
-─────────────────────────────────────────────
-Posição líquida:                  110.000 AOA  (o Operador A deve ao Operador B)
-```
-
-Uma única transferência bancária liquida todos os pagamentos do ciclo. Não uma transferência por pagamento — uma por ciclo. A eficiência de liquidação escala com o volume.
+No. BANZA is a protocol — a set of open rules. It does not hold funds, does not have a banking license, and does not process payments. Operators implement the protocol and process payments on their customers' behalf.
 
 ---
 
-### Exemplo Prático
+**Is BANZA only for Angola?**
 
-**Situação:** O Cliente Ana tem carteira no Operador A. O Comerciante Bento tem carteira no Operador B. A Ana quer pagar 2.000 AOA ao Bento.
-
-```
-1. A Ana inicia o pagamento na aplicação do Operador A.
-   → O Operador A identifica que o Bento está no Operador B.
-
-2. O Operador A verifica o certificado do Operador B.
-   → O certificado está válido. O Operador B não está revogado.
-   → O Operador B é um membro legítimo da rede BANZA.
-
-3. O Operador A envia um pedido de encaminhamento ao Operador B (assinado):
-   "Pedido rr-abc: pagar 2.000 AOA ao Bento (trace: tr-xyz)"
-
-4. O Operador B verifica o certificado do Operador A (confiança bidireccional).
-   → Identifica a carteira do Bento. A carteira está activa.
-   → Credita 2.000 AOA na carteira do Bento.
-   → Responde: "Aceite. Transfer ID: itx-def"
-
-5. O Operador A recebe a confirmação (numa operação atómica):
-   → Debita 2.000 AOA da carteira da Ana.
-   → Regista obrigação: "Operador A deve 2.000 AOA ao Operador B (rr-abc)"
-
-6. O Bento recebe notificação de pagamento. O saldo subiu 2.000 AOA.
-   A Ana recebe confirmação. O saldo baixou 2.000 AOA.
-
-7. No fim do ciclo de 24 horas:
-   → Os operadores calculam a posição líquida bilateral.
-   → O Operador A executa uma única transferência bancária ao Operador B.
-   → Todas as obrigações do ciclo são marcadas como liquidadas.
-```
-
-Em toda a cadeia, o mesmo `trace_id` (tr-xyz) aparece em todos os artefactos: no pedido de encaminhamento, na resposta, na obrigação, nas entradas de ledger de ambos os operadores, e nos eventos emitidos. Qualquer auditor pode reconstruir o pagamento completo a partir do `trace_id` — nos dois operadores — sem cooperação de nenhum deles.
+BANZA was designed for Angola — its kernel handles the Kwanza, its settlement rails are EMIS and Multicaixa, and its founding context is the Angolan payment landscape. The protocol is open: any entity worldwide can implement it. But Angola is where it matters first.
 
 ---
 
-### Obrigações
+**Can any company become a BANZA operator?**
 
-Uma obrigação é o registo formal de que um operador deve dinheiro a outro.
-
-Quando o Operador B aceita um pagamento de encaminhamento, está a assumir um risco: creditou o comerciante mas ainda não recebeu o dinheiro. A obrigação do Operador A — assinada criptograficamente — é o compromisso de que o pagamento será liquidado.
-
-Obrigações têm ciclo de vida:
-
-```
-pendente → em compensação → liquidada
-```
-
-Uma obrigação não pode transitar de "liquidada" para "pendente". A imutabilidade é uma propriedade do protocolo, não da base de dados de cada operador.
-
-O invariante fundamental: o montante na obrigação é sempre igual ao montante no pedido de encaminhamento. Nenhuma taxa, nenhum desconto, nenhum arredondamento é aplicado dentro do montante transferido entre operadores. Taxas são entradas de ledger separadas.
+Yes, provided they pass the conformance suite for their target certification level. There is no institutional approval, no minimum volume, no bilateral agreement. Open rules, open certification.
 
 ---
 
-### Compensação (Netting)
+**What happens if an operator goes out of business?**
 
-A compensação é o processo pelo qual os operadores calculam e liquidam as posições líquidas ao fim de cada ciclo.
-
-Sem compensação, cada pagamento exigiria uma transferência bancária imediata. Com compensação bilateral, centenas de pagamentos em sentidos opostos colapsam numa única transferência.
-
-```
-Exemplo de ciclo de 24 horas entre o Operador A e o Operador B:
-
-  Operador A → Operador B:  842 pagamentos  →  4.210.000 AOA brutos
-  Operador B → Operador A:  318 pagamentos  →  1.590.000 AOA brutos
-  ─────────────────────────────────────────────────────────────────
-  Posição líquida:                           →  2.620.000 AOA
-  Transferências bancárias executadas:        →  1 (não 1.160)
-```
-
-A compensação é sempre bilateral e independente: cada operador calcula a posição líquida de forma autónoma. Ambos devem chegar ao mesmo resultado antes de qualquer transferência ser executada. Se os resultados divergem, a liquidação é suspensa até a discrepância ser identificada e resolvida.
+The protocol continues. Other certified operators continue to operate. The Key Manifest, the BRL, and the conformance suite remain available. The protocol is independent of any specific operator. This is the disappearing operator test — and the fundamental reason BANZA follows the open model.
 
 ---
 
-### O Papel do BanzAI na Federação
+**What is the difference between BANZA and BanzAI?**
 
-O BanzAI é o Sistema Operativo do Protocolo. Na federação, o BanzAI observa, verifica e analisa. Nunca decide, nunca executa.
+BANZA is the protocol. It defines the rules, issues certificates, and owns the conformance suite.
 
-**O BanzAI não:**
-
-```
-✗ Executa pagamentos
-✗ Aprova pagamentos
-✗ Encaminha pagamentos
-✗ Detém fundos
-✗ Emite certificados (isso é o BANZA)
-✗ Aprova certificações (isso é o BANZA)
-✗ Governa a federação (isso é o BANZA via protocolo)
-```
-
-**O BanzAI faz:**
-
-```
-✓ Avalia a prontidão de um operador para certificação
-✓ Executa o conformance suite (79 testes de federação)
-✓ Verifica asserções de confiança (a 9 etapas do protocolo de trust)
-✓ Monitoriza a saúde da rede de federação
-✓ Gera relatórios de reconciliação cross-operador
-✓ Auditoria de cadeias de pagamento via trace_id
-✓ Identifica discrepâncias de obrigações antes da compensação
-```
-
-A distinção é fundamental: o BanzAI é infraestrutura de observabilidade e avaliação. A federação ocorre entre operadores. O BANZA é a autoridade. O BanzAI é o instrumento de verificação.
+BanzAI is the Protocol Operating System. It helps operators understand the rules, assess their readiness, analyze their traces, and prepare for certification. BanzAI evaluates; BANZA certifies.
 
 ---
 
-### Modelo de Autoridade
+**Does BanzAI certify operators?**
 
-```
-       BANZA
-       (Protocolo — Autoridade)
-         │
-         │  emite certificados
-         │  mantém lista de revogação
-         │  aprova certificação
-         │  define as regras
-         ▼
-       BanzAI
-       (Sistema Operativo do Protocolo)
-         │
-         │  avalia conformidade
-         │  verifica trust
-         │  audita payments
-         │  nunca decide
-         ▼
-      Operadores
-      (Participantes)
-         │
-         │  implementam o protocolo
-         │  processam pagamentos
-         │  liquidam obrigações
-         ↕
-      Operadores
-      (entre si, via protocolo)
-```
-
-Nenhum operador tem autoridade sobre outro operador. A autoridade reside no protocolo — nas regras abertas, nos contratos publicados, nos invariantes verificáveis. O BANZA é a entidade de governança que mantém essas regras.
+No. BanzAI produces readiness assessments, guidance, and simulation results. Only BANZA issues certificates — after an operator passes the deterministic conformance suite.
 
 ---
 
-### Cadeia de Confiança
+**How long does certification take?**
 
-```
-BANZA
-  │  assina com chave privada do BANZA
-  ▼
-Certificado do Operador B
-  │  "Este operador é certificado ao nível 3. Chave pública: ed25519:xxx. Válido até: 2026-08-29."
-  ▼
-Verificado pelo Operador A
-  │  usando a chave pública do BANZA (distribuída com o SDK)
-  │  sem contactar o BANZA em tempo real
-  ▼
-Confiança estabelecida
-  │  Operador B é um participante legítimo
-  ▼
-Encaminhamento seguro
-```
-
-A confiança é sempre transitiva através do BANZA, nunca bilateral. O Operador A não precisa de conhecer o Operador B. Ambos conhecem o BANZA. O certificado do BANZA é a ponte.
+Running the conformance suite takes minutes. BANZA review completes within 5 business days. An L3 federation certificate is valid for 90 days and must be renewed.
 
 ---
 
-### Por que a Federação Importa
+**What is the BRL?**
 
-**Para comerciantes**
-
-Um comerciante certificado num operador pode receber pagamentos de clientes em qualquer outro operador. Não precisa de estar em múltiplas redes. Não precisa de acordos com múltiplos operadores. A sua carteira num único operador torna-se acessível a toda a rede.
-
-**Para clientes**
-
-Um cliente pode pagar qualquer comerciante em qualquer operador certificado, usando apenas a aplicação do seu operador. A fragmentação da rede — onde a aplicação A só funciona com comerciantes A — deixa de existir.
-
-**Para operadores**
-
-Cada novo operador certificado torna todos os outros operadores mais úteis. Um operador com 100.000 clientes que entra na rede com um parceiro de 500.000 clientes não soma 600.000 clientes à rede — multiplica a capacidade de pagamento de todos. Este é o efeito de rede de Metcalfe: o valor de uma rede cresce com o quadrado dos seus participantes.
-
-**Para reguladores**
-
-A federação é auditável por design. O `trace_id` de qualquer pagamento cross-operador existe em ambos os operadores, em todos os artefactos: pedido de encaminhamento, obrigação, entradas de ledger, eventos. Um regulador pode reconstruir qualquer pagamento federado completo, em ambos os operadores, sem cooperação de nenhum deles. Nenhuma informação é privada ao protocolo — apenas ao operador específico.
-
-**Para investidores e bancos**
-
-A federação transforma o BANZA de um conjunto de operadores isolados numa rede de pagamentos unificada. O valor da rede não pertence a nenhum operador — pertence ao protocolo. Cada operador que entra aumenta o valor de todos os outros. Este modelo de crescimento é estruturalmente diferente do modelo proprietário, onde o valor fica capturado no operador dominante.
+The BANZA Revocation List — a signed, public list of revoked or suspended operator certificates, published every 6 hours at `banza.network/federation/revocation-list.json`. Before routing any federated payment, operators verify that the destination is not on the BRL.
 
 ---
 
-### Estado da Especificação e Roadmap
+**How does an operator verify another's certificate without calling BANZA in real time?**
 
-A especificação completa de federação foi concluída em Maio de 2026. A arquitectura está definida. Os contratos estão especificados. O modelo de conformance tem 79 testes definidos.
-
-| Fase | Descrição | Estado |
-|------|-----------|--------|
-| Especificação de arquitectura (ADR-026) | Modelo de trust, certificados, BRL | ✓ Concluído |
-| Contratos de federação | operator-certificate, federation-routing, federation-obligation, federation-event, federation-manifest | ✓ Concluído |
-| Invariantes de federação (18) | INV-TRUST-*, INV-FED-*, INV-FED-LEDGER-* | ✓ Concluído |
-| Fluxo de protocolo (10 fases) | Da descoberta à liquidação final | ✓ Concluído |
-| Modelo de conformance (79 testes) | Suites FED-CERT a FED-FAIL | ✓ Concluído |
-| Implementação do runner | Extensão do banza-conformance com modo --federation | H1 2027 |
-| Implementação do kernel | InteropRoutingEngine, CrossOperatorSettlementProvider | H1 2027 |
-| Operadores piloto | Dois operadores em federação controlada | H2 2027 |
-| Federação aberta | Qualquer operador certificado pode federar | 2028 |
-
-A implementação segue a especificação — não o inverte. Nenhum código de federação será escrito antes de a especificação estar validada. A especificação está validada.
+Using the Key Manifest. The Key Manifest is published at `banza.network/.well-known/banza/key-manifest.json`. SDKs pin it at release. A certificate is valid if: (1) its `issuer_key_id` appears in the Key Manifest, (2) its signature verifies with the issuing key's public key, (3) it is not expired, and (4) the operator is not in the current BRL. No real-time BANZA server call is required.
 
 ---
 
-## 11. Roadmap do Protocolo
+**What is federation?**
 
-### Curto prazo (H2 2026)
-
-| Item | Descrição |
-|---|---|
-| Conformance Suite v1 | Suite de testes executável para Níveis 1–3, disponível publicamente |
-| Certificação Nível 1–2 | Primeiros operadores externos certificados |
-| Documentação de certificação open access | Processo de certificação documentado publicamente |
-
-### Médio prazo (H1 2027)
-
-| Item | Descrição |
-|---|---|
-| Certificação Nível 3–4 | Protocolo completo e certificação de infraestrutura |
-| Operadores de terceiros | Primeiros operadores externos no protocolo |
-| RFC de federação | Especificação de encaminhamento inter-operadores |
-| Portal de certificação | Certificação self-service para operadores |
-
-### Longo prazo (H2 2027+)
-
-| Item | Descrição |
-|---|---|
-| Piloto de federação | Dois operadores em federação controlada |
-| Federação aberta | Qualquer operador Nível 4 pode federar |
-| Carris cross-border | AOA ↔ outras moedas africanas |
-| RFC process aberto à comunidade | Contribuições externas ao protocolo |
+Federation is the mechanism by which certified operators route payments between each other without bilateral agreements. Customer A on Operator A pays Merchant B on Operator B — crossing the operator boundary — using only the BANZA protocol. Trust is cryptographic, routing is protocol-defined, settlement is handled by bilateral netting.
 
 ---
 
-## 12. Declaração de Visão
+**Does an L3 operator need a special agreement with BANZA to federate?**
 
-O ecossistema de pagamentos digitais de Angola será construído sobre o protocolo BANZA — não sobre o produto de um único operador.
-
-O ecossistema tem sucesso quando:
-- Qualquer programador pode construir sobre o protocolo
-- Qualquer operador pode certificar-se
-- Qualquer angolano pode transaccionar, independentemente de qual operador usa
-
-**O protocolo é o que fica.**
-
-Os operadores mudam. Os produtos evoluem. O que o BANZA garante é que as regras permaneçam abertas, a certificação permaneça acessível, e a infraestrutura permaneça de Angola.
-
-> **BANZA é o protocolo. BANZA move o dinheiro. O protocolo existe independentemente de qualquer operador.**
+No. An L3 certificate is sufficient. Federation is an automatic consequence of L3 certification — there is no additional federeation enrollment process. Any two L3+ operators can federate immediately upon certificate verification.
 
 ---
 
-**Referências:**
+**What level should a new operator target first?**
 
-- ADR-025 — Hierarquia canónica de três níveis (supersede ADR-016)
-- ADR-002 — Ledger de dupla entrada
-- ADR-004 — Idempotência e rate limiting
-- ADR-006 — Sistema de pagamento QR
-- ADR-012 — Ecossistema SDK-first
-- ADR-013 — Identidade wallet-native
+Start at L0 or L1. L0 establishes that your sandbox environment is operational. L1 covers core wallets, static QR, and P2P transfers — the foundation of every higher level. Most operators target L2 (instant settlement) within their first implementation cycle.
+
+---
+
+**What is the root key ceremony?**
+
+The root key ceremony is the offline process by which the BANZA root key is generated and stored. It is performed on an air-gapped machine, in the presence of a Ceremony Officer and an independent Witness, following a documented procedure. The private key never touches a networked machine. The ceremony establishes the root of trust for the entire BANZA certificate chain. It is a one-time event — after which issuing keys can be generated and the Key Manifest published.
+
+---
+
+## References
+
+**ADRs:**
+- ADR-002 — Double-entry ledger
+- ADR-004 — Idempotency and rate limiting
+- ADR-006 — QR payment system
+- ADR-012 — SDK-first ecosystem
+- ADR-013 — Wallet-native identity
 - ADR-018 — Open financial kernel
 - ADR-019 — Operator separation
 - ADR-024 — Reference operator
+- ADR-025 — Ecosystem naming (canonical, supersedes ADR-016)
+- ADR-026 — Federation Trust Model
+- ADR-028 — Certification Level Architecture
+- ADR-029 — Production Root Architecture
 
-Ver também:
-- [BANZAI_REFERENCE.md](../banzai/BANZAI_REFERENCE.md) — Protocol Operating System
-- [BANZA_REFERENCE.md](../banza/BANZA_REFERENCE.md) — Reference operator implementation
+**Companion documents:**
+- `BANZA_CERTIFICATION.md` — Certification levels, process, maintenance (authoritative)
+- `BANZA_CONFORMANCE.md` — Conformance suite overview
+- `BANZA_GOVERNANCE.md` — Governance framework
+- `docs/adr/` — All Architecture Decision Records
+- `docs/rfc/` — All Requests for Comments
+- `docs/federation/` — Federation documentation
+- `docs/validation/MATRIX_A_BANZA.md` — BANZA Validation Matrix (canonical)
+- `docs/governance/BANZA_V1_OPERATIONAL_TRANSITION_PLAN.md` — M1–M6 roadmap
