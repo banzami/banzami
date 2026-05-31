@@ -1,0 +1,184 @@
+{
+  "_spec": "BANZA Internal Event Type Registry v1.0",
+  "_status": "canonical",
+  "_authority": "ADR-025",
+  "_surface": "internal-sse",
+  "_description": "Canonical registry of all event types emitted on the BANZA internal event stream (GET /events). These are protocol-level events — not webhook delivery events. See contracts/webhooks/event-types.json for outbound webhook types.",
+  "_source_of_truth": "reference/sandbox-operator/src/events.rs",
+
+  "naming_convention": {
+    "pattern": "<aggregate_type>.<verb>",
+    "aggregate_types": ["wallet", "payment", "payment_request", "qr", "settlement"],
+    "verbs": ["created", "sent", "received", "paid", "generated", "completed", "failed", "expired", "cancelled"]
+  },
+
+  "event_types": [
+
+    {
+      "type": "wallet.created",
+      "aggregate_type": "wallet",
+      "description": "A wallet was created. Emitted for all wallet types: consumer, merchant, internal, government.",
+      "certification_level": 0,
+      "stability": "stable",
+      "payload": {
+        "required": ["wallet_id", "currency"],
+        "schema": {
+          "wallet_id": { "type": "string", "description": "ID of the created wallet." },
+          "label":     { "type": "string", "description": "Human-readable wallet label." },
+          "currency":  { "type": "string", "description": "ISO 4217 currency code (e.g. 'AOA')." }
+        }
+      }
+    },
+
+    {
+      "type": "payment.sent",
+      "aggregate_type": "transfer",
+      "description": "A transfer was completed from a wallet's perspective as the sender. One payment.sent event is emitted per completed transfer.",
+      "certification_level": 1,
+      "stability": "stable",
+      "payload": {
+        "required": ["transfer_id", "from_wallet_id", "amount_minor", "currency"],
+        "schema": {
+          "transfer_id":    { "type": "string", "description": "ID of the executed transfer." },
+          "from_wallet_id": { "type": "string", "description": "ID of the debited wallet." },
+          "amount_minor":   { "type": "integer", "description": "Amount debited in minor units. INV-LEDGER-003: integer, never float." },
+          "currency":       { "type": "string" }
+        }
+      },
+      "invariants": ["INV-LEDGER-003"],
+      "notes": "Emitted atomically with payment.received. Both events share the same trace_id and correlation_id."
+    },
+
+    {
+      "type": "payment.received",
+      "aggregate_type": "transfer",
+      "description": "A transfer was completed from a wallet's perspective as the recipient. One payment.received event is emitted per completed transfer.",
+      "certification_level": 1,
+      "stability": "stable",
+      "payload": {
+        "required": ["transfer_id", "to_wallet_id", "amount_minor", "currency"],
+        "schema": {
+          "transfer_id":  { "type": "string" },
+          "to_wallet_id": { "type": "string", "description": "ID of the credited wallet." },
+          "amount_minor": { "type": "integer", "description": "Amount credited in minor units." },
+          "currency":     { "type": "string" }
+        }
+      },
+      "invariants": ["INV-LEDGER-003"]
+    },
+
+    {
+      "type": "payment_request.created",
+      "aggregate_type": "payment_request",
+      "description": "A payment request (pull payment) was created and is awaiting payment.",
+      "certification_level": 1,
+      "stability": "stable",
+      "payload": {
+        "required": ["pr_id", "to_wallet_id", "amount_minor", "currency"],
+        "schema": {
+          "pr_id":        { "type": "string", "description": "Payment request ID." },
+          "to_wallet_id": { "type": "string", "description": "Wallet that will receive funds." },
+          "amount_minor": { "type": "integer" },
+          "currency":     { "type": "string" },
+          "description":  { "type": "string" }
+        }
+      }
+    },
+
+    {
+      "type": "payment_request.paid",
+      "aggregate_type": "payment_request",
+      "description": "A payment request was fulfilled. The resulting transfer ID is included. The payment_request and the resulting transfer share the same trace_id.",
+      "certification_level": 1,
+      "stability": "stable",
+      "payload": {
+        "required": ["pr_id", "transfer_id", "amount_minor"],
+        "schema": {
+          "pr_id":       { "type": "string" },
+          "transfer_id": { "type": "string", "description": "The transfer that fulfilled this payment request. Its causation_id equals the pr_id." },
+          "amount_minor": { "type": "integer" }
+        }
+      },
+      "invariants": ["INV-TRACE-001"],
+      "notes": "causation_id on the resulting transfer MUST equal the payment_request ID."
+    },
+
+    {
+      "type": "qr.generated",
+      "aggregate_type": "qr",
+      "description": "A QR code was generated. This is the root event for a QR payment flow.",
+      "certification_level": 1,
+      "stability": "stable",
+      "payload": {
+        "required": ["qr_id", "merchant_wallet_id", "currency"],
+        "schema": {
+          "qr_id":              { "type": "string" },
+          "merchant_wallet_id": { "type": "string" },
+          "amount_minor":       { "type": ["integer", "null"], "description": "null for open-amount QR codes." },
+          "currency":           { "type": "string" }
+        }
+      }
+    },
+
+    {
+      "type": "qr.paid",
+      "aggregate_type": "qr",
+      "description": "A QR code was paid. The QR code transitions to PAID/USED status. The resulting transfer ID is included.",
+      "certification_level": 1,
+      "stability": "stable",
+      "payload": {
+        "required": ["qr_id", "transfer_id", "amount_minor"],
+        "schema": {
+          "qr_id":       { "type": "string" },
+          "transfer_id": { "type": "string", "description": "The transfer that settled this QR payment." },
+          "amount_minor": { "type": "integer" }
+        }
+      },
+      "invariants": ["INV-QR-001", "INV-TRACE-001"],
+      "notes": "After qr.paid, the QR code MUST NOT accept further payments (INV-QR-001: single-use enforcement)."
+    },
+
+    {
+      "type": "settlement.created",
+      "aggregate_type": "settlement",
+      "description": "A settlement batch was initiated. Emitted when the batch transitions to CREATED status.",
+      "certification_level": 1,
+      "stability": "stable",
+      "payload": {
+        "required": ["batch_id", "wallet_id", "gross_minor", "net_minor", "tx_count"],
+        "schema": {
+          "batch_id":    { "type": "string" },
+          "wallet_id":   { "type": "string" },
+          "gross_minor": { "type": "integer", "description": "Total gross amount before fees. INV-STL-001: gross = net + fee." },
+          "fee_minor":   { "type": "integer" },
+          "net_minor":   { "type": "integer", "description": "Amount disbursed after fees." },
+          "tx_count":    { "type": "integer" }
+        }
+      },
+      "invariants": ["INV-STL-001"]
+    },
+
+    {
+      "type": "settlement.completed",
+      "aggregate_type": "settlement",
+      "description": "A settlement batch completed successfully. The provider reference for the rail settlement is included.",
+      "certification_level": 1,
+      "stability": "stable",
+      "payload": {
+        "required": ["batch_id"],
+        "schema": {
+          "batch_id":     { "type": "string" },
+          "provider_ref": { "type": ["string", "null"], "description": "External settlement rail reference. Null in sandbox." }
+        }
+      }
+    }
+
+  ],
+
+  "invariants": {
+    "INV-TRACE-001": "Every event MUST carry trace_id and correlation_id. All events in the same payment flow MUST share the same trace_id.",
+    "INV-EVENT-001": "Event IDs are globally unique. No id value appears twice in the event stream.",
+    "INV-EVENT-002": "created_at is set at emission time. It is immutable after emission.",
+    "INV-LEDGER-003": "All amount_minor values in event payloads MUST be integers. Float monetary values are a certification FAIL."
+  }
+}
