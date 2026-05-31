@@ -4,8 +4,10 @@ BANZA Federation Runner Infrastructure
 Two embedded HTTP servers used exclusively by the conformance runner:
 
   SimBServer      — Simulated Operator B
-      GET /.well-known/banza/operator.json     configurable manifest
-      GET /.well-known/banza/certificate.json  configurable cert
+      GET  /.well-known/banza/operator.json     configurable manifest
+      GET  /.well-known/banza/certificate.json  configurable cert
+      POST /federation/route                    routing wire protocol (FED-ROUTE)
+      GET  /wallets/{wallet_id}                 wallet balance queries
 
   TrustRootServer — BANZA trust root endpoints
       GET /federation/revocation-list.json     configurable BRL
@@ -15,17 +17,59 @@ State is updated by the runner between tests using RunnerInfra methods.
 Both servers are thread-safe; each is started in its own daemon thread.
 """
 
+import base64
+import hashlib
 import http.server
 import json
 import socket
 import threading
-from datetime import datetime, timezone
+import uuid
+from datetime import datetime, timedelta, timezone
 
+try:
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+    from cryptography.exceptions import InvalidSignature
+    _SIM_B_CRYPTO = True
+except ImportError:
+    _SIM_B_CRYPTO = False
+
+# ── Module-level helpers ──────────────────────────────────────────────────────
 
 def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("", 0))
         return s.getsockname()[1]
+
+
+def _b64url_decode(s: str) -> bytes:
+    pad = (4 - len(s) % 4) % 4
+    return base64.urlsafe_b64decode(s + "=" * pad)
+
+
+def _parse_sig_header(header: str):
+    """Parse Banza-Federation-Signature: t=<int>,v1=<base64url>. Returns (t_int, sig_b64) or (None, None)."""
+    t_val = None
+    sig_b64 = None
+    for part in header.split(","):
+        part = part.strip()
+        if part.startswith("t="):
+            try:
+                t_val = int(part[2:])
+            except ValueError:
+                pass
+        elif part.startswith("v1="):
+            sig_b64 = part[3:]
+    return t_val, sig_b64
+
+
+def _canonical_body_hash(body_bytes: bytes) -> str:
+    """Canonical hash for idempotency: parse JSON, sort keys, re-serialize, then SHA-256."""
+    try:
+        parsed = json.loads(body_bytes)
+        canonical = json.dumps(parsed, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    except Exception:
+        canonical = body_bytes
+    return hashlib.sha256(canonical).hexdigest()
 
 
 # ── Simulated Operator B ──────────────────────────────────────────────────────
@@ -35,29 +79,244 @@ def _make_sim_b_handler(state: dict, lock: threading.Lock):
         def log_message(self, fmt, *args):
             pass  # suppress per-request logs
 
+        # ── Response helper ───────────────────────────────────────────────────
+
+        def _json(self, status: int, body: dict) -> None:
+            data = json.dumps(body).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+        # ── GET ───────────────────────────────────────────────────────────────
+
         def do_GET(self):
             if self.path == "/.well-known/banza/operator.json":
                 with lock:
                     body = json.dumps(state["manifest"], indent=2).encode("utf-8") \
                         if state["manifest"] else b'{"error":"not configured"}'
-            elif self.path == "/.well-known/banza/certificate.json":
-                with lock:
-                    body = json.dumps(state["cert"], indent=2).encode("utf-8") \
-                        if state["cert"] else b'{"error":"not configured"}'
-            else:
-                body = json.dumps({"error": "not_found"}).encode("utf-8")
-                self.send_response(404)
+                self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
+
+            elif self.path == "/.well-known/banza/certificate.json":
+                with lock:
+                    body = json.dumps(state["cert"], indent=2).encode("utf-8") \
+                        if state["cert"] else b'{"error":"not configured"}'
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            elif self.path.startswith("/wallets/"):
+                wallet_id = self.path[len("/wallets/"):]
+                with lock:
+                    wallet = state["wallets"].get(wallet_id)
+                if wallet is None:
+                    self._json(404, {"error": "not_found", "wallet_id": wallet_id})
+                else:
+                    self._json(200, {
+                        "wallet_id": wallet_id,
+                        "status": wallet["status"],
+                        "balance_minor": wallet["balance_minor"],
+                    })
+
+            else:
+                self._json(404, {"error": "not_found", "path": self.path})
+
+        # ── POST ──────────────────────────────────────────────────────────────
+
+        def do_POST(self):
+            if self.path == "/federation/route":
+                self._handle_route()
+            else:
+                self._json(404, {"error": "not_found", "path": self.path})
+
+        def _handle_route(self):
+            content_length = int(self.headers.get("Content-Length", 0))
+            body_bytes = self.rfile.read(content_length)
+
+            # Parse body first — needed for all responses
+            try:
+                req = json.loads(body_bytes)
+                if not isinstance(req, dict):
+                    raise ValueError("body is not a JSON object")
+            except Exception:
+                self._json(400, {"error": "invalid_json"})
                 return
 
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
+            routing_id = req.get("routing_request_id", "")
+            trace_id = req.get("trace_id", "")
+
+            # Read shared state once
+            with lock:
+                manifest = state.get("manifest") or {}
+                my_op_id = manifest.get("operator_id", "operator-b-test")
+                fc = manifest.get("federation_capabilities") or {}
+                supported_currencies = fc.get("supported_currencies", ["AOA"])
+                op_a_pub_key = state.get("op_a_public_key")
+                routing_store = state["routing_store"]
+                wallets = state["wallets"]
+
+            # 1. Validate to_operator_id
+            to_op_id = req.get("to_operator_id", "")
+            if to_op_id != my_op_id:
+                self._json(400, {
+                    "schema_version": "1",
+                    "routing_request_id": routing_id,
+                    "status": "rejected",
+                    "trace_id": trace_id,
+                    "rejection_code": "capability_unavailable",
+                    "rejection_reason": (
+                        f"to_operator_id {to_op_id!r} does not match this operator ({my_op_id!r})"
+                    ),
+                })
+                return
+
+            # 2. Verify Banza-Federation-Signature
+            sig_header = self.headers.get("Banza-Federation-Signature", "")
+            if not sig_header:
+                self._json(401, {
+                    "schema_version": "1",
+                    "routing_request_id": routing_id,
+                    "status": "rejected",
+                    "trace_id": trace_id,
+                    "rejection_code": "operator_trust_failure",
+                    "rejection_reason": "Missing Banza-Federation-Signature header",
+                })
+                return
+
+            t_val, sig_b64 = _parse_sig_header(sig_header)
+            sig_valid = False
+            if t_val is not None and sig_b64 and op_a_pub_key and _SIM_B_CRYPTO:
+                try:
+                    payload = (str(t_val) + ".").encode("ascii") + body_bytes
+                    sig_bytes = _b64url_decode(sig_b64)
+                    pub = Ed25519PublicKey.from_public_bytes(op_a_pub_key)
+                    pub.verify(sig_bytes, payload)
+                    sig_valid = True
+                except (InvalidSignature, Exception):
+                    sig_valid = False
+
+            if not sig_valid:
+                self._json(401, {
+                    "schema_version": "1",
+                    "routing_request_id": routing_id,
+                    "status": "rejected",
+                    "trace_id": trace_id,
+                    "rejection_code": "operator_trust_failure",
+                    "rejection_reason": "Signature verification failed",
+                })
+                return
+
+            # 3. Validate amount.minor > 0 (INV-FED-LEDGER-002)
+            amount = req.get("amount") or {}
+            amount_minor = amount.get("minor", 0)
+            if not isinstance(amount_minor, int) or isinstance(amount_minor, bool) or amount_minor <= 0:
+                self._json(400, {
+                    "schema_version": "1",
+                    "routing_request_id": routing_id,
+                    "status": "rejected",
+                    "trace_id": trace_id,
+                    "rejection_code": "amount_below_minimum",
+                    "rejection_reason": "amount.minor must be a positive integer",
+                })
+                return
+
+            # 4. Idempotency check (INV-FED-004)
+            body_hash = _canonical_body_hash(body_bytes)
+            with lock:
+                if routing_id in state["routing_store"]:
+                    stored = state["routing_store"][routing_id]
+                    if stored["body_hash"] != body_hash:
+                        dup_resp = {
+                            "schema_version": "1",
+                            "routing_request_id": routing_id,
+                            "status": "rejected",
+                            "trace_id": trace_id,
+                            "rejection_code": "duplicate_request",
+                            "rejection_reason": (
+                                "routing_request_id already processed with different content"
+                            ),
+                        }
+                        self._json(200, dup_resp)
+                        return
+                    else:
+                        # Same content → replay original response
+                        self._json(200, stored["response"])
+                        return
+
+            # 5. Validate currency
+            currency = amount.get("currency", "")
+            if currency not in supported_currencies:
+                resp = {
+                    "schema_version": "1",
+                    "routing_request_id": routing_id,
+                    "status": "rejected",
+                    "trace_id": trace_id,
+                    "rejection_code": "currency_not_supported",
+                    "rejection_reason": (
+                        f"Currency {currency!r} is not supported. "
+                        f"Supported: {supported_currencies}"
+                    ),
+                }
+                with lock:
+                    state["routing_store"][routing_id] = {"body_hash": body_hash, "response": resp}
+                self._json(200, resp)
+                return
+
+            # 6. Validate recipient
+            recipient_id = req.get("recipient_identifier", "")
+            with lock:
+                wallet = state["wallets"].get(recipient_id)
+
+            if wallet is None:
+                resp = {
+                    "schema_version": "1",
+                    "routing_request_id": routing_id,
+                    "status": "rejected",
+                    "trace_id": trace_id,
+                    "rejection_code": "recipient_not_found",
+                    "rejection_reason": f"No wallet matching identifier {recipient_id!r}",
+                }
+                with lock:
+                    state["routing_store"][routing_id] = {"body_hash": body_hash, "response": resp}
+                self._json(200, resp)
+                return
+
+            if wallet["status"] == "suspended":
+                resp = {
+                    "schema_version": "1",
+                    "routing_request_id": routing_id,
+                    "status": "rejected",
+                    "trace_id": trace_id,
+                    "rejection_code": "recipient_suspended",
+                    "rejection_reason": f"Wallet {recipient_id!r} is suspended",
+                }
+                with lock:
+                    state["routing_store"][routing_id] = {"body_hash": body_hash, "response": resp}
+                self._json(200, resp)
+                return
+
+            # 7. Accept — credit payee, assign interop_transfer_id
+            itx_id = f"itx-{uuid.uuid4()}"
+            now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            resp = {
+                "schema_version": "1",
+                "routing_request_id": routing_id,
+                "status": "accepted",
+                "trace_id": trace_id,
+                "interop_transfer_id": itx_id,
+                "accepted_at": now_str,
+            }
+            with lock:
+                state["wallets"][recipient_id]["balance_minor"] += amount_minor
+                state["routing_store"][routing_id] = {"body_hash": body_hash, "response": resp}
+            self._json(200, resp)
 
     return SimBHandler
 
@@ -105,6 +364,7 @@ class RunnerInfra:
         infra.start()
         try:
             infra.configure_sim_b(manifest, cert)
+            infra.configure_routing("operator-a-test", op_a_pub_bytes)
             infra.set_brl_empty()
             # ... run tests ...
         finally:
@@ -116,7 +376,20 @@ class RunnerInfra:
         self._trust_root_port = _free_port()
         self._lock = threading.Lock()
 
-        self._sim_b_state = {"manifest": None, "cert": None}
+        self._sim_b_state = {
+            "manifest": None,
+            "cert": None,
+            # FED-ROUTE: Operator A credentials for routing signature verification
+            "op_a_public_key": None,
+            "op_a_operator_id": None,
+            # FED-ROUTE: in-memory routing store (idempotency cache)
+            "routing_store": {},
+            # FED-ROUTE: pre-configured wallets on Simulated Operator B
+            "wallets": {
+                "wallet-payee-test-001": {"status": "active", "balance_minor": 0},
+                "wallet-suspended-test-001": {"status": "suspended", "balance_minor": 0},
+            },
+        }
         self._trust_root_state = {
             "brl": self._empty_brl(),
             "key_manifest": {"schema_version": "1", "published_at": "", "keys": []},
@@ -147,6 +420,33 @@ class RunnerInfra:
             self._sim_b_state["manifest"] = manifest
             self._sim_b_state["cert"] = cert
 
+    def configure_routing(self, op_a_operator_id: str, op_a_public_key: bytes) -> None:
+        """
+        Configure Sim Op B with Operator A's ed25519 public key for routing
+        signature verification (FED-ROUTE suite).
+        """
+        with self._lock:
+            self._sim_b_state["op_a_operator_id"] = op_a_operator_id
+            self._sim_b_state["op_a_public_key"] = op_a_public_key
+
+    def reset_routing_state(self) -> None:
+        """
+        Clear routing request store and reset wallet balances to initial state.
+        Call before each FED-ROUTE test to ensure test isolation (Section 6.1).
+        """
+        with self._lock:
+            self._sim_b_state["routing_store"] = {}
+            self._sim_b_state["wallets"] = {
+                "wallet-payee-test-001": {"status": "active", "balance_minor": 0},
+                "wallet-suspended-test-001": {"status": "suspended", "balance_minor": 0},
+            }
+
+    def get_wallet_balance(self, wallet_id: str):
+        """Return current balance_minor for wallet_id, or None if not found."""
+        with self._lock:
+            wallet = self._sim_b_state["wallets"].get(wallet_id)
+        return wallet["balance_minor"] if wallet is not None else None
+
     # ── BRL configuration ─────────────────────────────────────────────────────
 
     def set_brl_empty(self) -> None:
@@ -157,7 +457,6 @@ class RunnerInfra:
     def set_brl_expired(self) -> None:
         """BRL that expired 1 hour ago (for FED-TRUST-009 — INV-TRUST-006)."""
         now = datetime.now(timezone.utc)
-        from datetime import timedelta
         issued_at = (now - timedelta(hours=8)).strftime("%Y-%m-%dT%H:%M:%SZ")
         expires_at = (now - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
         with self._lock:
@@ -172,7 +471,6 @@ class RunnerInfra:
     def set_brl_revoked(self, operator_id: str) -> None:
         """BRL that lists operator_id as revoked (FED-CERT-009)."""
         now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        from datetime import timedelta
         expires = (datetime.now(timezone.utc) + timedelta(hours=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
         with self._lock:
             self._trust_root_state["brl"] = {
@@ -239,7 +537,6 @@ class RunnerInfra:
     @staticmethod
     def _empty_brl() -> dict:
         now = datetime.now(timezone.utc)
-        from datetime import timedelta
         return {
             "schema_version": "1",
             "issued_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),

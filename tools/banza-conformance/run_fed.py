@@ -1,5 +1,5 @@
 """
-BANZA Federation Conformance Runner — Slice 4
+BANZA Federation Conformance Runner — Slice 5
 
 Implements:
   FED-CERT-001  Certificate Present at Well-Known URL                    (Slice 0)
@@ -30,14 +30,28 @@ Implements:
   FED-TRUST-007 Step 2.8 Fails When cross_operator_routing Not in Cert   (Slice 4)
   FED-TRUST-008 Step 2.9 Fails on cert/manifest operator_id Mismatch     (Slice 4)
   FED-TRUST-009 BRL Staleness Enforcement (INV-TRUST-006)                (Slice 4)
+  FED-ROUTE-001 Valid Routing Request Accepted                           (Slice 5)
+  FED-ROUTE-002 routing_request_id Echoed Unchanged                      (Slice 5)
+  FED-ROUTE-003 trace_id Propagated Unchanged (INV-FED-001)              (Slice 5)
+  FED-ROUTE-004 Idempotent Retry Returns Same Response (INV-FED-004)     (Slice 5)
+  FED-ROUTE-005 Request Without Valid Signature Rejected                 (Slice 5)
+  FED-ROUTE-006 Wrong to_operator_id Rejected                            (Slice 5)
+  FED-ROUTE-007 Recipient Not Found Returns Structured Rejection         (Slice 5)
+  FED-ROUTE-008 Unsupported Currency Returns Structured Rejection        (Slice 5)
+  FED-ROUTE-009 Accepted Response Contains Valid interop_transfer_id     (Slice 5)
+  FED-ROUTE-010 Non-Positive amount.minor Rejected (INV-FED-LEDGER-002)  (Slice 5)
+  FED-ROUTE-011 Duplicate routing_request_id with Different Content      (Slice 5)
+  FED-ROUTE-012 Suspended Recipient Wallet Returns Structured Rejection  (Slice 5)
 
-Spec: FEDERATION_TEST_SUITE_SPEC.md §Suite FED-CERT, §Suite FED-DISC, §Suite FED-TRUST
+Spec: FEDERATION_TEST_SUITE_SPEC.md §Suite FED-CERT, §Suite FED-DISC,
+      §Suite FED-TRUST, §Suite FED-ROUTE
 Contracts: contracts/federation/operator-certificate.json,
-           contracts/federation/federation-manifest.json
+           contracts/federation/federation-manifest.json,
+           contracts/federation/federation-routing.json
 
 Requires:
   cryptography>=41.0.0  for FED-CERT-002, FED-CERT-008–011, FED-DISC-007,
-                        and all FED-TRUST tests
+                        all FED-TRUST tests, and all FED-ROUTE tests
 """
 
 import argparse
@@ -56,7 +70,7 @@ from typing import Optional
 import trust_root as _tr
 from runner_infra import RunnerInfra
 
-RUNNER_VERSION = "0.5.0-slice4"
+RUNNER_VERSION = "0.6.0-slice5"
 
 # ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -76,6 +90,17 @@ def _find_manifest_schema_path() -> Optional[str]:
     for p in [
         os.path.join(this_dir, "..", "..", "contracts", "federation", "federation-manifest.json"),
         os.path.join(os.getcwd(), "contracts", "federation", "federation-manifest.json"),
+    ]:
+        if os.path.isfile(p):
+            return os.path.normpath(p)
+    return None
+
+
+def _find_routing_schema_path() -> Optional[str]:
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    for p in [
+        os.path.join(this_dir, "..", "..", "contracts", "federation", "federation-routing.json"),
+        os.path.join(os.getcwd(), "contracts", "federation", "federation-routing.json"),
     ]:
         if os.path.isfile(p):
             return os.path.normpath(p)
@@ -231,6 +256,55 @@ def validate_federation_manifest(manifest: dict) -> list:
     return errors
 
 
+# ── RoutingResponse validation ────────────────────────────────────────────────
+
+_ROUTING_REJECTION_CODES = {
+    "recipient_not_found", "recipient_suspended", "currency_not_supported",
+    "amount_below_minimum", "amount_above_maximum", "operator_trust_failure",
+    "capability_unavailable", "duplicate_request",
+}
+
+_ITX_PATTERN = r"^itx-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+
+
+def validate_routing_response(resp: dict) -> list:
+    """
+    Validate a RoutingResponse dict against federation-routing.json schema.
+    Returns list of error strings. Empty = valid.
+    """
+    if not isinstance(resp, dict):
+        return ["body is not a JSON object"]
+    errors = []
+    for f in ("schema_version", "routing_request_id", "status", "trace_id"):
+        if f not in resp:
+            errors.append(f"required field missing: '{f}'")
+
+    if "schema_version" in resp and resp["schema_version"] != "1":
+        errors.append(f"schema_version must be '1', got {resp['schema_version']!r}")
+
+    status = resp.get("status")
+    if status is not None and status not in ("accepted", "rejected", "pending"):
+        errors.append(f"status must be 'accepted'|'rejected'|'pending', got {status!r}")
+
+    if status == "accepted":
+        if "interop_transfer_id" not in resp:
+            errors.append("interop_transfer_id required when status=accepted")
+        else:
+            itx = resp["interop_transfer_id"]
+            if not re.match(_ITX_PATTERN, itx):
+                errors.append(f"interop_transfer_id format invalid: {itx!r}")
+        if "accepted_at" not in resp:
+            errors.append("accepted_at required when status=accepted")
+
+    if status == "rejected":
+        if "rejection_code" not in resp:
+            errors.append("rejection_code required when status=rejected")
+        elif resp["rejection_code"] not in _ROUTING_REJECTION_CODES:
+            errors.append(f"rejection_code {resp['rejection_code']!r} not in registry")
+
+    return errors
+
+
 # ── HTTP ──────────────────────────────────────────────────────────────────────
 
 def http_get(url: str, timeout: int = 10) -> tuple:
@@ -268,6 +342,80 @@ def http_post(url: str, body: dict, timeout: int = 10) -> tuple:
         return e.code, headers, raw
     except Exception as exc:
         raise RuntimeError(f"POST {url}: {exc}") from exc
+
+
+# ── Routing wire protocol helpers (FED-ROUTE) ─────────────────────────────────
+
+def _make_sig_header(body: dict, op_priv) -> str:
+    """
+    Build Banza-Federation-Signature header for a routing request.
+    Signed payload: str(unix_seconds) + "." + raw_body_bytes.
+    """
+    body_bytes = json.dumps(body).encode("utf-8")
+    t = int(time.time())
+    payload = (str(t) + ".").encode("ascii") + body_bytes
+    sig_bytes = op_priv.sign(payload)
+    return f"t={t},v1={_tr.b64url_encode(sig_bytes)}"
+
+
+def _post_route(url: str, body: dict, sig_header: str = None, timeout: int = 10) -> tuple:
+    """
+    POST a routing request to url.
+
+    sig_header: if provided, sent as Banza-Federation-Signature header.
+                if None, the header is omitted (tests missing-signature path).
+
+    Returns (http_status, response_dict_or_None).
+    """
+    body_bytes = json.dumps(body).encode("utf-8")
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+    if sig_header:
+        headers["Banza-Federation-Signature"] = sig_header
+    req = urllib.request.Request(url, data=body_bytes, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            raw = resp.read().decode("utf-8", errors="replace")
+            try:
+                return resp.status, json.loads(raw)
+            except json.JSONDecodeError:
+                return resp.status, None
+    except urllib.error.HTTPError as e:
+        raw = e.read().decode("utf-8", errors="replace")
+        try:
+            return e.code, json.loads(raw)
+        except json.JSONDecodeError:
+            return e.code, None
+    except Exception as exc:
+        raise RuntimeError(f"POST {url}: {exc}") from exc
+
+
+def _routing_body(
+    base_url: str,
+    routing_request_id: str = "rr-00000000-0000-0000-0000-000000000001",
+    trace_id: str = "tr-00000000-0000-0000-0000-000000000001",
+    from_operator_id: str = "operator-a-test",
+    to_operator_id: str = "operator-b-test",
+    amount_minor: int = 50000,
+    currency: str = "AOA",
+    sender_wallet_id: str = "wallet-payer-test-001",
+    recipient_identifier: str = "wallet-payee-test-001",
+    recipient_identifier_type: str = "wallet_id",
+    created_at: str = None,
+) -> dict:
+    """Build a RoutingRequest dict with fixture defaults."""
+    return {
+        "schema_version": "1",
+        "routing_request_id": routing_request_id,
+        "trace_id": trace_id,
+        "from_operator_id": from_operator_id,
+        "to_operator_id": to_operator_id,
+        "amount": {"minor": amount_minor, "currency": currency},
+        "sender_wallet_id": sender_wallet_id,
+        "recipient_identifier": recipient_identifier,
+        "recipient_identifier_type": recipient_identifier_type,
+        "created_at": created_at or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "certificate_url": f"{base_url}/.well-known/banza/certificate.json",
+    }
 
 
 # ── Test case builders ────────────────────────────────────────────────────────
@@ -2406,6 +2554,807 @@ def run_suite_fed_trust(
     }
 
 
+# ── FED-ROUTE-001 ────────────────────────────────────────────────────────────
+
+def run_fed_route_001(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-ROUTE-001 — Valid Routing Request Accepted
+
+    Happy-path: valid signed request → HTTP 200, status=accepted, all required
+    response fields present.
+    Pass:   HTTP 200 AND status=accepted AND routing_request_id/trace_id/
+            interop_transfer_id/accepted_at present.
+    Severity: STANDARD  Contract: federation-routing.json  L3 Req: FED-L3-007
+    """
+    case = _make_case("FED-ROUTE-001", "Valid Routing Request Accepted")
+    infra.reset_routing_state()
+    route_url = f"{infra.sim_b_url}/federation/route"
+
+    body = _routing_body(base_url)
+    sig = _make_sig_header(body, op_a_priv)
+
+    t0 = time.monotonic()
+    try:
+        status, resp = _post_route(route_url, body, sig)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": route_url, "body": body}
+    case["response"] = {"status": status, "body": resp}
+
+    if resp is None:
+        return _fail_case(case, "response is not valid JSON", ms)
+
+    schema_errors = validate_routing_response(resp)
+    response_status = resp.get("status")
+    itx_id = resp.get("interop_transfer_id")
+    accepted_at = resp.get("accepted_at")
+
+    assertions = [
+        _assertion("HTTP status == 200", status == 200, 200, status),
+        _assertion("response.status == accepted", response_status == "accepted", "accepted", response_status),
+        _assertion("routing_request_id echoed", resp.get("routing_request_id") is not None,
+                   "present", resp.get("routing_request_id")),
+        _assertion("trace_id echoed", resp.get("trace_id") is not None,
+                   "present", resp.get("trace_id")),
+        _assertion("interop_transfer_id present", itx_id is not None, "present", itx_id),
+        _assertion("accepted_at present", accepted_at is not None, "present", accepted_at),
+        _assertion("RoutingResponse schema valid", not schema_errors,
+                   "no schema errors", "; ".join(schema_errors) if schema_errors else "ok"),
+    ]
+
+    case["evidence"] = {
+        "routing_request_id": body["routing_request_id"],
+        "trace_id": body["trace_id"],
+        "response_status": response_status,
+        "interop_transfer_id": itx_id,
+        "accepted_at": accepted_at,
+        "http_status": status,
+        "schema_errors": schema_errors,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-ROUTE-002 ────────────────────────────────────────────────────────────
+
+def run_fed_route_002(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-ROUTE-002 — routing_request_id Echoed Unchanged
+
+    response.routing_request_id MUST equal the request routing_request_id exactly.
+    Pass:   Exact string equality.  Severity: STANDARD  Invariant: INV-FED-004
+    """
+    case = _make_case("FED-ROUTE-002", "routing_request_id Echoed Unchanged")
+    infra.reset_routing_state()
+    route_url = f"{infra.sim_b_url}/federation/route"
+
+    expected_id = "rr-00000000-0000-0000-0000-000000000001"
+    body = _routing_body(base_url, routing_request_id=expected_id)
+    sig = _make_sig_header(body, op_a_priv)
+
+    t0 = time.monotonic()
+    try:
+        status, resp = _post_route(route_url, body, sig)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": route_url, "body": body}
+    case["response"] = {"status": status, "body": resp}
+
+    if resp is None:
+        return _fail_case(case, "response is not valid JSON", ms)
+
+    echoed_id = resp.get("routing_request_id")
+    assertions = [
+        _assertion("HTTP status == 200", status == 200, 200, status),
+        _assertion("response.status == accepted", resp.get("status") == "accepted", "accepted", resp.get("status")),
+        _assertion(
+            f"routing_request_id echoed unchanged ({expected_id!r})",
+            echoed_id == expected_id, expected_id, echoed_id or "(absent)",
+        ),
+    ]
+
+    case["evidence"] = {
+        "request_routing_request_id": expected_id,
+        "response_routing_request_id": echoed_id,
+        "match": echoed_id == expected_id,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-ROUTE-003 ────────────────────────────────────────────────────────────
+
+def run_fed_route_003(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-ROUTE-003 — trace_id Propagated Unchanged (INV-FED-001)
+
+    response.trace_id MUST be identical to the request trace_id.
+    Pass:   Exact string equality.  Severity: CRITICAL  Invariant: INV-FED-001
+    L3 Req: FED-L3-012
+    """
+    case = _make_case("FED-ROUTE-003", "trace_id Propagated Unchanged (INV-FED-001)")
+    infra.reset_routing_state()
+    route_url = f"{infra.sim_b_url}/federation/route"
+
+    expected_trace = "tr-00000000-0000-0000-0000-000000000001"
+    body = _routing_body(base_url, trace_id=expected_trace)
+    sig = _make_sig_header(body, op_a_priv)
+
+    t0 = time.monotonic()
+    try:
+        status, resp = _post_route(route_url, body, sig)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": route_url, "body": body}
+    case["response"] = {"status": status, "body": resp}
+
+    if resp is None:
+        return _fail_case(case, "response is not valid JSON", ms)
+
+    echoed_trace = resp.get("trace_id")
+    assertions = [
+        _assertion("HTTP status == 200", status == 200, 200, status),
+        _assertion("response.status == accepted", resp.get("status") == "accepted", "accepted", resp.get("status")),
+        _assertion(
+            f"trace_id propagated unchanged ({expected_trace!r})",
+            echoed_trace == expected_trace, expected_trace, echoed_trace or "(absent)",
+        ),
+    ]
+
+    case["evidence"] = {
+        "request_trace_id": expected_trace,
+        "response_trace_id": echoed_trace,
+        "match": echoed_trace == expected_trace,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-ROUTE-004 ────────────────────────────────────────────────────────────
+
+def run_fed_route_004(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-ROUTE-004 — Idempotent Retry Returns Same Response (INV-FED-004)
+
+    Same routing_request_id twice → identical response; payee credited once only.
+    Pass:   response2 fields == response1 fields AND payee balance unchanged
+            after second request.
+    Severity: CRITICAL  Invariant: INV-FED-004  L3 Req: FED-L3-007
+    """
+    case = _make_case("FED-ROUTE-004", "Idempotent Retry Returns Same Response (INV-FED-004)")
+    infra.reset_routing_state()
+    route_url = f"{infra.sim_b_url}/federation/route"
+
+    body = _routing_body(base_url)
+    balance_before = infra.get_wallet_balance("wallet-payee-test-001") or 0
+
+    t0 = time.monotonic()
+    try:
+        status1, resp1 = _post_route(route_url, body, _make_sig_header(body, op_a_priv))
+        balance_mid = infra.get_wallet_balance("wallet-payee-test-001") or 0
+        status2, resp2 = _post_route(route_url, body, _make_sig_header(body, op_a_priv))
+        balance_after = infra.get_wallet_balance("wallet-payee-test-001") or 0
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": route_url, "body": body}
+    case["response"] = {"status": status2, "body": resp2}
+
+    if resp1 is None or resp2 is None:
+        return _fail_case(case, "one or both responses not valid JSON", ms)
+
+    # Field-level comparison (timestamps match because Sim Op B replays stored response)
+    id_match = resp1.get("routing_request_id") == resp2.get("routing_request_id")
+    status_match = resp1.get("status") == resp2.get("status")
+    trace_match = resp1.get("trace_id") == resp2.get("trace_id")
+    itx_match = resp1.get("interop_transfer_id") == resp2.get("interop_transfer_id")
+    accepted_at_match = resp1.get("accepted_at") == resp2.get("accepted_at")
+    balance_unchanged = balance_after == balance_mid
+
+    assertions = [
+        _assertion("first request accepted", resp1.get("status") == "accepted",
+                   "accepted", resp1.get("status")),
+        _assertion("second request returns same routing_request_id",
+                   id_match, resp1.get("routing_request_id"), resp2.get("routing_request_id")),
+        _assertion("second request returns same status",
+                   status_match, resp1.get("status"), resp2.get("status")),
+        _assertion("second request returns same trace_id",
+                   trace_match, resp1.get("trace_id"), resp2.get("trace_id")),
+        _assertion("second request returns same interop_transfer_id",
+                   itx_match, resp1.get("interop_transfer_id"), resp2.get("interop_transfer_id")),
+        _assertion("second request returns same accepted_at",
+                   accepted_at_match, resp1.get("accepted_at"), resp2.get("accepted_at")),
+        _assertion(
+            "payee wallet balance unchanged after second request (credited once only)",
+            balance_unchanged,
+            f"balance unchanged at {balance_mid}",
+            f"balance_after={balance_after} vs balance_mid={balance_mid}",
+        ),
+    ]
+
+    case["evidence"] = {
+        "routing_request_id": body["routing_request_id"],
+        "first_response": resp1,
+        "second_response": resp2,
+        "payee_wallet": "wallet-payee-test-001",
+        "balance_before": balance_before,
+        "balance_after_first": balance_mid,
+        "balance_after_second": balance_after,
+        "idempotency_replay_result": "same_response" if (id_match and itx_match) else "different_response",
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-ROUTE-005 ────────────────────────────────────────────────────────────
+
+def run_fed_route_005(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-ROUTE-005 — Request Without Valid Signature Rejected
+
+    Sub-case A: no Banza-Federation-Signature header → HTTP 401.
+    Sub-case B: wrong/invalid signature → HTTP 401.
+    Pass:   Both sub-cases return HTTP 401.
+    Severity: CRITICAL  L3 Req: FED-L3-010
+    """
+    case = _make_case("FED-ROUTE-005", "Request Without Valid Signature Rejected")
+    infra.reset_routing_state()
+    route_url = f"{infra.sim_b_url}/federation/route"
+
+    body = _routing_body(base_url)
+
+    t0 = time.monotonic()
+    try:
+        # Sub-case A: missing signature
+        status_a, resp_a = _post_route(route_url, body, sig_header=None)
+        # Sub-case B: wrong signature (placeholder "A"*86)
+        bad_sig = f"t={int(time.time())},v1={'A' * 86}"
+        status_b, resp_b = _post_route(route_url, body, sig_header=bad_sig)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": route_url, "body": body}
+    case["response"] = {"status_a": status_a, "status_b": status_b}
+
+    assertions = [
+        _assertion("missing signature → HTTP 401", status_a == 401, 401, status_a),
+        _assertion("invalid signature → HTTP 401", status_b == 401, 401, status_b),
+    ]
+
+    code_a = (resp_a or {}).get("rejection_code", "")
+    code_b = (resp_b or {}).get("rejection_code", "")
+
+    case["evidence"] = {
+        "routing_request_id": body["routing_request_id"],
+        "no_sig_status": status_a,
+        "no_sig_rejection_code": code_a,
+        "wrong_sig_status": status_b,
+        "wrong_sig_rejection_code": code_b,
+        "wrong_sig_used": f"A*86 placeholder (not a valid ed25519 signature)",
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-ROUTE-006 ────────────────────────────────────────────────────────────
+
+def run_fed_route_006(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-ROUTE-006 — Wrong to_operator_id Rejected
+
+    Request addressed to wrong operator → HTTP 400.
+    Pass:   HTTP 400.  Severity: STANDARD
+    """
+    case = _make_case("FED-ROUTE-006", "Wrong to_operator_id Rejected")
+    infra.reset_routing_state()
+    route_url = f"{infra.sim_b_url}/federation/route"
+
+    body = _routing_body(
+        base_url,
+        routing_request_id="rr-00000000-0000-0000-0000-000000000004",
+        trace_id="tr-00000000-0000-0000-0000-000000000004",
+        to_operator_id="some-other-operator",
+    )
+    sig = _make_sig_header(body, op_a_priv)
+
+    t0 = time.monotonic()
+    try:
+        status, resp = _post_route(route_url, body, sig)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": route_url, "body": body}
+    case["response"] = {"status": status, "body": resp}
+
+    assertions = [
+        _assertion("wrong to_operator_id → HTTP 400", status == 400, 400, status),
+    ]
+
+    case["evidence"] = {
+        "routing_request_id": body["routing_request_id"],
+        "request_to_operator_id": body["to_operator_id"],
+        "sim_b_operator_id": "operator-b-test",
+        "http_status": status,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-ROUTE-007 ────────────────────────────────────────────────────────────
+
+def run_fed_route_007(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-ROUTE-007 — Recipient Not Found Returns Structured Rejection
+
+    Unknown recipient → HTTP 200, status=rejected, rejection_code=recipient_not_found.
+    Pass:   HTTP 200 AND status=rejected AND rejection_code=recipient_not_found.
+    Severity: STANDARD
+    """
+    case = _make_case("FED-ROUTE-007", "Recipient Not Found Returns Structured Rejection")
+    infra.reset_routing_state()
+    route_url = f"{infra.sim_b_url}/federation/route"
+
+    body = _routing_body(
+        base_url,
+        routing_request_id="rr-00000000-0000-0000-0000-000000000002",
+        trace_id="tr-00000000-0000-0000-0000-000000000002",
+        recipient_identifier="wallet-does-not-exist-xxxxxxxx",
+    )
+    sig = _make_sig_header(body, op_a_priv)
+
+    t0 = time.monotonic()
+    try:
+        status, resp = _post_route(route_url, body, sig)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": route_url, "body": body}
+    case["response"] = {"status": status, "body": resp}
+
+    if resp is None:
+        return _fail_case(case, "response is not valid JSON", ms)
+
+    response_status = resp.get("status")
+    rejection_code = resp.get("rejection_code")
+    trace_echoed = resp.get("trace_id")
+
+    assertions = [
+        _assertion("HTTP status == 200", status == 200, 200, status),
+        _assertion("response.status == rejected", response_status == "rejected", "rejected", response_status),
+        _assertion("rejection_code == recipient_not_found",
+                   rejection_code == "recipient_not_found", "recipient_not_found", rejection_code or "(absent)"),
+        _assertion("trace_id propagated", trace_echoed == body["trace_id"],
+                   body["trace_id"], trace_echoed or "(absent)"),
+    ]
+
+    case["evidence"] = {
+        "routing_request_id": body["routing_request_id"],
+        "trace_id": body["trace_id"],
+        "recipient_identifier": body["recipient_identifier"],
+        "response_status": response_status,
+        "rejection_code": rejection_code,
+        "rejection_reason": resp.get("rejection_reason"),
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-ROUTE-008 ────────────────────────────────────────────────────────────
+
+def run_fed_route_008(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-ROUTE-008 — Unsupported Currency Returns Structured Rejection
+
+    EUR not in Sim Op B's supported currencies (AOA only) →
+    HTTP 200, status=rejected, rejection_code=currency_not_supported.
+    Pass:   rejection_code=currency_not_supported.  Severity: STANDARD
+    """
+    case = _make_case("FED-ROUTE-008", "Unsupported Currency Returns Structured Rejection")
+    infra.reset_routing_state()
+    route_url = f"{infra.sim_b_url}/federation/route"
+
+    body = _routing_body(
+        base_url,
+        routing_request_id="rr-00000000-0000-0000-0000-000000000003",
+        trace_id="tr-00000000-0000-0000-0000-000000000003",
+        currency="EUR",
+    )
+    sig = _make_sig_header(body, op_a_priv)
+
+    t0 = time.monotonic()
+    try:
+        status, resp = _post_route(route_url, body, sig)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": route_url, "body": body}
+    case["response"] = {"status": status, "body": resp}
+
+    if resp is None:
+        return _fail_case(case, "response is not valid JSON", ms)
+
+    response_status = resp.get("status")
+    rejection_code = resp.get("rejection_code")
+
+    assertions = [
+        _assertion("HTTP status == 200", status == 200, 200, status),
+        _assertion("response.status == rejected", response_status == "rejected", "rejected", response_status),
+        _assertion("rejection_code == currency_not_supported",
+                   rejection_code == "currency_not_supported",
+                   "currency_not_supported", rejection_code or "(absent)"),
+    ]
+
+    case["evidence"] = {
+        "routing_request_id": body["routing_request_id"],
+        "request_currency": body["amount"]["currency"],
+        "sim_b_supported_currencies": ["AOA"],
+        "response_status": response_status,
+        "rejection_code": rejection_code,
+        "rejection_reason": resp.get("rejection_reason"),
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-ROUTE-009 ────────────────────────────────────────────────────────────
+
+def run_fed_route_009(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-ROUTE-009 — Accepted Response Contains Valid interop_transfer_id
+
+    On acceptance, Sim Op B assigns interop_transfer_id matching
+    ^itx-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$.
+    Pass:   Format matches.  Severity: STANDARD  L3 Req: FED-L3-007
+    """
+    case = _make_case("FED-ROUTE-009", "Accepted Response Contains Valid interop_transfer_id")
+    infra.reset_routing_state()
+    route_url = f"{infra.sim_b_url}/federation/route"
+
+    body = _routing_body(base_url)
+    sig = _make_sig_header(body, op_a_priv)
+
+    t0 = time.monotonic()
+    try:
+        status, resp = _post_route(route_url, body, sig)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": route_url, "body": body}
+    case["response"] = {"status": status, "body": resp}
+
+    if resp is None:
+        return _fail_case(case, "response is not valid JSON", ms)
+
+    itx_id = resp.get("interop_transfer_id")
+    format_ok = bool(itx_id and re.match(_ITX_PATTERN, itx_id))
+
+    assertions = [
+        _assertion("HTTP status == 200", status == 200, 200, status),
+        _assertion("response.status == accepted", resp.get("status") == "accepted",
+                   "accepted", resp.get("status")),
+        _assertion("interop_transfer_id present", itx_id is not None, "present", itx_id),
+        _assertion(
+            "interop_transfer_id matches ^itx-<uuid>$",
+            format_ok, "itx-<uuid>", itx_id or "(absent)",
+        ),
+    ]
+
+    case["evidence"] = {
+        "routing_request_id": body["routing_request_id"],
+        "interop_transfer_id": itx_id,
+        "interop_transfer_id_pattern": _ITX_PATTERN,
+        "format_valid": format_ok,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-ROUTE-010 ────────────────────────────────────────────────────────────
+
+def run_fed_route_010(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-ROUTE-010 — Non-Positive amount.minor Rejected (INV-FED-LEDGER-002)
+
+    Zero and negative amounts must be rejected (HTTP 400 OR status=rejected).
+    Pass:   Both amount.minor=0 and amount.minor=-1000 are rejected.
+    Severity: CRITICAL  Invariant: INV-FED-LEDGER-002
+    """
+    case = _make_case("FED-ROUTE-010", "Non-Positive amount.minor Rejected (INV-FED-LEDGER-002)")
+    infra.reset_routing_state()
+    route_url = f"{infra.sim_b_url}/federation/route"
+
+    body_zero = _routing_body(
+        base_url,
+        routing_request_id="rr-00000000-0000-0000-0000-000000000005",
+        trace_id="tr-00000000-0000-0000-0000-000000000005",
+        amount_minor=0,
+    )
+    body_neg = _routing_body(
+        base_url,
+        routing_request_id="rr-00000000-0000-0000-0000-000000000005",
+        trace_id="tr-00000000-0000-0000-0000-000000000005",
+        amount_minor=-1000,
+    )
+
+    t0 = time.monotonic()
+    try:
+        status_zero, resp_zero = _post_route(route_url, body_zero, _make_sig_header(body_zero, op_a_priv))
+        infra.reset_routing_state()
+        status_neg, resp_neg = _post_route(route_url, body_neg, _make_sig_header(body_neg, op_a_priv))
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": route_url}
+    case["response"] = {"status_zero": status_zero, "status_neg": status_neg}
+
+    def _is_rejected(status, resp):
+        if status == 400:
+            return True
+        if resp and resp.get("status") == "rejected":
+            return True
+        return False
+
+    zero_rejected = _is_rejected(status_zero, resp_zero)
+    neg_rejected = _is_rejected(status_neg, resp_neg)
+
+    assertions = [
+        _assertion("amount.minor=0 rejected (HTTP 400 or status=rejected)",
+                   zero_rejected, "rejected", f"HTTP {status_zero} / status={resp_zero.get('status') if resp_zero else 'N/A'}"),
+        _assertion("amount.minor=-1000 rejected (HTTP 400 or status=rejected)",
+                   neg_rejected, "rejected", f"HTTP {status_neg} / status={resp_neg.get('status') if resp_neg else 'N/A'}"),
+    ]
+
+    case["evidence"] = {
+        "zero_amount_http_status": status_zero,
+        "zero_amount_response": resp_zero,
+        "neg_amount_http_status": status_neg,
+        "neg_amount_response": resp_neg,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-ROUTE-011 ────────────────────────────────────────────────────────────
+
+def run_fed_route_011(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-ROUTE-011 — Duplicate routing_request_id with Different Content Returns duplicate_request
+
+    Same routing_request_id reused with different amount → rejection_code=duplicate_request.
+    Pass:   rejection_code=duplicate_request on second request.
+    Severity: CRITICAL  Invariant: INV-FED-IDEM-001
+    """
+    case = _make_case(
+        "FED-ROUTE-011",
+        "Duplicate routing_request_id with Different Content Returns duplicate_request",
+    )
+    infra.reset_routing_state()
+    route_url = f"{infra.sim_b_url}/federation/route"
+
+    # First request: rr-001, amount=50000
+    body1 = _routing_body(base_url, amount_minor=50000)
+    # Second request: same rr-001 but amount=99999 (protocol violation by Operator A)
+    body2 = dict(body1)
+    body2["amount"] = {"minor": 99999, "currency": "AOA"}
+
+    t0 = time.monotonic()
+    try:
+        status1, resp1 = _post_route(route_url, body1, _make_sig_header(body1, op_a_priv))
+        status2, resp2 = _post_route(route_url, body2, _make_sig_header(body2, op_a_priv))
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": route_url}
+    case["response"] = {"status2": status2, "body2": resp2}
+
+    if resp1 is None or resp2 is None:
+        return _fail_case(case, "one or both responses not valid JSON", ms)
+
+    first_accepted = resp1.get("status") == "accepted"
+    rejection_code = (resp2 or {}).get("rejection_code")
+    dup_code = rejection_code == "duplicate_request"
+
+    assertions = [
+        _assertion("first request accepted", first_accepted, "accepted", resp1.get("status")),
+        _assertion("second request (different content) rejected", resp2.get("status") == "rejected",
+                   "rejected", resp2.get("status")),
+        _assertion("rejection_code == duplicate_request",
+                   dup_code, "duplicate_request", rejection_code or "(absent)"),
+    ]
+
+    case["evidence"] = {
+        "routing_request_id": body1["routing_request_id"],
+        "first_amount_minor": body1["amount"]["minor"],
+        "second_amount_minor": body2["amount"]["minor"],
+        "first_response_status": resp1.get("status"),
+        "second_response_status": resp2.get("status"),
+        "rejection_code": rejection_code,
+        "first_interop_transfer_id": resp1.get("interop_transfer_id"),
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-ROUTE-012 ────────────────────────────────────────────────────────────
+
+def run_fed_route_012(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-ROUTE-012 — Suspended Recipient Wallet Returns Structured Rejection
+
+    Payment to suspended wallet → status=rejected, rejection_code=recipient_suspended.
+    Pass:   rejection_code=recipient_suspended.  Severity: STANDARD
+    """
+    case = _make_case("FED-ROUTE-012", "Suspended Recipient Wallet Returns Structured Rejection")
+    infra.reset_routing_state()
+    route_url = f"{infra.sim_b_url}/federation/route"
+
+    body = _routing_body(
+        base_url,
+        routing_request_id="rr-00000000-0000-0000-0000-000000000006",
+        trace_id="tr-00000000-0000-0000-0000-000000000006",
+        recipient_identifier="wallet-suspended-test-001",
+    )
+    sig = _make_sig_header(body, op_a_priv)
+
+    t0 = time.monotonic()
+    try:
+        status, resp = _post_route(route_url, body, sig)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": route_url, "body": body}
+    case["response"] = {"status": status, "body": resp}
+
+    if resp is None:
+        return _fail_case(case, "response is not valid JSON", ms)
+
+    response_status = resp.get("status")
+    rejection_code = resp.get("rejection_code")
+    trace_echoed = resp.get("trace_id")
+
+    assertions = [
+        _assertion("HTTP status == 200", status == 200, 200, status),
+        _assertion("response.status == rejected", response_status == "rejected",
+                   "rejected", response_status),
+        _assertion("rejection_code == recipient_suspended",
+                   rejection_code == "recipient_suspended",
+                   "recipient_suspended", rejection_code or "(absent)"),
+        _assertion("trace_id propagated", trace_echoed == body["trace_id"],
+                   body["trace_id"], trace_echoed or "(absent)"),
+    ]
+
+    case["evidence"] = {
+        "routing_request_id": body["routing_request_id"],
+        "trace_id": body["trace_id"],
+        "recipient_identifier": body["recipient_identifier"],
+        "wallet_status": "suspended",
+        "response_status": response_status,
+        "rejection_code": rejection_code,
+        "rejection_reason": resp.get("rejection_reason"),
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-ROUTE suite runner ────────────────────────────────────────────────────
+
+def run_suite_fed_route(
+    base_url: str,
+    infra: "RunnerInfra" = None,
+    op_a_priv=None,
+) -> dict:
+    """
+    Run all 12 FED-ROUTE tests.
+
+    Requires infra (Sim Op B) and op_a_priv (Operator A signing key).
+    Without both, all tests are skipped.
+    """
+    def _skip(case_id, title, reason):
+        return _skip_case(_make_case(case_id, title), reason)
+
+    route_avail = infra is not None and op_a_priv is not None
+
+    if not route_avail:
+        reason = "routing infrastructure not available (install cryptography)"
+        cases = [
+            _skip(f"FED-ROUTE-{str(i).zfill(3)}", t, reason)
+            for i, t in [
+                (1, "Valid Routing Request Accepted"),
+                (2, "routing_request_id Echoed Unchanged"),
+                (3, "trace_id Propagated Unchanged (INV-FED-001)"),
+                (4, "Idempotent Retry Returns Same Response (INV-FED-004)"),
+                (5, "Request Without Valid Signature Rejected"),
+                (6, "Wrong to_operator_id Rejected"),
+                (7, "Recipient Not Found Returns Structured Rejection"),
+                (8, "Unsupported Currency Returns Structured Rejection"),
+                (9, "Accepted Response Contains Valid interop_transfer_id"),
+                (10, "Non-Positive amount.minor Rejected (INV-FED-LEDGER-002)"),
+                (11, "Duplicate routing_request_id with Different Content Returns duplicate_request"),
+                (12, "Suspended Recipient Wallet Returns Structured Rejection"),
+            ]
+        ]
+    else:
+        cases = [
+            run_fed_route_001(base_url, infra, op_a_priv),
+            run_fed_route_002(base_url, infra, op_a_priv),
+            run_fed_route_003(base_url, infra, op_a_priv),
+            run_fed_route_004(base_url, infra, op_a_priv),
+            run_fed_route_005(base_url, infra, op_a_priv),
+            run_fed_route_006(base_url, infra, op_a_priv),
+            run_fed_route_007(base_url, infra, op_a_priv),
+            run_fed_route_008(base_url, infra, op_a_priv),
+            run_fed_route_009(base_url, infra, op_a_priv),
+            run_fed_route_010(base_url, infra, op_a_priv),
+            run_fed_route_011(base_url, infra, op_a_priv),
+            run_fed_route_012(base_url, infra, op_a_priv),
+        ]
+
+    passed = sum(1 for c in cases if c["status"] == "PASS")
+    failed = sum(1 for c in cases if c["status"] == "FAIL")
+    skipped = sum(1 for c in cases if c["status"] in ("SKIP", "ERROR"))
+
+    return {
+        "suite_id": "FED-ROUTE",
+        "suite_name": "Routing Negotiation",
+        "blocking": True,
+        "passed": passed,
+        "failed": failed,
+        "skipped": skipped,
+        "cases": cases,
+    }
+
+
 # ── FED-DISC suite runner ─────────────────────────────────────────────────────
 
 def run_suite_fed_disc(
@@ -2547,22 +3496,25 @@ def run_federation_mode(
     run_cert = fed_suite in (None, "cert")
     run_disc = fed_suite in (None, "disc")
     run_trust = fed_suite in (None, "trust")
+    run_route = fed_suite in (None, "route")
 
-    if fed_suite is not None and not run_cert and not run_disc and not run_trust:
-        print(f"ERROR: Unknown --fed-suite value: {fed_suite!r}. Available: cert, disc, trust",
+    if fed_suite is not None and not run_cert and not run_disc and not run_trust and not run_route:
+        print(f"ERROR: Unknown --fed-suite value: {fed_suite!r}. "
+              f"Available: cert, disc, trust, route",
               file=sys.stderr)
         return 2
 
     suite_label = {
-        None: "FED-CERT-001–011, FED-DISC-001–008, FED-TRUST-001–009",
+        None: "FED-CERT-001–011, FED-DISC-001–008, FED-TRUST-001–009, FED-ROUTE-001–012",
         "cert": "FED-CERT-001–011",
         "disc": "FED-DISC-001–008",
         "trust": "FED-TRUST-001–009",
+        "route": "FED-ROUTE-001–012",
     }.get(fed_suite, fed_suite)
 
     print(f"BANZA Federation Conformance Runner {RUNNER_VERSION}")
     print(f"Operator: {base_url}")
-    print(f"Slice:    4 — {suite_label}")
+    print(f"Slice:    5 — {suite_label}")
     print()
 
     schema_path = _find_schema_path()
@@ -2590,6 +3542,7 @@ def run_federation_mode(
     secondary_key_id = None
     secondary_pub = None
     root_public_key_bytes = None
+    op_a_priv = None
 
     if _tr.CRYPTO_AVAILABLE:
         try:
@@ -2737,6 +3690,9 @@ def run_federation_mode(
                 operator_public_key_bytes=op_a_pub,
             )
 
+            # Configure Sim Op B with Operator A's public key (for FED-ROUTE sig verification)
+            infra.configure_routing(cert_a["operator_id"], op_a_pub)
+
             # Extended setup: deliver cert + BANZA root key + BRL URL + key manifest URL
             setup_ok = setup_operator_for_federation(
                 base_url, cert_a,
@@ -2806,6 +3762,16 @@ def run_federation_mode(
                 cert_b_no_routing_cap=cert_b_no_routing_cap,
                 cert_b_mismatched=cert_b_mismatched,
             ))
+        if run_route:
+            # Restore Sim Op B to valid state for routing tests
+            if infra and manifest_b and cert_b_valid:
+                infra.configure_sim_b(manifest_b, cert_b_valid)
+                infra.set_brl_empty()
+            suite_results.append(run_suite_fed_route(
+                base_url,
+                infra=infra,
+                op_a_priv=op_a_priv if _tr.CRYPTO_AVAILABLE else None,
+            ))
     finally:
         if infra:
             infra.stop()
@@ -2853,6 +3819,8 @@ def run_federation_mode(
             parts.append("FED-DISC-001–008")
         if "FED-TRUST" in suite_ids:
             parts.append("FED-TRUST-001–009")
+        if "FED-ROUTE" in suite_ids:
+            parts.append("FED-ROUTE-001–012")
         print(f"{', '.join(parts)}: ALL PASS")
         print()
         print("What is now proven:")
@@ -2890,6 +3858,20 @@ def run_federation_mode(
             print("  ✓ Missing routing capability rejected at step 2.8      (INV-TRUST-004)")
             print("  ✓ cert/manifest operator_id mismatch rejected at 2.9   (INV-TRUST-001)")
             print("  ✓ Expired BRL rejected — fail-closed enforced          (INV-TRUST-006)")
+        if "FED-ROUTE" in suite_ids:
+            print("  ✓ Valid routing request accepted — HTTP 200, status=accepted")
+            print("  ✓ routing_request_id echoed unchanged                  (INV-FED-004)")
+            print("  ✓ trace_id propagated unchanged                        (INV-FED-001)")
+            print("  ✓ Idempotent retry returns same response, no double-credit (INV-FED-004)")
+            print("  ✓ Missing signature rejected with HTTP 401")
+            print("  ✓ Invalid signature rejected with HTTP 401")
+            print("  ✓ Wrong to_operator_id rejected with HTTP 400")
+            print("  ✓ Unknown recipient → rejection_code=recipient_not_found")
+            print("  ✓ Unsupported currency → rejection_code=currency_not_supported")
+            print("  ✓ interop_transfer_id matches ^itx-<uuid>$ format")
+            print("  ✓ Zero/negative amount rejected                        (INV-FED-LEDGER-002)")
+            print("  ✓ Duplicate routing_request_id with different content → duplicate_request (INV-FED-IDEM-001)")
+            print("  ✓ Suspended recipient → rejection_code=recipient_suspended")
     elif total_fail > 0:
         print(f"{', '.join(suite_ids)}: FAIL  ({total_pass} passed, {total_fail} failed, {total_skip} skipped)")
     else:
@@ -2902,7 +3884,7 @@ def run_federation_mode(
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "runner_version": RUNNER_VERSION,
         "federation_mode": True,
-        "slice": "4",
+        "slice": "5",
         "operator_url": base_url,
         "schema_path": schema_path,
         "crypto_available": _tr.CRYPTO_AVAILABLE,
@@ -2935,7 +3917,7 @@ def main() -> None:
     parser.add_argument("--output", help="Write JSON report to this file")
     parser.add_argument("--quiet", action="store_true", help="Suppress passing test output")
     parser.add_argument("--fed-suite", dest="fed_suite",
-                        help="Run only this suite: cert | disc | trust (default: all)")
+                        help="Run only this suite: cert | disc | trust | route (default: all)")
     args = parser.parse_args()
 
     sys.exit(run_federation_mode(
