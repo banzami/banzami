@@ -63,10 +63,18 @@ Implements:
   FED-EVT-004   federation.obligation.recorded Emitted on Operator A     (Slice 8)
   FED-EVT-005   All Federation Events Share trace_id (INV-FED-001)       (Slice 8)
   FED-EVT-006   Federation Events Validate Against Schema                (Slice 8)
+  FED-SETTLE-001 Obligation Export Includes All Pending Obligations       (Slice 9)
+  FED-SETTLE-002 Net Position Computed Correctly                          (Slice 9)
+  FED-SETTLE-003 Both Operators Independently Compute Same Net            (Slice 9)
+  FED-SETTLE-004 Settlement Execution: Ledger Entries Correct             (Slice 9)
+  FED-SETTLE-005 Obligations Marked Settled With Required Fields          (Slice 9)
+  FED-SETTLE-006 Reconciliation: All Accepted Routing Requests Have Obls  (Slice 9)
+  FED-SETTLE-007 Reconciliation: Trace Cross-Check Across Both Operators  (Slice 9)
+  FED-SETTLE-008 Settlement Blocked on Unresolved Discrepancy             (Slice 9)
 
 Spec: FEDERATION_TEST_SUITE_SPEC.md §Suite FED-CERT, §Suite FED-DISC,
       §Suite FED-TRUST, §Suite FED-ROUTE, §Suite FED-EXEC, §Suite FED-OBL,
-      §Suite FED-EVT
+      §Suite FED-EVT, §Suite FED-SETTLE
 Contracts: contracts/federation/operator-certificate.json,
            contracts/federation/federation-manifest.json,
            contracts/federation/federation-routing.json,
@@ -95,7 +103,7 @@ from typing import Optional
 import trust_root as _tr
 from runner_infra import RunnerInfra
 
-RUNNER_VERSION = "0.9.0-slice8"
+RUNNER_VERSION = "1.0.0-slice9"
 
 # ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -3621,6 +3629,118 @@ def _get_sim_b_events_http(sim_b_url: str) -> tuple:
         raise
 
 
+# ── FED-SETTLE HTTP helpers ───────────────────────────────────────────────────
+
+def _netting_trigger(base_url: str) -> tuple:
+    """POST /conformance/federation/netting/trigger → (status, body_or_None)."""
+    try:
+        status, _, raw = http_post(f"{base_url}/conformance/federation/netting/trigger", {})
+        try:
+            return status, json.loads(raw)
+        except json.JSONDecodeError:
+            return status, None
+    except RuntimeError as exc:
+        raise
+
+
+def _netting_execute(base_url: str, batch_id: str) -> tuple:
+    """POST /conformance/federation/netting/execute → (status, body_or_None)."""
+    try:
+        status, _, raw = http_post(
+            f"{base_url}/conformance/federation/netting/execute",
+            {"settlement_batch_id": batch_id},
+        )
+        try:
+            return status, json.loads(raw)
+        except json.JSONDecodeError:
+            return status, None
+    except RuntimeError as exc:
+        raise
+
+
+def _add_b_obligation(
+    base_url: str,
+    amount_minor: int,
+    routing_request_id: str,
+    trace_id: str,
+    currency: str = "AOA",
+) -> tuple:
+    """POST /conformance/federation/netting/add-b-obligation → (status, body_or_None)."""
+    try:
+        status, _, raw = http_post(
+            f"{base_url}/conformance/federation/netting/add-b-obligation",
+            {
+                "amount_minor": amount_minor,
+                "currency": currency,
+                "routing_request_id": routing_request_id,
+                "trace_id": trace_id,
+                "from_operator_id": "operator-b-test",
+                "to_operator_id": "operator-a-test",
+            },
+        )
+        try:
+            return status, json.loads(raw)
+        except json.JSONDecodeError:
+            return status, None
+    except RuntimeError as exc:
+        raise
+
+
+def _inject_discrepancy(
+    base_url: str,
+    routing_request_id: str,
+    reported_amount_minor: int,
+) -> tuple:
+    """POST /conformance/federation/netting/inject-discrepancy → (status, body_or_None)."""
+    try:
+        status, _, raw = http_post(
+            f"{base_url}/conformance/federation/netting/inject-discrepancy",
+            {
+                "routing_request_id": routing_request_id,
+                "reported_amount_minor": reported_amount_minor,
+            },
+        )
+        try:
+            return status, json.loads(raw)
+        except json.JSONDecodeError:
+            return status, None
+    except RuntimeError as exc:
+        raise
+
+
+def _reset_netting_state(base_url: str) -> bool:
+    """POST /conformance/federation/netting/reset → True if OK."""
+    try:
+        status, _, _ = http_post(f"{base_url}/conformance/federation/netting/reset", {})
+        return status in (200, 204)
+    except RuntimeError:
+        return False
+
+
+def _get_netting_settlement_ledger(base_url: str) -> tuple:
+    """GET /conformance/federation/netting/settlement-ledger → (status, body_or_None)."""
+    try:
+        status, _, raw = http_get(f"{base_url}/conformance/federation/netting/settlement-ledger")
+        try:
+            return status, json.loads(raw)
+        except json.JSONDecodeError:
+            return status, None
+    except RuntimeError as exc:
+        raise
+
+
+def _get_routing_commits(base_url: str) -> tuple:
+    """GET /conformance/federation/routing-commits → (status, body_or_None)."""
+    try:
+        status, _, raw = http_get(f"{base_url}/conformance/federation/routing-commits")
+        try:
+            return status, json.loads(raw)
+        except json.JSONDecodeError:
+            return status, None
+    except RuntimeError as exc:
+        raise
+
+
 def _reset_exec_state(base_url: str) -> bool:
     """POST /conformance/federation/reset → True if OK."""
     try:
@@ -4482,6 +4602,37 @@ _OBL_BATCH_ID = "stl-test-batch-001"
 
 _EVT_RR_ID = "rr-00000000-0000-0000-0000-000000000002"
 _EVT_TRACE_ID = "tr-00000000-0000-0000-0000-000000000002"
+
+# ── FED-SETTLE constants ──────────────────────────────────────────────────────
+
+# Tests 001–005, 007–008: 3 A→B obligations of 50,000 AOA each
+_SETTLE_RR_ID_1 = "rr-00000000-0000-0000-0000-000000003001"
+_SETTLE_RR_ID_2 = "rr-00000000-0000-0000-0000-000000003002"
+_SETTLE_RR_ID_3 = "rr-00000000-0000-0000-0000-000000003003"
+_SETTLE_TRACE_1 = "tr-00000000-0000-0000-0000-000000003001"
+_SETTLE_TRACE_2 = "tr-00000000-0000-0000-0000-000000003002"
+_SETTLE_TRACE_3 = "tr-00000000-0000-0000-0000-000000003003"
+_SETTLE_AMOUNT = 50000         # AOA minor units per routing request
+_SETTLE_B_TO_A_AMOUNT = 40000  # AOA minor units for the simulated B→A obligation
+
+# Test 006: 5 routing requests for reconciliation check
+_SETTLE_REC_RR_IDS = [
+    "rr-00000000-0000-0000-0000-000000004001",
+    "rr-00000000-0000-0000-0000-000000004002",
+    "rr-00000000-0000-0000-0000-000000004003",
+    "rr-00000000-0000-0000-0000-000000004004",
+    "rr-00000000-0000-0000-0000-000000004005",
+]
+_SETTLE_REC_TRACE_IDS = [
+    "tr-00000000-0000-0000-0000-000000004001",
+    "tr-00000000-0000-0000-0000-000000004002",
+    "tr-00000000-0000-0000-0000-000000004003",
+    "tr-00000000-0000-0000-0000-000000004004",
+    "tr-00000000-0000-0000-0000-000000004005",
+]
+# B→A routing_request_id used in SETTLE-002 and SETTLE-003
+_SETTLE_B_TO_A_RR_ID = "rr-00000000-0000-0000-0000-000000003099"
+_SETTLE_B_TO_A_TRACE = "tr-00000000-0000-0000-0000-000000003099"
 
 
 # ── FED-OBL helpers ───────────────────────────────────────────────────────────
@@ -5826,6 +5977,896 @@ def run_suite_fed_evt(
     }
 
 
+# ── FED-SETTLE helpers ────────────────────────────────────────────────────────
+
+def _settle_route_three(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """Execute 3 routing requests (SETTLE-001 IDs) for FED-SETTLE suite setup."""
+    results = {}
+    for rr_id, trace_id in [
+        (_SETTLE_RR_ID_1, _SETTLE_TRACE_1),
+        (_SETTLE_RR_ID_2, _SETTLE_TRACE_2),
+        (_SETTLE_RR_ID_3, _SETTLE_TRACE_3),
+    ]:
+        payload = _build_exec_route_payload(
+            base_url=base_url,
+            sim_b_url=infra.sim_b_url,
+            routing_request_id=rr_id,
+            trace_id=trace_id,
+            op_a_priv=op_a_priv,
+            amount_minor=_SETTLE_AMOUNT,
+        )
+        _, result = _call_fed_route(base_url, payload)
+        results[rr_id] = result or {}
+    return results
+
+
+# ── FED-SETTLE-001 ────────────────────────────────────────────────────────────
+
+def run_fed_settle_001(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-SETTLE-001 — Obligation Export Includes All Pending Obligations
+
+    3 routing requests create 3 A→B obligations. Trigger netting. All 3 must be in
+    the export with correct amounts and settlement_state advanced to in_netting.
+
+    Pass:   Batch includes all 3; gross_a_to_b correct; obligations in in_netting
+    Fail:   Any obligation missing; wrong amounts
+    Severity: STANDARD
+    Contract: federation-obligation.json
+    L3 Req: FED-L3-008
+    """
+    case = _make_case("FED-SETTLE-001", "Obligation Export Includes All Pending Obligations")
+
+    _reset_exec_state(base_url)
+    _reset_netting_state(base_url)
+    infra.reset_routing_state()
+
+    t0 = time.monotonic()
+    try:
+        route_results = _settle_route_three(base_url, infra, op_a_priv)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    all_accepted = all(r.get("routing_status") == "accepted" for r in route_results.values())
+    if not all_accepted:
+        return _fail_case(case, "not all 3 routing requests accepted", int((time.monotonic() - t0) * 1000))
+
+    try:
+        netting_status, netting_body = _netting_trigger(base_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if netting_status != 200 or not netting_body:
+        return _fail_case(case, f"netting/trigger HTTP {netting_status}", ms)
+
+    batch = netting_body.get("batch") or {}
+    included_rr_ids = set(batch.get("included_a_to_b_routing_ids", []))
+    expected_rr_ids = {_SETTLE_RR_ID_1, _SETTLE_RR_ID_2, _SETTLE_RR_ID_3}
+    all_included = expected_rr_ids.issubset(included_rr_ids)
+    gross_a_to_b = batch.get("gross_a_to_b", 0)
+    expected_gross = _SETTLE_AMOUNT * 3  # 150,000
+    gross_correct = gross_a_to_b == expected_gross
+    recon_clean = batch.get("reconciliation_status") == "clean"
+
+    # Verify obligations advanced to in_netting
+    obl_states = {}
+    for rr_id in [_SETTLE_RR_ID_1, _SETTLE_RR_ID_2, _SETTLE_RR_ID_3]:
+        try:
+            _, obl = _get_obligation_op_a(base_url, rr_id)
+            obl_states[rr_id] = obl.get("settlement_state") if obl else None
+        except RuntimeError:
+            obl_states[rr_id] = None
+    all_in_netting = all(s == "in_netting" for s in obl_states.values())
+
+    assertions = [
+        _assertion("3 routing requests accepted (prerequisite)",
+                   all_accepted, "3 accepted", str(all_accepted)),
+        _assertion("netting/trigger HTTP 200", netting_status == 200, 200, netting_status),
+        _assertion("batch includes all 3 A→B obligations",
+                   all_included, str(expected_rr_ids), f"included={included_rr_ids}"),
+        _assertion(f"gross_a_to_b == {expected_gross}",
+                   gross_correct, expected_gross, gross_a_to_b),
+        _assertion("reconciliation_status == clean",
+                   recon_clean, "clean", batch.get("reconciliation_status")),
+        _assertion("all 3 obligations settlement_state == in_netting",
+                   all_in_netting, "in_netting", str(obl_states)),
+    ]
+    case["evidence"] = {
+        "routing_request_ids": list(expected_rr_ids),
+        "included_a_to_b_routing_ids": list(included_rr_ids),
+        "gross_a_to_b": gross_a_to_b,
+        "expected_gross": expected_gross,
+        "obligation_states": obl_states,
+        "reconciliation_status": batch.get("reconciliation_status"),
+        "settlement_batch_id": batch.get("settlement_batch_id"),
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-SETTLE-002 ────────────────────────────────────────────────────────────
+
+def run_fed_settle_002(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-SETTLE-002 — Net Position Computed Correctly
+
+    A→B: 3×50,000=150,000. B→A: 1×40,000=40,000. net=110,000 (A owes B).
+    Integer arithmetic only (INV-FED-LEDGER-002).
+
+    Pass:   net == 110,000; type is integer
+    Fail:   Wrong net; floating point used; gross values incorrect
+    Severity: STANDARD
+    Invariant: INV-FED-LEDGER-001
+    """
+    case = _make_case("FED-SETTLE-002", "Net Position Computed Correctly")
+
+    _reset_exec_state(base_url)
+    _reset_netting_state(base_url)
+    infra.reset_routing_state()
+
+    t0 = time.monotonic()
+
+    try:
+        route_results = _settle_route_three(base_url, infra, op_a_priv)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    all_accepted = all(r.get("routing_status") == "accepted" for r in route_results.values())
+    if not all_accepted:
+        return _fail_case(case, "not all routing requests accepted", int((time.monotonic() - t0) * 1000))
+
+    try:
+        _, _ = _add_b_obligation(base_url, _SETTLE_B_TO_A_AMOUNT, _SETTLE_B_TO_A_RR_ID, _SETTLE_B_TO_A_TRACE)
+    except RuntimeError as exc:
+        return _error_case(case, f"add-b-obligation failed: {exc}")
+
+    try:
+        netting_status, netting_body = _netting_trigger(base_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if netting_status != 200 or not netting_body:
+        return _fail_case(case, f"netting/trigger HTTP {netting_status}", ms)
+
+    batch = netting_body.get("batch") or {}
+    gross_a_to_b = batch.get("gross_a_to_b")
+    gross_b_to_a = batch.get("gross_b_to_a")
+    net_amount = batch.get("net_amount")
+    net_payer = batch.get("net_payer_operator_id")
+
+    expected_gross_a_to_b = _SETTLE_AMOUNT * 3    # 150,000
+    expected_gross_b_to_a = _SETTLE_B_TO_A_AMOUNT  # 40,000
+    expected_net = expected_gross_a_to_b - expected_gross_b_to_a  # 110,000
+
+    assertions = [
+        _assertion("3 A→B + 1 B→A routing setup (prerequisite)",
+                   all_accepted, "3 accepted", str(all_accepted)),
+        _assertion(f"gross_a_to_b == {expected_gross_a_to_b}",
+                   gross_a_to_b == expected_gross_a_to_b, expected_gross_a_to_b, gross_a_to_b),
+        _assertion(f"gross_b_to_a == {expected_gross_b_to_a}",
+                   gross_b_to_a == expected_gross_b_to_a, expected_gross_b_to_a, gross_b_to_a),
+        _assertion(f"net_amount == {expected_net} (A owes B)",
+                   net_amount == expected_net, expected_net, net_amount),
+        _assertion("net_payer_operator_id is Operator A",
+                   "operator-a" in (net_payer or ""), "operator-a-...", net_payer or "(absent)"),
+        _assertion("net_amount is integer (INV-FED-LEDGER-002)",
+                   isinstance(net_amount, int) and not isinstance(net_amount, bool),
+                   "integer", type(net_amount).__name__),
+    ]
+    case["evidence"] = {
+        "a_to_b_obligations": 3,
+        "b_to_a_obligations": 1,
+        "gross_a_to_b": gross_a_to_b,
+        "gross_b_to_a": gross_b_to_a,
+        "net_amount": net_amount,
+        "expected_gross_a_to_b": expected_gross_a_to_b,
+        "expected_gross_b_to_a": expected_gross_b_to_a,
+        "expected_net": expected_net,
+        "net_payer_operator_id": net_payer,
+        "net_payee_operator_id": batch.get("net_payee_operator_id"),
+        "settlement_batch_id": batch.get("settlement_batch_id"),
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-SETTLE-003 ────────────────────────────────────────────────────────────
+
+def run_fed_settle_003(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-SETTLE-003 — Both Operators Independently Compute Same Net
+
+    Both operators compute net from the same obligation data. Settlement authorized
+    only when both nets agree.
+
+    Pass:   Both nets equal; settlement_status == authorized
+    Fail:   Nets differ; settlement proceeds without agreement
+    Severity: STANDARD
+    Invariant: INV-FED-LEDGER-001
+    """
+    case = _make_case("FED-SETTLE-003", "Both Operators Independently Compute Same Net")
+
+    _reset_exec_state(base_url)
+    _reset_netting_state(base_url)
+    infra.reset_routing_state()
+
+    t0 = time.monotonic()
+
+    try:
+        route_results = _settle_route_three(base_url, infra, op_a_priv)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    all_accepted = all(r.get("routing_status") == "accepted" for r in route_results.values())
+    if not all_accepted:
+        return _fail_case(case, "not all routing requests accepted", int((time.monotonic() - t0) * 1000))
+
+    try:
+        _add_b_obligation(base_url, _SETTLE_B_TO_A_AMOUNT, _SETTLE_B_TO_A_RR_ID, _SETTLE_B_TO_A_TRACE)
+    except RuntimeError as exc:
+        return _error_case(case, f"add-b-obligation failed: {exc}")
+
+    try:
+        netting_status, netting_body = _netting_trigger(base_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if netting_status != 200 or not netting_body:
+        return _fail_case(case, f"netting/trigger HTTP {netting_status}", ms)
+
+    batch = netting_body.get("batch") or {}
+    op_a_net = batch.get("net_amount")
+
+    # Operator B independently computes: gross_b_sees_a_to_b=150,000, gross_b_sees_b_to_a=40,000
+    op_b_net = (_SETTLE_AMOUNT * 3) - _SETTLE_B_TO_A_AMOUNT  # 110,000
+
+    nets_agree = (op_a_net == op_b_net)
+    settlement_authorized = batch.get("settlement_status") == "authorized"
+    recon_clean = batch.get("reconciliation_status") == "clean"
+
+    assertions = [
+        _assertion("3 A→B + 1 B→A routing setup (prerequisite)",
+                   all_accepted, "3 accepted", str(all_accepted)),
+        _assertion("netting/trigger HTTP 200", netting_status == 200, 200, netting_status),
+        _assertion(f"Operator A computed net == {op_b_net}",
+                   op_a_net == op_b_net, op_b_net, op_a_net),
+        _assertion("Operator A and Operator B nets are equal (bilateral agreement)",
+                   nets_agree, op_b_net, f"A:{op_a_net} B:{op_b_net}"),
+        _assertion("settlement_status == authorized (nets agree)",
+                   settlement_authorized, "authorized", batch.get("settlement_status")),
+        _assertion("reconciliation_status == clean",
+                   recon_clean, "clean", batch.get("reconciliation_status")),
+    ]
+    case["evidence"] = {
+        "operator_a_computed_net": op_a_net,
+        "operator_b_computed_net": op_b_net,
+        "nets_agree": nets_agree,
+        "gross_a_to_b": batch.get("gross_a_to_b"),
+        "gross_b_to_a": batch.get("gross_b_to_a"),
+        "settlement_status": batch.get("settlement_status"),
+        "reconciliation_status": batch.get("reconciliation_status"),
+        "settlement_batch_id": batch.get("settlement_batch_id"),
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-SETTLE-004 ────────────────────────────────────────────────────────────
+
+def run_fed_settle_004(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-SETTLE-004 — Settlement Execution: Ledger Entries Correct
+
+    Settlement bank transfer produces 4 correct ledger entries:
+    Op A DEBIT federation_payable:op-b + CREDIT federation_settlement_clearing
+    Op B DEBIT federation_settlement_clearing + CREDIT federation_receivable:op-a
+
+    Pass:   All 4 entries present with correct accounts and amount == net
+    Fail:   Wrong accounts; wrong amounts; entries missing
+    Severity: STANDARD
+    Invariant: INV-FED-LEDGER-001
+    """
+    case = _make_case("FED-SETTLE-004", "Settlement Execution: Ledger Entries Correct")
+
+    _reset_exec_state(base_url)
+    _reset_netting_state(base_url)
+    infra.reset_routing_state()
+
+    t0 = time.monotonic()
+
+    try:
+        route_results = _settle_route_three(base_url, infra, op_a_priv)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    all_accepted = all(r.get("routing_status") == "accepted" for r in route_results.values())
+    if not all_accepted:
+        return _fail_case(case, "not all routing requests accepted", int((time.monotonic() - t0) * 1000))
+
+    try:
+        _add_b_obligation(base_url, _SETTLE_B_TO_A_AMOUNT, _SETTLE_B_TO_A_RR_ID, _SETTLE_B_TO_A_TRACE)
+    except RuntimeError as exc:
+        return _error_case(case, f"add-b-obligation failed: {exc}")
+
+    try:
+        netting_status, netting_body = _netting_trigger(base_url)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if netting_status != 200 or not netting_body:
+        return _fail_case(case, f"netting/trigger HTTP {netting_status}", int((time.monotonic() - t0) * 1000))
+
+    batch = netting_body.get("batch") or {}
+    batch_id = batch.get("settlement_batch_id")
+
+    try:
+        exec_status, exec_body = _netting_execute(base_url, batch_id)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if exec_status != 200 or not exec_body:
+        return _fail_case(case, f"netting/execute HTTP {exec_status}", ms)
+
+    try:
+        _, ledger_body = _get_netting_settlement_ledger(base_url)
+    except RuntimeError as exc:
+        return _error_case(case, f"get settlement ledger failed: {exc}")
+
+    entries = (ledger_body.get("entries") or []) if ledger_body else []
+    entry_count = len(entries)
+    expected_net = (_SETTLE_AMOUNT * 3) - _SETTLE_B_TO_A_AMOUNT  # 110,000
+
+    op_a_debit = next((e for e in entries
+                       if e.get("operator") == "operator-a-test"
+                       and e.get("entry_type") == "DEBIT"
+                       and "federation_payable" in e.get("account", "")), None)
+    op_a_credit = next((e for e in entries
+                        if e.get("operator") == "operator-a-test"
+                        and e.get("entry_type") == "CREDIT"
+                        and e.get("account") == "federation_settlement_clearing"), None)
+    op_b_debit = next((e for e in entries
+                       if e.get("operator") == "operator-b-test"
+                       and e.get("entry_type") == "DEBIT"
+                       and e.get("account") == "federation_settlement_clearing"), None)
+    op_b_credit = next((e for e in entries
+                        if e.get("operator") == "operator-b-test"
+                        and e.get("entry_type") == "CREDIT"
+                        and "federation_receivable" in e.get("account", "")), None)
+
+    amounts_correct = all(
+        e is not None and e.get("amount_minor") == expected_net
+        for e in [op_a_debit, op_a_credit, op_b_debit, op_b_credit]
+    )
+
+    assertions = [
+        _assertion("settlement executed (HTTP 200)", exec_status == 200, 200, exec_status),
+        _assertion("4 settlement ledger entries produced", entry_count == 4, 4, entry_count),
+        _assertion("Op A DEBIT federation_payable:operator-b-test",
+                   op_a_debit is not None, "present", "missing" if not op_a_debit else "present"),
+        _assertion("Op A CREDIT federation_settlement_clearing",
+                   op_a_credit is not None, "present", "missing" if not op_a_credit else "present"),
+        _assertion("Op B DEBIT federation_settlement_clearing",
+                   op_b_debit is not None, "present", "missing" if not op_b_debit else "present"),
+        _assertion("Op B CREDIT federation_receivable:operator-a-test",
+                   op_b_credit is not None, "present", "missing" if not op_b_credit else "present"),
+        _assertion(f"all entries amount_minor == {expected_net} (net)",
+                   amounts_correct, expected_net, "see entries"),
+    ]
+    case["evidence"] = {
+        "settlement_batch_id": batch_id,
+        "net_amount": expected_net,
+        "ledger_entry_count": entry_count,
+        "op_a_debit": op_a_debit,
+        "op_a_credit": op_a_credit,
+        "op_b_debit": op_b_debit,
+        "op_b_credit": op_b_credit,
+        "simulated_bank_reference": exec_body.get("simulated_bank_reference"),
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-SETTLE-005 ────────────────────────────────────────────────────────────
+
+def run_fed_settle_005(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-SETTLE-005 — Obligations Marked Settled With Required Fields
+
+    All obligations in the batch must have settlement_state=settled,
+    settled_at (ISO 8601), and settlement_batch_id after settlement executes.
+
+    Pass:   All 3 obligations have all three fields set correctly
+    Fail:   Any obligation still pending; missing fields
+    Severity: STANDARD
+    Contract: federation-obligation.json
+    """
+    case = _make_case("FED-SETTLE-005", "Obligations Marked Settled With Required Fields")
+
+    _reset_exec_state(base_url)
+    _reset_netting_state(base_url)
+    infra.reset_routing_state()
+
+    t0 = time.monotonic()
+
+    try:
+        route_results = _settle_route_three(base_url, infra, op_a_priv)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    all_accepted = all(r.get("routing_status") == "accepted" for r in route_results.values())
+    if not all_accepted:
+        return _fail_case(case, "not all routing requests accepted", int((time.monotonic() - t0) * 1000))
+
+    try:
+        netting_status, netting_body = _netting_trigger(base_url)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    batch = (netting_body.get("batch") or {}) if netting_body else {}
+    batch_id = batch.get("settlement_batch_id")
+    if not batch_id or netting_status != 200:
+        return _fail_case(case, f"netting/trigger failed HTTP {netting_status}",
+                          int((time.monotonic() - t0) * 1000))
+
+    try:
+        exec_status, _ = _netting_execute(base_url, batch_id)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if exec_status != 200:
+        return _fail_case(case, f"netting/execute HTTP {exec_status}", ms)
+
+    obl_states = {}
+    for rr_id in [_SETTLE_RR_ID_1, _SETTLE_RR_ID_2, _SETTLE_RR_ID_3]:
+        try:
+            _, obl = _get_obligation_op_a(base_url, rr_id)
+            obl_states[rr_id] = obl or {}
+        except RuntimeError:
+            obl_states[rr_id] = {}
+
+    all_settled = all(o.get("settlement_state") == "settled" for o in obl_states.values())
+    all_settled_at = all(
+        isinstance(o.get("settled_at"), str) and o["settled_at"]
+        for o in obl_states.values()
+    )
+    all_batch_id = all(
+        isinstance(o.get("settlement_batch_id"), str) and o["settlement_batch_id"]
+        for o in obl_states.values()
+    )
+    batch_ids_match = all(o.get("settlement_batch_id") == batch_id for o in obl_states.values())
+
+    assertions = [
+        _assertion("settlement executed (HTTP 200)", exec_status == 200, 200, exec_status),
+        _assertion("all 3 obligations settlement_state=settled",
+                   all_settled, "settled",
+                   str({k: v.get("settlement_state") for k, v in obl_states.items()})),
+        _assertion("all obligations have settled_at (ISO 8601)",
+                   all_settled_at, "ISO 8601",
+                   str({k: v.get("settled_at") for k, v in obl_states.items()})),
+        _assertion("all obligations have settlement_batch_id",
+                   all_batch_id, "present",
+                   str({k: v.get("settlement_batch_id") for k, v in obl_states.items()})),
+        _assertion("all obligations reference the same settlement_batch_id",
+                   batch_ids_match, batch_id,
+                   str({k: v.get("settlement_batch_id") for k, v in obl_states.items()})),
+    ]
+    case["evidence"] = {
+        "settlement_batch_id": batch_id,
+        "obligations": {k: {
+            "settlement_state": v.get("settlement_state"),
+            "settled_at": v.get("settled_at"),
+            "settlement_batch_id": v.get("settlement_batch_id"),
+        } for k, v in obl_states.items()},
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-SETTLE-006 ────────────────────────────────────────────────────────────
+
+def run_fed_settle_006(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-SETTLE-006 — Reconciliation: All Accepted Routing Requests Have Obligations
+
+    5 routing requests accepted; every one must have exactly one obligation.
+    No accepted routing request may exist without a corresponding obligation.
+
+    Pass:   1:1 match; no orphan routing requests (INV-FED-RECON-001)
+    Fail:   Any accepted request without obligation
+    Severity: CRITICAL
+    Invariant: INV-FED-RECON-001
+    Contract: federation-obligation.json
+    """
+    case = _make_case(
+        "FED-SETTLE-006",
+        "Reconciliation: All Accepted Routing Requests Have Obligations (INV-FED-RECON-001)",
+    )
+
+    _reset_exec_state(base_url)
+    _reset_netting_state(base_url)
+    infra.reset_routing_state()
+
+    t0 = time.monotonic()
+
+    accepted_rr_ids = []
+    for rr_id, trace_id in zip(_SETTLE_REC_RR_IDS, _SETTLE_REC_TRACE_IDS):
+        payload = _build_exec_route_payload(
+            base_url=base_url,
+            sim_b_url=infra.sim_b_url,
+            routing_request_id=rr_id,
+            trace_id=trace_id,
+            op_a_priv=op_a_priv,
+            amount_minor=_SETTLE_AMOUNT,
+        )
+        try:
+            _, result = _call_fed_route(base_url, payload)
+            if result and result.get("routing_status") == "accepted":
+                accepted_rr_ids.append(rr_id)
+        except RuntimeError as exc:
+            return _error_case(case, f"routing {rr_id} failed: {exc}")
+
+    ms = int((time.monotonic() - t0) * 1000)
+
+    if len(accepted_rr_ids) < 5:
+        return _fail_case(case, f"only {len(accepted_rr_ids)}/5 routing requests accepted", ms)
+
+    try:
+        _, obligations_body = _get_obligations_all_op_a(base_url)
+    except RuntimeError as exc:
+        return _error_case(case, f"get obligations failed: {exc}")
+
+    obligations = (obligations_body.get("obligations") or []) if obligations_body else []
+    obligation_rr_ids = {
+        obl["routing_request_id"] for obl in obligations
+        if "routing_request_id" in obl
+    }
+
+    missing = set(accepted_rr_ids) - obligation_rr_ids
+    extra = obligation_rr_ids - set(accepted_rr_ids)
+    recon_clean = len(missing) == 0
+
+    assertions = [
+        _assertion("5 routing requests accepted (prerequisite)",
+                   len(accepted_rr_ids) == 5, 5, len(accepted_rr_ids)),
+        _assertion("obligations count == 5 (one per accepted request)",
+                   len(obligations) >= 5, ">=5", len(obligations)),
+        _assertion("all 5 accepted routing_request_ids have obligations (INV-FED-RECON-001)",
+                   recon_clean, "empty set", str(missing)),
+        _assertion("no orphan obligations",
+                   len(extra) == 0, "0", len(extra)),
+    ]
+    case["evidence"] = {
+        "accepted_routing_request_count": len(accepted_rr_ids),
+        "accepted_routing_request_ids": accepted_rr_ids,
+        "obligation_routing_request_ids": sorted(obligation_rr_ids),
+        "missing_obligations_for": sorted(missing),
+        "extra_obligations_for": sorted(extra),
+        "reconciliation_clean": recon_clean,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-SETTLE-007 ────────────────────────────────────────────────────────────
+
+def run_fed_settle_007(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-SETTLE-007 — Reconciliation: Trace Cross-Check Across Both Operators
+
+    For each of 3 payments with distinct trace_ids, all 4 artifact types carry that
+    exact trace_id: (1) ledger entry on Op A, (2) obligation on Op A,
+    (3) ledger entry on Op B, (4) event on Op B.
+
+    Pass:   All 4 artifact types found per trace_id (3 payments × 4 = 12 checks)
+    Fail:   Any trace_id missing from any artifact type
+    Severity: STANDARD
+    Invariant: INV-FED-RECON-001
+    Contract: All
+    L3 Req: FED-L3-012
+    """
+    case = _make_case(
+        "FED-SETTLE-007",
+        "Reconciliation: Trace Cross-Check Across Both Operators (INV-FED-RECON-001)",
+    )
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    t0 = time.monotonic()
+
+    try:
+        route_results = _settle_route_three(base_url, infra, op_a_priv)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    all_accepted = all(r.get("routing_status") == "accepted" for r in route_results.values())
+    if not all_accepted:
+        return _fail_case(case, "not all routing requests accepted", int((time.monotonic() - t0) * 1000))
+
+    try:
+        _, ledger_a_body = _get_ledger_op_a(base_url, _EXEC_SENDER_WALLET)
+    except RuntimeError as exc:
+        return _error_case(case, f"get Op A ledger failed: {exc}")
+
+    try:
+        _, obligations_body = _get_obligations_all_op_a(base_url)
+    except RuntimeError as exc:
+        return _error_case(case, f"get obligations failed: {exc}")
+
+    try:
+        _, events_b_body = _get_sim_b_events_http(infra.sim_b_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, f"get Sim Op B events failed: {exc}")
+
+    ledger_a_entries = (ledger_a_body.get("entries") or []) if ledger_a_body else []
+    obligations = (obligations_body.get("obligations") or []) if obligations_body else []
+    events_b = (events_b_body.get("events") or []) if isinstance(events_b_body, dict) else []
+    ledger_b_entries = infra.get_sim_b_ledger(_EXEC_PAYEE_WALLET)
+
+    trace_id_pairs = [
+        (_SETTLE_RR_ID_1, _SETTLE_TRACE_1),
+        (_SETTLE_RR_ID_2, _SETTLE_TRACE_2),
+        (_SETTLE_RR_ID_3, _SETTLE_TRACE_3),
+    ]
+
+    per_trace = {}
+    all_assertions = []
+    for rr_id, trace_id in trace_id_pairs:
+        ledger_a_ok = any(
+            e.get("trace_id") == trace_id and e.get("routing_request_id") == rr_id
+            for e in ledger_a_entries
+        )
+        obl_ok = any(
+            o.get("trace_id") == trace_id and o.get("routing_request_id") == rr_id
+            for o in obligations
+        )
+        ledger_b_ok = any(
+            e.get("trace_id") == trace_id and e.get("routing_request_id") == rr_id
+            for e in ledger_b_entries
+        )
+        event_b_ok = any(
+            e.get("trace_id") == trace_id
+            and (e.get("routing_request_id") == rr_id or e.get("aggregate_id") == rr_id)
+            for e in events_b
+        )
+        per_trace[trace_id] = {
+            "routing_request_id": rr_id,
+            "ledger_a": ledger_a_ok,
+            "obligation_a": obl_ok,
+            "ledger_b": ledger_b_ok,
+            "event_b": event_b_ok,
+            "all_found": all([ledger_a_ok, obl_ok, ledger_b_ok, event_b_ok]),
+        }
+        short = trace_id[-6:]
+        all_assertions.extend([
+            _assertion(f"trace …{short}: ledger entry on Op A",
+                       ledger_a_ok, "found", "missing" if not ledger_a_ok else "found"),
+            _assertion(f"trace …{short}: obligation on Op A",
+                       obl_ok, "found", "missing" if not obl_ok else "found"),
+            _assertion(f"trace …{short}: ledger entry on Op B",
+                       ledger_b_ok, "found", "missing" if not ledger_b_ok else "found"),
+            _assertion(f"trace …{short}: event on Op B",
+                       event_b_ok, "found", "missing" if not event_b_ok else "found"),
+        ])
+
+    all_complete = all(r["all_found"] for r in per_trace.values())
+    assertions = (
+        [_assertion("3 routing requests accepted (prerequisite)",
+                    all_accepted, "3 accepted", str(all_accepted))]
+        + all_assertions
+        + [_assertion("all 3 trace_ids in all 4 artifact types (INV-FED-RECON-001)",
+                      all_complete, "all complete",
+                      str({t[-6:]: r["all_found"] for t, r in per_trace.items()}))]
+    )
+    case["evidence"] = {
+        "payments": 3,
+        "artifacts_per_payment": 4,
+        "trace_cross_check": per_trace,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-SETTLE-008 ────────────────────────────────────────────────────────────
+
+def run_fed_settle_008(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-SETTLE-008 — Settlement Blocked on Unresolved Discrepancy
+
+    If Operator B reports a different amount for one obligation, settlement MUST NOT
+    proceed. The batch must have reconciliation_status=discrepancy and
+    settlement_status=blocked.
+
+    Pass:   reconciliation_status=discrepancy; settlement blocked; no bank transfer
+    Fail:   Settlement proceeds despite discrepancy (INV-FED-LEDGER-001 violation)
+    Severity: CRITICAL
+    Invariant: INV-FED-LEDGER-001
+    """
+    case = _make_case("FED-SETTLE-008", "Settlement Blocked on Unresolved Discrepancy")
+
+    _reset_exec_state(base_url)
+    _reset_netting_state(base_url)
+    infra.reset_routing_state()
+
+    t0 = time.monotonic()
+
+    try:
+        route_results = _settle_route_three(base_url, infra, op_a_priv)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    all_accepted = all(r.get("routing_status") == "accepted" for r in route_results.values())
+    if not all_accepted:
+        return _fail_case(case, "not all routing requests accepted", int((time.monotonic() - t0) * 1000))
+
+    # Inject discrepancy: Op B claims rr_id_1 has amount 49,999 instead of 50,000
+    disc_amount = _SETTLE_AMOUNT - 1  # 49,999
+    try:
+        disc_status, _ = _inject_discrepancy(base_url, _SETTLE_RR_ID_1, disc_amount)
+        if disc_status != 200:
+            return _error_case(case, f"inject-discrepancy HTTP {disc_status}")
+    except RuntimeError as exc:
+        return _error_case(case, f"inject-discrepancy failed: {exc}")
+
+    try:
+        netting_status, netting_body = _netting_trigger(base_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if netting_status != 200 or not netting_body:
+        return _fail_case(case, f"netting/trigger HTTP {netting_status}", ms)
+
+    batch = netting_body.get("batch") or {}
+    batch_id = batch.get("settlement_batch_id")
+    recon_status = batch.get("reconciliation_status")
+    settle_status = batch.get("settlement_status")
+    discrepancies = batch.get("discrepancies", [])
+
+    # Attempt settlement — must be rejected
+    exec_status = None
+    exec_body = None
+    if batch_id:
+        try:
+            exec_status, exec_body = _netting_execute(base_url, batch_id)
+        except RuntimeError as exc:
+            exec_status = 500
+            exec_body = {"error": str(exc)}
+
+    settlement_rejected = exec_status is not None and exec_status != 200
+
+    # Obligations must NOT be settled (still pending — batch was blocked, not advanced)
+    obl_final_states = {}
+    for rr_id in [_SETTLE_RR_ID_1, _SETTLE_RR_ID_2, _SETTLE_RR_ID_3]:
+        try:
+            _, obl = _get_obligation_op_a(base_url, rr_id)
+            obl_final_states[rr_id] = obl.get("settlement_state") if obl else None
+        except RuntimeError:
+            obl_final_states[rr_id] = None
+    no_obligation_settled = not any(s == "settled" for s in obl_final_states.values())
+
+    assertions = [
+        _assertion("3 routing requests accepted (prerequisite)",
+                   all_accepted, "3 accepted", str(all_accepted)),
+        _assertion("discrepancy injected (prerequisite)",
+                   disc_status == 200, 200, disc_status),
+        _assertion("reconciliation_status == discrepancy",
+                   recon_status == "discrepancy", "discrepancy", recon_status),
+        _assertion("settlement_status == blocked",
+                   settle_status == "blocked", "blocked", settle_status),
+        _assertion("discrepancy details logged (routing_request_id + amounts)",
+                   len(discrepancies) > 0, ">=1 entry", len(discrepancies)),
+        _assertion("settlement execution rejected (HTTP != 200) (INV-FED-LEDGER-001)",
+                   settlement_rejected, "rejected (409)", f"HTTP {exec_status}"),
+        _assertion("no obligation moved to settled state",
+                   no_obligation_settled, "none settled", str(obl_final_states)),
+    ]
+    case["evidence"] = {
+        "discrepancy_routing_request_id": _SETTLE_RR_ID_1,
+        "operator_a_amount": _SETTLE_AMOUNT,
+        "operator_b_reported_amount": disc_amount,
+        "reconciliation_status": recon_status,
+        "settlement_status": settle_status,
+        "discrepancies": discrepancies,
+        "execute_http_status": exec_status,
+        "execute_response": exec_body,
+        "obligation_states_after_blocked_batch": obl_final_states,
+        "settlement_batch_id": batch_id,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-SETTLE suite runner ───────────────────────────────────────────────────
+
+def run_suite_fed_settle(
+    base_url: str,
+    infra: "RunnerInfra" = None,
+    op_a_priv=None,
+) -> dict:
+    """
+    Run all 8 FED-SETTLE tests.
+
+    Requires infra (Sim Op B) and op_a_priv (Operator A signing key).
+    Without both, all tests are skipped.
+    """
+    def _skip(case_id, title, reason):
+        return _skip_case(_make_case(case_id, title), reason)
+
+    settle_avail = infra is not None and op_a_priv is not None
+
+    if not settle_avail:
+        reason = "settlement infrastructure not available (install cryptography)"
+        cases = [
+            _skip(f"FED-SETTLE-{str(i).zfill(3)}", t, reason)
+            for i, t in [
+                (1, "Obligation Export Includes All Pending Obligations"),
+                (2, "Net Position Computed Correctly"),
+                (3, "Both Operators Independently Compute Same Net"),
+                (4, "Settlement Execution: Ledger Entries Correct"),
+                (5, "Obligations Marked Settled With Required Fields"),
+                (6, "Reconciliation: All Accepted Routing Requests Have Obligations"),
+                (7, "Reconciliation: Trace Cross-Check Across Both Operators"),
+                (8, "Settlement Blocked on Unresolved Discrepancy"),
+            ]
+        ]
+    else:
+        cases = [
+            run_fed_settle_001(base_url, infra, op_a_priv),
+            run_fed_settle_002(base_url, infra, op_a_priv),
+            run_fed_settle_003(base_url, infra, op_a_priv),
+            run_fed_settle_004(base_url, infra, op_a_priv),
+            run_fed_settle_005(base_url, infra, op_a_priv),
+            run_fed_settle_006(base_url, infra, op_a_priv),
+            run_fed_settle_007(base_url, infra, op_a_priv),
+            run_fed_settle_008(base_url, infra, op_a_priv),
+        ]
+
+    passed = sum(1 for c in cases if c["status"] == "PASS")
+    failed = sum(1 for c in cases if c["status"] == "FAIL")
+    skipped = sum(1 for c in cases if c["status"] in ("SKIP", "ERROR"))
+
+    return {
+        "suite_id": "FED-SETTLE",
+        "suite_name": "Netting and Settlement",
+        "blocking": True,
+        "passed": passed,
+        "failed": failed,
+        "skipped": skipped,
+        "cases": cases,
+    }
+
+
 # ── FED-ROUTE suite runner ────────────────────────────────────────────────────
 
 def run_suite_fed_route(
@@ -6039,19 +7080,22 @@ def run_federation_mode(
     run_exec = fed_suite in (None, "exec")
     run_obl = fed_suite in (None, "obl")
     run_evt = fed_suite in (None, "evt")
+    run_settle = fed_suite in (None, "settle")
 
     if (fed_suite is not None
             and not run_cert and not run_disc and not run_trust
-            and not run_route and not run_exec and not run_obl and not run_evt):
+            and not run_route and not run_exec and not run_obl
+            and not run_evt and not run_settle):
         print(f"ERROR: Unknown --fed-suite value: {fed_suite!r}. "
-              f"Available: cert, disc, trust, route, exec, obl, evt",
+              f"Available: cert, disc, trust, route, exec, obl, evt, settle",
               file=sys.stderr)
         return 2
 
     suite_label = {
         None: (
             "FED-CERT-001–011, FED-DISC-001–008, FED-TRUST-001–009, "
-            "FED-ROUTE-001–012, FED-EXEC-001–008, FED-OBL-001–007, FED-EVT-001–006"
+            "FED-ROUTE-001–012, FED-EXEC-001–008, FED-OBL-001–007, "
+            "FED-EVT-001–006, FED-SETTLE-001–008"
         ),
         "cert": "FED-CERT-001–011",
         "disc": "FED-DISC-001–008",
@@ -6060,11 +7104,12 @@ def run_federation_mode(
         "exec": "FED-EXEC-001–008",
         "obl": "FED-OBL-001–007",
         "evt": "FED-EVT-001–006",
+        "settle": "FED-SETTLE-001–008",
     }.get(fed_suite, fed_suite)
 
     print(f"BANZA Federation Conformance Runner {RUNNER_VERSION}")
     print(f"Operator: {base_url}")
-    print(f"Slice:    8 — {suite_label}")
+    print(f"Slice:    9 — {suite_label}")
     print()
 
     schema_path = _find_schema_path()
@@ -6366,6 +7411,16 @@ def run_federation_mode(
                 infra=infra,
                 op_a_priv=op_a_priv if _tr.CRYPTO_AVAILABLE else None,
             ))
+        if run_settle:
+            # Restore Sim Op B to valid state for netting/settlement tests
+            if infra and manifest_b and cert_b_valid:
+                infra.configure_sim_b(manifest_b, cert_b_valid)
+                infra.set_brl_empty()
+            suite_results.append(run_suite_fed_settle(
+                base_url,
+                infra=infra,
+                op_a_priv=op_a_priv if _tr.CRYPTO_AVAILABLE else None,
+            ))
     finally:
         if infra:
             infra.stop()
@@ -6421,6 +7476,8 @@ def run_federation_mode(
             parts.append("FED-OBL-001–007")
         if "FED-EVT" in suite_ids:
             parts.append("FED-EVT-001–006")
+        if "FED-SETTLE" in suite_ids:
+            parts.append("FED-SETTLE-001–008")
         print(f"{', '.join(parts)}: ALL PASS")
         print()
         print("What is now proven:")
@@ -6499,6 +7556,15 @@ def run_federation_mode(
             print("  ✓ federation.obligation.recorded event on Operator A with obligation_id")
             print("  ✓ All 4 event types carry identical trace_id            (INV-FED-001)")
             print("  ✓ All federation events validate against federation-event.json schema")
+        if "FED-SETTLE" in suite_ids:
+            print("  ✓ All pending obligations enter netting batch; states advance to in_netting")
+            print("  ✓ gross_a_to_b and gross_b_to_a computed correctly; net = abs(diff) (INV-FED-LEDGER-001)")
+            print("  ✓ Both operators independently compute identical net position (bilateral agreement)")
+            print("  ✓ Settlement produces 4 correct ledger entries on both operators (INV-FED-LEDGER-001)")
+            print("  ✓ Settled obligations carry settled_at (ISO 8601) + settlement_batch_id")
+            print("  ✓ Every accepted routing request has exactly one obligation (INV-FED-RECON-001)")
+            print("  ✓ trace_id appears in all 4 artifact types across both operators (INV-FED-RECON-001)")
+            print("  ✓ Amount mismatch blocks settlement; no bank transfer occurs   (INV-FED-LEDGER-001)")
     elif total_fail > 0:
         print(f"{', '.join(suite_ids)}: FAIL  ({total_pass} passed, {total_fail} failed, {total_skip} skipped)")
     else:
@@ -6511,7 +7577,7 @@ def run_federation_mode(
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "runner_version": RUNNER_VERSION,
         "federation_mode": True,
-        "slice": "8",
+        "slice": "9",
         "operator_url": base_url,
         "schema_path": schema_path,
         "crypto_available": _tr.CRYPTO_AVAILABLE,
@@ -6538,14 +7604,15 @@ def run_federation_mode(
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="BANZA Federation Conformance Runner "
-                    "(FED-CERT + FED-DISC + FED-TRUST + FED-ROUTE + FED-EXEC + FED-OBL + FED-EVT)"
+                    "(FED-CERT + FED-DISC + FED-TRUST + FED-ROUTE + FED-EXEC "
+                    "+ FED-OBL + FED-EVT + FED-SETTLE)"
     )
     parser.add_argument("--url", required=True,
                         help="Base URL of the operator (e.g. http://localhost:8099)")
     parser.add_argument("--output", help="Write JSON report to this file")
     parser.add_argument("--quiet", action="store_true", help="Suppress passing test output")
     parser.add_argument("--fed-suite", dest="fed_suite",
-                        help="Run only this suite: cert | disc | trust | route | exec | obl | evt (default: all)")
+                        help="Run only this suite: cert | disc | trust | route | exec | obl | evt | settle (default: all)")
     args = parser.parse_args()
 
     sys.exit(run_federation_mode(

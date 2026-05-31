@@ -10,11 +10,19 @@ Routes:
   POST /conformance/federation/reset                             reset federation execution state (FED-EXEC)
   POST /conformance/federation/obligations/{rr_id}/mark-in-netting  advance obligation to in_netting (FED-OBL)
   POST /conformance/federation/obligations/{rr_id}/mark-settled      advance obligation to settled (FED-OBL)
+  POST /conformance/federation/netting/add-b-obligation          add simulated B→A obligation (FED-SETTLE)
+  POST /conformance/federation/netting/trigger                   compute netting batch from pending obligations (FED-SETTLE)
+  POST /conformance/federation/netting/execute                   execute settlement, mark obligations settled (FED-SETTLE)
+  POST /conformance/federation/netting/inject-discrepancy        inject amount discrepancy for negative test (FED-SETTLE)
+  POST /conformance/federation/netting/reset                     reset netting state (FED-SETTLE)
   GET  /conformance/federation/wallet/{id}                       payer wallet balance query (FED-EXEC)
   GET  /conformance/federation/ledger/{wallet_id}                ledger entries for wallet (FED-EXEC)
   GET  /conformance/federation/obligations/{rr_id}               obligation by routing_request_id (FED-EXEC/OBL)
   GET  /conformance/federation/obligations                       all obligations (FED-EXEC/OBL)
   GET  /conformance/federation/events                            federation events emitted by Operator A (FED-EXEC, FED-EVT)
+  GET  /conformance/federation/routing-commits                   all routing results keyed by routing_request_id (FED-SETTLE)
+  GET  /conformance/federation/netting/batches                   list all settlement batches (FED-SETTLE)
+  GET  /conformance/federation/netting/settlement-ledger         settlement ledger entries (FED-SETTLE)
   GET  /.well-known/banza/certificate.json                       serve current operator certificate
   GET  /.well-known/banza/operator.json                          serve federation manifest (FED-DISC)
   GET  /health                                                   sandbox health response
@@ -299,6 +307,12 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
             self._handle_fed_obligations_all()
         elif self.path == "/conformance/federation/events":
             self._handle_fed_events()
+        elif self.path == "/conformance/federation/routing-commits":
+            self._handle_routing_commits()
+        elif self.path == "/conformance/federation/netting/batches":
+            self._handle_netting_batches()
+        elif self.path == "/conformance/federation/netting/settlement-ledger":
+            self._handle_netting_settlement_ledger()
         else:
             self._respond_json(404, {"error": "not_found", "path": self.path})
 
@@ -429,6 +443,16 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
                 self._handle_obl_mark_settled(rr_id)
             else:
                 self._respond_json(404, {"error": "not_found", "path": self.path})
+        elif self.path == "/conformance/federation/netting/add-b-obligation":
+            self._handle_netting_add_b_obligation()
+        elif self.path == "/conformance/federation/netting/trigger":
+            self._handle_netting_trigger()
+        elif self.path == "/conformance/federation/netting/execute":
+            self._handle_netting_execute()
+        elif self.path == "/conformance/federation/netting/inject-discrepancy":
+            self._handle_netting_inject_discrepancy()
+        elif self.path == "/conformance/federation/netting/reset":
+            self._handle_netting_reset()
         else:
             self._respond_json(404, {"error": "not_found", "path": self.path})
 
@@ -860,6 +884,326 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
             self.server.state["fed_exec"] = _initial_fed_exec_state()
         self._respond_json(200, {"ok": True, "message": "federation execution state reset"})
 
+    # ── FED-SETTLE query endpoints ────────────────────────────────────────────
+
+    def _handle_routing_commits(self):
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+            commits = dict(fed["routing_commits"])
+        self._respond_json(200, {"routing_commits": commits, "count": len(commits)})
+
+    def _handle_netting_batches(self):
+        with self.server.state_lock:
+            batches = list(self.server.state["netting"]["batches"].values())
+        self._respond_json(200, {"batches": batches, "count": len(batches)})
+
+    def _handle_netting_settlement_ledger(self):
+        with self.server.state_lock:
+            ledger = list(self.server.state["netting"]["settlement_ledger"])
+        self._respond_json(200, {"entries": ledger, "count": len(ledger)})
+
+    # ── FED-SETTLE netting endpoints ──────────────────────────────────────────
+
+    def _handle_netting_add_b_obligation(self):
+        """
+        POST /conformance/federation/netting/add-b-obligation
+
+        Add a simulated B→A obligation to the netting state.
+        Body: {amount_minor, currency, routing_request_id, trace_id,
+               from_operator_id, to_operator_id}
+        """
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            payload = json.loads(self.rfile.read(length)) if length > 0 else {}
+        except Exception as exc:
+            return self._respond_json(400, {"ok": False, "error": str(exc)})
+
+        amount_minor = payload.get("amount_minor")
+        currency = payload.get("currency", "AOA")
+        routing_request_id = payload.get("routing_request_id", f"rr-{uuid.uuid4()}")
+        trace_id = payload.get("trace_id", "")
+        from_operator_id = payload.get("from_operator_id", "operator-b-test")
+        to_operator_id = payload.get("to_operator_id", "operator-a-test")
+
+        if not isinstance(amount_minor, int) or isinstance(amount_minor, bool) or amount_minor <= 0:
+            return self._respond_json(400, {"ok": False, "error": "amount_minor must be a positive integer"})
+
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        obligation = {
+            "obligation_id": f"ob-{uuid.uuid4()}",
+            "from_operator_id": from_operator_id,
+            "to_operator_id": to_operator_id,
+            "amount": {"minor": amount_minor, "currency": currency},
+            "routing_request_id": routing_request_id,
+            "trace_id": trace_id,
+            "recorded_at": now_str,
+            "settlement_state": "pending",
+        }
+
+        with self.server.state_lock:
+            self.server.state["netting"]["b_to_a_obligations"].append(obligation)
+
+        self._respond_json(200, {"ok": True, "obligation": obligation})
+
+    def _handle_netting_trigger(self):
+        """
+        POST /conformance/federation/netting/trigger
+
+        Compute netting batch from all pending A→B obligations + all B→A obligations.
+        Checks discrepancy_overrides: if Op B reports a different amount for any A→B
+        obligation, marks batch as discrepancy/blocked (obligations NOT advanced).
+        Otherwise marks batch as clean/authorized and advances A→B obligations to in_netting.
+        """
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        period = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+            netting = self.server.state["netting"]
+            my_op_id = (self.server.state.get("cert") or {}).get("operator_id", "operator-a-test")
+            a_to_b_pending = [
+                obl for obl in fed["obligations"].values()
+                if obl.get("settlement_state") == "pending"
+            ]
+            b_to_a_pending = list(netting["b_to_a_obligations"])
+            discrepancy_overrides = dict(netting["discrepancy_overrides"])
+
+        if not a_to_b_pending and not b_to_a_pending:
+            return self._respond_json(400, {"ok": False, "error": "no obligations to net"})
+
+        # Gross positions
+        gross_a_to_b = sum(obl["amount"]["minor"] for obl in a_to_b_pending)
+        gross_b_to_a = sum(obl["amount"]["minor"] for obl in b_to_a_pending)
+
+        # Discrepancy check
+        discrepancies = []
+        for obl in a_to_b_pending:
+            rr_id = obl["routing_request_id"]
+            if rr_id in discrepancy_overrides:
+                reported = discrepancy_overrides[rr_id]
+                actual = obl["amount"]["minor"]
+                if reported != actual:
+                    discrepancies.append({
+                        "routing_request_id": rr_id,
+                        "operator_a_amount": actual,
+                        "operator_b_reported_amount": reported,
+                        "discrepancy_amount": actual - reported,
+                    })
+
+        # Net position
+        net_diff = gross_a_to_b - gross_b_to_a
+        net_amount = abs(net_diff)
+        if net_diff > 0:
+            net_payer_operator_id = my_op_id
+            net_payee_operator_id = "operator-b-test"
+        elif net_diff < 0:
+            net_payer_operator_id = "operator-b-test"
+            net_payee_operator_id = my_op_id
+        else:
+            net_payer_operator_id = None
+            net_payee_operator_id = None
+
+        currency = (a_to_b_pending[0]["amount"]["currency"] if a_to_b_pending
+                    else b_to_a_pending[0]["amount"]["currency"] if b_to_a_pending
+                    else "AOA")
+        batch_id = f"stl-{period}-{uuid.uuid4().hex[:8]}"
+
+        if discrepancies:
+            reconciliation_status = "discrepancy"
+            settlement_status = "blocked"
+        else:
+            reconciliation_status = "clean"
+            settlement_status = "authorized"
+
+        batch = {
+            "settlement_batch_id": batch_id,
+            "operator_a_id": my_op_id,
+            "operator_b_id": "operator-b-test",
+            "currency": currency,
+            "period_start": period,
+            "period_end": period,
+            "included_obligations": (
+                [obl["obligation_id"] for obl in a_to_b_pending]
+                + [obl["obligation_id"] for obl in b_to_a_pending]
+            ),
+            "included_a_to_b_routing_ids": [obl["routing_request_id"] for obl in a_to_b_pending],
+            "gross_a_to_b": gross_a_to_b,
+            "gross_b_to_a": gross_b_to_a,
+            "net_amount": net_amount,
+            "net_payer_operator_id": net_payer_operator_id,
+            "net_payee_operator_id": net_payee_operator_id,
+            "reconciliation_status": reconciliation_status,
+            "settlement_status": settlement_status,
+            "discrepancies": discrepancies,
+            "created_at": now_str,
+            "settled_at": None,
+            "simulated_bank_reference": None,
+        }
+
+        # Advance A→B obligations to in_netting only when clean
+        if not discrepancies:
+            with self.server.state_lock:
+                fed = self.server.state["fed_exec"]
+                for obl in a_to_b_pending:
+                    rr_id = obl["routing_request_id"]
+                    if rr_id in fed["obligations"]:
+                        fed["obligations"][rr_id] = dict(fed["obligations"][rr_id])
+                        fed["obligations"][rr_id]["settlement_state"] = "in_netting"
+                        fed["obligations"][rr_id]["netting_period"] = period
+
+        with self.server.state_lock:
+            self.server.state["netting"]["batches"][batch_id] = batch
+
+        self._respond_json(200, {"ok": True, "batch": batch})
+
+    def _handle_netting_execute(self):
+        """
+        POST /conformance/federation/netting/execute
+
+        Execute settlement for a batch that is authorized (reconciliation_status=clean).
+        Body (optional): {"settlement_batch_id": "stl-..."}
+        Returns 409 if batch is blocked (discrepancy) or already settled.
+        Produces 4 settlement ledger entries and marks A→B obligations as settled.
+        """
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            payload = json.loads(self.rfile.read(length)) if length > 0 else {}
+        except Exception as exc:
+            return self._respond_json(400, {"ok": False, "error": str(exc)})
+
+        batch_id = (payload.get("settlement_batch_id") or "") if isinstance(payload, dict) else ""
+        if not batch_id:
+            with self.server.state_lock:
+                batches = self.server.state["netting"]["batches"]
+            if not batches:
+                return self._respond_json(400, {"ok": False, "error": "no settlement batch found"})
+            batch_id = list(batches.keys())[-1]
+
+        with self.server.state_lock:
+            batch = self.server.state["netting"]["batches"].get(batch_id)
+
+        if batch is None:
+            return self._respond_json(404, {"ok": False, "error": "settlement_batch_id not found"})
+
+        if batch["reconciliation_status"] == "discrepancy":
+            return self._respond_json(409, {
+                "ok": False,
+                "error": "settlement_blocked_on_discrepancy",
+                "settlement_batch_id": batch_id,
+                "reconciliation_status": "discrepancy",
+                "discrepancies": batch.get("discrepancies", []),
+            })
+
+        if batch["settlement_status"] != "authorized":
+            return self._respond_json(409, {
+                "ok": False,
+                "error": "settlement_not_authorized",
+                "settlement_status": batch["settlement_status"],
+            })
+
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        bank_ref = f"simulated-bank-ref-{uuid.uuid4().hex[:12]}"
+        net_amount = batch["net_amount"]
+        op_a_id = batch["operator_a_id"]
+        op_b_id = batch["operator_b_id"]
+
+        # 4 settlement ledger entries: 2 on Op A side, 2 on Op B side
+        settlement_entries = [
+            {
+                "operator": op_a_id,
+                "entry_type": "DEBIT",
+                "account": f"federation_payable:{op_b_id}",
+                "amount_minor": net_amount,
+                "settlement_batch_id": batch_id,
+                "recorded_at": now_str,
+            },
+            {
+                "operator": op_a_id,
+                "entry_type": "CREDIT",
+                "account": "federation_settlement_clearing",
+                "amount_minor": net_amount,
+                "settlement_batch_id": batch_id,
+                "recorded_at": now_str,
+            },
+            {
+                "operator": op_b_id,
+                "entry_type": "DEBIT",
+                "account": "federation_settlement_clearing",
+                "amount_minor": net_amount,
+                "settlement_batch_id": batch_id,
+                "recorded_at": now_str,
+            },
+            {
+                "operator": op_b_id,
+                "entry_type": "CREDIT",
+                "account": f"federation_receivable:{op_a_id}",
+                "amount_minor": net_amount,
+                "settlement_batch_id": batch_id,
+                "recorded_at": now_str,
+            },
+        ]
+
+        routing_ids = batch.get("included_a_to_b_routing_ids", [])
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+            netting = self.server.state["netting"]
+            for rr_id in routing_ids:
+                if rr_id in fed["obligations"]:
+                    fed["obligations"][rr_id] = dict(fed["obligations"][rr_id])
+                    fed["obligations"][rr_id]["settlement_state"] = "settled"
+                    fed["obligations"][rr_id]["settled_at"] = now_str
+                    fed["obligations"][rr_id]["settlement_batch_id"] = batch_id
+            netting["settlement_ledger"].extend(settlement_entries)
+            netting["batches"][batch_id] = dict(netting["batches"][batch_id])
+            netting["batches"][batch_id]["settlement_status"] = "settled"
+            netting["batches"][batch_id]["settled_at"] = now_str
+            netting["batches"][batch_id]["simulated_bank_reference"] = bank_ref
+            updated_batch = dict(netting["batches"][batch_id])
+
+        self._respond_json(200, {
+            "ok": True,
+            "batch": updated_batch,
+            "settlement_ledger_entries": settlement_entries,
+            "simulated_bank_reference": bank_ref,
+        })
+
+    def _handle_netting_inject_discrepancy(self):
+        """
+        POST /conformance/federation/netting/inject-discrepancy
+
+        Register that Operator B reports a different amount for one obligation.
+        Body: {routing_request_id, reported_amount_minor}
+        On the next trigger, this discrepancy will block settlement.
+        """
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            payload = json.loads(self.rfile.read(length)) if length > 0 else {}
+        except Exception as exc:
+            return self._respond_json(400, {"ok": False, "error": str(exc)})
+
+        routing_request_id = payload.get("routing_request_id", "")
+        reported_amount_minor = payload.get("reported_amount_minor")
+
+        if not routing_request_id:
+            return self._respond_json(400, {"ok": False, "error": "routing_request_id required"})
+        if not isinstance(reported_amount_minor, int) or isinstance(reported_amount_minor, bool):
+            return self._respond_json(400, {"ok": False, "error": "reported_amount_minor must be integer"})
+
+        with self.server.state_lock:
+            self.server.state["netting"]["discrepancy_overrides"][routing_request_id] = reported_amount_minor
+
+        self._respond_json(200, {
+            "ok": True,
+            "routing_request_id": routing_request_id,
+            "reported_amount_minor": reported_amount_minor,
+        })
+
+    def _handle_netting_reset(self):
+        """POST /conformance/federation/netting/reset — clear netting state."""
+        with self.server.state_lock:
+            self.server.state["netting"] = _initial_netting_state()
+        self._respond_json(200, {"ok": True, "message": "netting state reset"})
+
     # ── Response helper ───────────────────────────────────────────────────────
 
     def _respond_json(self, status: int, body: dict):
@@ -910,6 +1254,16 @@ def _initial_fed_exec_state() -> dict:
     }
 
 
+def _initial_netting_state() -> dict:
+    """Initial in-memory netting/settlement state (FED-SETTLE conformance tests)."""
+    return {
+        "b_to_a_obligations": [],     # simulated B→A obligations added via add-b-obligation
+        "batches": {},                 # batch_id → settlement batch
+        "settlement_ledger": [],       # 4 entries per executed batch
+        "discrepancy_overrides": {},   # routing_request_id → op-b-reported amount (FED-SETTLE-008)
+    }
+
+
 # ── Server startup ────────────────────────────────────────────────────────────
 
 def run_server(port: int) -> None:
@@ -923,6 +1277,7 @@ def run_server(port: int) -> None:
         "key_manifest_url": "",
         "op_a_signing_key_bytes": None,
         "fed_exec": _initial_fed_exec_state(),
+        "netting": _initial_netting_state(),
     }
 
     # ThreadingHTTPServer: each request in its own thread, preventing deadlock
