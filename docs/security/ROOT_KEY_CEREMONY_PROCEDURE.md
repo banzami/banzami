@@ -156,7 +156,7 @@ deactivate
 
 # Copy ceremony files
 cp ~/banza/tools/banza-conformance/trust_root.py /media/ceremony-usb/
-cp ~/banza/tools/banza-conformance/ceremony_script.py /media/ceremony-usb/
+cp ~/banza/tools/root-ceremony/ceremony_script.py /media/ceremony-usb/
 ```
 
 Record software hashes:

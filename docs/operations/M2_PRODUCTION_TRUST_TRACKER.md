@@ -44,7 +44,7 @@ M2 is complete when all of the following are simultaneously true:
 | `ROOT_KEY_CEREMONY_CHECKLIST.md` | COMPLETE | Print on ceremony day |
 | `ROOT_KEY_CEREMONY_RECORD_TEMPLATE.md` | COMPLETE | Print on ceremony day |
 | `trust_root.py` — ceremony software base | COMPLETE | Verified correct algorithm |
-| `ceremony_script.py` — ceremony wrapper | **MISSING** | Must be created before ceremony day (see Gap OPS-001-G1) |
+| `ceremony_script.py` — ceremony wrapper | **COMPLETE** | `tools/root-ceremony/ceremony_script.py` — dry-run verified (see CEREMONY_SCRIPT_REPORT.md) |
 | Air-gapped ceremony machine | **NOT CONFIRMED** | Need to identify and verify machine |
 | Output USB A (`BANZA_KEYS_A`) | **NOT PROCURED** | ≥8 GB, freshly formatted |
 | Output USB B (`BANZA_KEYS_B`) | **NOT PROCURED** | ≥8 GB, freshly formatted |
