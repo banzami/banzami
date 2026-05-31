@@ -4,9 +4,13 @@ Tests a running Banza operator against the protocol conformance suite and produc
 
 ## Requirements
 
-Python 3.8+. No third-party packages — stdlib only.
+Python 3.8+. No third-party packages for the core runner — stdlib only.
+
+For L3 federation conformance (signature verification): `pip install cryptography>=41.0.0`
 
 ## Usage
+
+### Standard conformance (L0–L4)
 
 ```bash
 # Run all suites against a local operator
@@ -27,6 +31,53 @@ Or via the shell wrapper:
 ```bash
 ./tools/banza-conformance/run.sh --url http://localhost:3000 --output report.json
 ```
+
+### L3 Federation Conformance (79 tests, 9 suites)
+
+The federation conformance suite tests cross-operator federation protocol compliance.
+It requires two terminals: one for the fixture server (Operator A adapter) and one for the runner.
+
+```bash
+# Terminal 1 — start the fixture server (Operator A)
+python3 tools/banza-conformance/fixture_server.py --port 8099
+
+# Terminal 2 — run the full federation suite (79 tests)
+python3 tools/banza-conformance/run.py \
+  --federation \
+  --url http://localhost:8099 \
+  --output l3-report.json
+
+# Run only one federation sub-suite
+python3 tools/banza-conformance/run.py \
+  --federation \
+  --url http://localhost:8099 \
+  --fed-suite cert        # cert | disc | trust | route | exec | obl | evt | settle | fail
+```
+
+**What the federation runner does:**
+- Generates an ephemeral test BANZA root keypair (never reused as production)
+- Spins up an embedded Simulated Operator B (random port, in-process)
+- Spins up an embedded test BRL/key-manifest server (random port, in-process)
+- Runs all 79 federation tests against the fixture server
+- Produces a structured JSON evidence report
+
+**Federation suites:**
+
+| Suite | Cases | Blocking | What it tests |
+|---|---|---|---|
+| FED-CERT | 11 | Yes | Certificate schema, signature, expiry, BRL |
+| FED-DISC | 8 | Yes | Federation manifest extension fields |
+| FED-TRUST | 9 | Yes | All 9 ADR-026 trust protocol steps |
+| FED-ROUTE | 12 | Yes | Routing wire protocol, idempotency, rejections |
+| FED-EXEC | 8 | Yes | Acceptance semantics, ledger atomicity |
+| FED-OBL | 7 | Yes | Obligation creation, signature, state machine |
+| FED-EVT | 6 | No | Federation event emission and schema |
+| FED-SETTLE | 10 | No | Netting, settlement, reconciliation |
+| FED-FAIL | 8 | No | Retry, crash recovery, revocation, mismatches |
+
+**L3 certification decision:** All blocking suites (FED-CERT through FED-OBL) must PASS. FAIL in a blocking suite denies certification. FAIL in a non-blocking suite produces conditional certification (30-day remediation window).
+
+See `docs/federation/FEDERATION_CONFORMANCE_MODEL.md` for the full decision rules.
 
 ## Options
 
