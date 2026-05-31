@@ -59,14 +59,14 @@ M2 is complete when all of the following are simultaneously true:
 
 | ID | Gap | Effort | Unblocked? |
 |----|-----|--------|-----------|
-| OPS-001-G1 | Create `ceremony_script.py` — structured wrapper executing Phases 1–7 as defined in the Procedure document Appendix A | ~1 day | Yes — can do today |
+| OPS-001-G1 | ~~Create `ceremony_script.py`~~ — **RESOLVED** (`tools/root-ceremony/ceremony_script.py`, dry-run verified, see CEREMONY_SCRIPT_REPORT.md) | ~~1 day~~ — DONE | — |
 | OPS-001-G2 | Assign Ceremony Witness | Hours | Yes — immediately |
 | OPS-001-G3 | Procure and format 4 USB drives | Hours | Yes — immediately |
 | OPS-001-G4 | Identify and verify air-gapped machine | Hours | Yes — immediately |
 | OPS-001-G5 | Confirm offline printer functional | Minutes | Yes — immediately |
 | OPS-001-G6 | Identify and book secure ceremony room | Hours | Yes — immediately |
 
-**OPS-001-G1 is the only technical gap.** All others are physical/logistical.
+**OPS-001-G1 is resolved.** All remaining gaps are physical/logistical.
 
 #### Evidence of completion
 
@@ -310,7 +310,7 @@ All items below are **unblocked today**. Completing them before the ceremony mea
 
 | Task | Description | Effort | Priority |
 |------|-------------|--------|---------|
-| OPS-001-G1 | Create `ceremony_script.py` | ~1 day | CRITICAL — required before ceremony |
+| OPS-001-G1 | ~~Create `ceremony_script.py`~~ | **DONE** | ~~CRITICAL~~ — resolved |
 | OPS-001-G2–G6 | Hardware + participants + room | Hours | CRITICAL — required before ceremony |
 | OPS-003-G1 | Fix `generate_key_manifest()` in `trust_root.py` | ~0.5 day | HIGH — needed on ceremony day |
 | OPS-003-G2 | Create `contracts/federation/key-manifest.json` (PROTO-003) | ~0.5 day | HIGH |
