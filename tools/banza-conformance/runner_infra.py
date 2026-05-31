@@ -125,6 +125,19 @@ def _make_sim_b_handler(state: dict, lock: threading.Lock):
                         "balance_minor": wallet["balance_minor"],
                     })
 
+            elif self.path == "/federation/events":
+                # FED-EXEC-007: federation events emitted by Sim Op B
+                with lock:
+                    events = list(state["events"])
+                self._json(200, {"events": events})
+
+            elif self.path.startswith("/ledger/"):
+                # FED-EXEC-002: payee ledger entries on Sim Op B
+                wallet_id = self.path[len("/ledger/"):]
+                with lock:
+                    entries = [e for e in state["ledger"] if e.get("wallet_id") == wallet_id]
+                self._json(200, {"wallet_id": wallet_id, "entries": entries})
+
             else:
                 self._json(404, {"error": "not_found", "path": self.path})
 
@@ -313,9 +326,35 @@ def _make_sim_b_handler(state: dict, lock: threading.Lock):
                 "interop_transfer_id": itx_id,
                 "accepted_at": now_str,
             }
+            currency = amount.get("currency", "AOA")
+            ledger_entry = {
+                "wallet_id": recipient_id,
+                "entry_type": "CREDIT",
+                "amount_minor": amount_minor,
+                "currency": currency,
+                "trace_id": trace_id,
+                "routing_request_id": routing_id,
+                "interop_transfer_id": itx_id,
+                "recorded_at": now_str,
+            }
             with lock:
                 state["wallets"][recipient_id]["balance_minor"] += amount_minor
                 state["routing_store"][routing_id] = {"body_hash": body_hash, "response": resp}
+                state["ledger"].append(ledger_entry)
+                state["events"].append({
+                    "event_type": "federation.routing.accepted",
+                    "routing_request_id": routing_id,
+                    "interop_transfer_id": itx_id,
+                    "trace_id": trace_id,
+                    "emitted_at": now_str,
+                })
+                state["events"].append({
+                    "event_type": "federation.payment.completed",
+                    "routing_request_id": routing_id,
+                    "interop_transfer_id": itx_id,
+                    "trace_id": trace_id,
+                    "emitted_at": now_str,
+                })
             self._json(200, resp)
 
     return SimBHandler
@@ -389,6 +428,10 @@ class RunnerInfra:
                 "wallet-payee-test-001": {"status": "active", "balance_minor": 0},
                 "wallet-suspended-test-001": {"status": "suspended", "balance_minor": 0},
             },
+            # FED-EXEC: payee ledger entries (CREDIT on acceptance)
+            "ledger": [],
+            # FED-EXEC: federation events emitted on acceptance
+            "events": [],
         }
         self._trust_root_state = {
             "brl": self._empty_brl(),
@@ -431,8 +474,8 @@ class RunnerInfra:
 
     def reset_routing_state(self) -> None:
         """
-        Clear routing request store and reset wallet balances to initial state.
-        Call before each FED-ROUTE test to ensure test isolation (Section 6.1).
+        Clear routing request store, reset wallet balances, clear ledger and events.
+        Call before each FED-ROUTE / FED-EXEC test to ensure test isolation (Section 6.1).
         """
         with self._lock:
             self._sim_b_state["routing_store"] = {}
@@ -440,12 +483,27 @@ class RunnerInfra:
                 "wallet-payee-test-001": {"status": "active", "balance_minor": 0},
                 "wallet-suspended-test-001": {"status": "suspended", "balance_minor": 0},
             }
+            self._sim_b_state["ledger"] = []
+            self._sim_b_state["events"] = []
 
     def get_wallet_balance(self, wallet_id: str):
         """Return current balance_minor for wallet_id, or None if not found."""
         with self._lock:
             wallet = self._sim_b_state["wallets"].get(wallet_id)
         return wallet["balance_minor"] if wallet is not None else None
+
+    def get_sim_b_events(self, routing_request_id: str = None) -> list:
+        """Return events emitted by Sim Op B, optionally filtered by routing_request_id."""
+        with self._lock:
+            events = list(self._sim_b_state["events"])
+        if routing_request_id is not None:
+            events = [e for e in events if e.get("routing_request_id") == routing_request_id]
+        return events
+
+    def get_sim_b_ledger(self, wallet_id: str) -> list:
+        """Return ledger entries for the given wallet_id on Sim Op B."""
+        with self._lock:
+            return [e for e in self._sim_b_state["ledger"] if e.get("wallet_id") == wallet_id]
 
     # ── BRL configuration ─────────────────────────────────────────────────────
 

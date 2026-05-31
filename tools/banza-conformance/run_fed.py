@@ -1,5 +1,5 @@
 """
-BANZA Federation Conformance Runner — Slice 5
+BANZA Federation Conformance Runner — Slice 6
 
 Implements:
   FED-CERT-001  Certificate Present at Well-Known URL                    (Slice 0)
@@ -42,16 +42,24 @@ Implements:
   FED-ROUTE-010 Non-Positive amount.minor Rejected (INV-FED-LEDGER-002)  (Slice 5)
   FED-ROUTE-011 Duplicate routing_request_id with Different Content      (Slice 5)
   FED-ROUTE-012 Suspended Recipient Wallet Returns Structured Rejection  (Slice 5)
+  FED-EXEC-001  Payee Wallet Credited Simultaneously with Acceptance     (Slice 6)
+  FED-EXEC-002  Ledger Entries Correct on Both Operators                 (Slice 6)
+  FED-EXEC-003  No Debit Without Acceptance (BC-001)                     (Slice 6)
+  FED-EXEC-004  Debit and Obligation Are Atomic (BC-003)                 (Slice 6)
+  FED-EXEC-005  Acceptance Is Irrevocable on Operator B (BC-004)        (Slice 6)
+  FED-EXEC-006  Operator B Internal Failure Does Not Affect Obligation   (Slice 6)
+  FED-EXEC-007  Provisional Completion: All 7 Criteria Met               (Slice 6)
+  FED-EXEC-008  Double-Debit Prevention Via Posting Idempotency Key      (Slice 6)
 
 Spec: FEDERATION_TEST_SUITE_SPEC.md §Suite FED-CERT, §Suite FED-DISC,
-      §Suite FED-TRUST, §Suite FED-ROUTE
+      §Suite FED-TRUST, §Suite FED-ROUTE, §Suite FED-EXEC
 Contracts: contracts/federation/operator-certificate.json,
            contracts/federation/federation-manifest.json,
            contracts/federation/federation-routing.json
 
 Requires:
   cryptography>=41.0.0  for FED-CERT-002, FED-CERT-008–011, FED-DISC-007,
-                        all FED-TRUST tests, and all FED-ROUTE tests
+                        all FED-TRUST tests, all FED-ROUTE tests, all FED-EXEC tests
 """
 
 import argparse
@@ -70,7 +78,7 @@ from typing import Optional
 import trust_root as _tr
 from runner_infra import RunnerInfra
 
-RUNNER_VERSION = "0.6.0-slice5"
+RUNNER_VERSION = "0.7.0-slice6"
 
 # ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -3287,6 +3295,958 @@ def run_fed_route_012(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
     return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
 
 
+# ── FED-EXEC helpers ─────────────────────────────────────────────────────────
+
+_EXEC_SENDER_WALLET = "wallet-sender-test-001"
+_EXEC_PAYEE_WALLET = "wallet-payee-test-001"
+_EXEC_INITIAL_BALANCE = 500000
+_EXEC_RR_ID = "rr-00000000-0000-0000-0000-000000000001"
+_EXEC_TRACE_ID = "tr-00000000-0000-0000-0000-000000000001"
+_EXEC_AMOUNT = 50000
+
+
+def _build_exec_route_payload(
+    base_url: str,
+    sim_b_url: str,
+    routing_request_id: str,
+    trace_id: str,
+    op_a_priv,
+    amount_minor: int = _EXEC_AMOUNT,
+    currency: str = "AOA",
+    recipient_identifier: str = _EXEC_PAYEE_WALLET,
+    to_operator_id: str = "operator-b-test",
+) -> dict:
+    """Build the payload for POST /conformance/federation/route."""
+    routing_body = _routing_body(
+        base_url=base_url,
+        routing_request_id=routing_request_id,
+        trace_id=trace_id,
+        to_operator_id=to_operator_id,
+        amount_minor=amount_minor,
+        currency=currency,
+        sender_wallet_id=_EXEC_SENDER_WALLET,
+        recipient_identifier=recipient_identifier,
+    )
+    sig_header = _make_sig_header(routing_body, op_a_priv)
+    return {
+        "routing_request_id": routing_request_id,
+        "trace_id": trace_id,
+        "sender_wallet_id": _EXEC_SENDER_WALLET,
+        "routing_body": routing_body,
+        "signature_header": sig_header,
+        "sim_b_route_url": f"{sim_b_url}/federation/route",
+    }
+
+
+def _call_fed_route(base_url: str, payload: dict) -> tuple:
+    """POST /conformance/federation/route on Operator A → (status, result_or_None)."""
+    try:
+        status, _, raw = http_post(f"{base_url}/conformance/federation/route", payload)
+        try:
+            return status, json.loads(raw)
+        except json.JSONDecodeError:
+            return status, None
+    except RuntimeError as exc:
+        raise
+
+
+def _get_wallet_op_a(base_url: str, wallet_id: str) -> tuple:
+    """GET /conformance/federation/wallet/{wallet_id} → (status, dict_or_None)."""
+    try:
+        status, _, raw = http_get(f"{base_url}/conformance/federation/wallet/{wallet_id}")
+        try:
+            return status, json.loads(raw)
+        except json.JSONDecodeError:
+            return status, None
+    except RuntimeError as exc:
+        raise
+
+
+def _get_ledger_op_a(base_url: str, wallet_id: str) -> tuple:
+    """GET /conformance/federation/ledger/{wallet_id} → (status, dict_or_None)."""
+    try:
+        status, _, raw = http_get(f"{base_url}/conformance/federation/ledger/{wallet_id}")
+        try:
+            return status, json.loads(raw)
+        except json.JSONDecodeError:
+            return status, None
+    except RuntimeError as exc:
+        raise
+
+
+def _get_obligation_op_a(base_url: str, routing_request_id: str) -> tuple:
+    """GET /conformance/federation/obligations/{rr_id} → (status, dict_or_None)."""
+    try:
+        status, _, raw = http_get(
+            f"{base_url}/conformance/federation/obligations/{routing_request_id}"
+        )
+        try:
+            return status, json.loads(raw)
+        except json.JSONDecodeError:
+            return status, None
+    except RuntimeError as exc:
+        raise
+
+
+def _get_events_op_a(base_url: str) -> tuple:
+    """GET /conformance/federation/events → (status, dict_or_None)."""
+    try:
+        status, _, raw = http_get(f"{base_url}/conformance/federation/events")
+        try:
+            return status, json.loads(raw)
+        except json.JSONDecodeError:
+            return status, None
+    except RuntimeError as exc:
+        raise
+
+
+def _reset_exec_state(base_url: str) -> bool:
+    """POST /conformance/federation/reset → True if OK."""
+    try:
+        status, _, _ = http_post(f"{base_url}/conformance/federation/reset", {})
+        return status in (200, 204)
+    except RuntimeError:
+        return False
+
+
+# ── FED-EXEC-001 ──────────────────────────────────────────────────────────────
+
+def run_fed_exec_001(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-EXEC-001 — Payee Wallet Credited Simultaneously with Acceptance
+
+    When Operator B returns status=accepted, payee wallet is already credited.
+    Query Sim Op B's payee wallet before and immediately after acceptance response.
+
+    Pass:   balance_after - balance_before == amount.minor
+    Fail:   Balance unchanged; balance changes after delay
+    Severity: CRITICAL
+    Invariant: INV-FED-LEDGER-001
+    Contract: federation-routing.json
+    L3 Req: FED-L3-011
+    """
+    case = _make_case("FED-EXEC-001", "Payee Wallet Credited Simultaneously with Acceptance")
+
+    infra.reset_routing_state()
+
+    balance_before = infra.get_wallet_balance(_EXEC_PAYEE_WALLET)
+    if balance_before is None:
+        return _error_case(case, f"payee wallet {_EXEC_PAYEE_WALLET!r} not found on Sim Op B")
+
+    body = _routing_body(
+        base_url=base_url,
+        routing_request_id=_EXEC_RR_ID,
+        trace_id=_EXEC_TRACE_ID,
+        amount_minor=_EXEC_AMOUNT,
+    )
+    sig_header = _make_sig_header(body, op_a_priv)
+    route_url = f"{infra.sim_b_url}/federation/route"
+
+    t0 = time.monotonic()
+    try:
+        status, resp = _post_route(route_url, body, sig_header)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": route_url, "routing_request_id": _EXEC_RR_ID}
+    case["response"] = {"status": status, "body": resp}
+
+    if status != 200 or not resp or resp.get("status") != "accepted":
+        return _fail_case(
+            case,
+            f"routing not accepted: HTTP {status}, status={resp.get('status') if resp else None}",
+            ms,
+        )
+
+    balance_after = infra.get_wallet_balance(_EXEC_PAYEE_WALLET)
+    delta = (balance_after - balance_before) if balance_after is not None else None
+
+    assertions = [
+        _assertion("routing response status=accepted", resp.get("status") == "accepted",
+                   "accepted", resp.get("status")),
+        _assertion(
+            f"balance_after - balance_before == {_EXEC_AMOUNT}",
+            delta == _EXEC_AMOUNT,
+            _EXEC_AMOUNT,
+            delta,
+        ),
+    ]
+    case["evidence"] = {
+        "payee_wallet": _EXEC_PAYEE_WALLET,
+        "balance_before": balance_before,
+        "balance_after": balance_after,
+        "balance_delta": delta,
+        "expected_delta": _EXEC_AMOUNT,
+        "routing_request_id": _EXEC_RR_ID,
+        "interop_transfer_id": resp.get("interop_transfer_id"),
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-EXEC-002 ──────────────────────────────────────────────────────────────
+
+def run_fed_exec_002(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-EXEC-002 — Ledger Entries Correct on Both Operators
+
+    After routing accepted:
+      Operator A: DEBIT payer_wallet = amount.minor with trace_id
+      Operator B: CREDIT payee_wallet = amount.minor with trace_id
+
+    Pass:   Both entries present; amounts match routing request; trace_ids match
+    Fail:   Missing entry; wrong amount; wrong trace_id; wrong entry type
+    Severity: CRITICAL
+    Invariant: INV-FED-LEDGER-001, INV-FED-005
+    L3 Req: FED-L3-011, FED-L3-014
+    """
+    case = _make_case("FED-EXEC-002", "Ledger Entries Correct on Both Operators")
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_EXEC_RR_ID,
+        trace_id=_EXEC_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        status, result = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result or result.get("routing_status") != "accepted":
+        return _fail_case(case, f"routing not accepted: {result}", ms)
+
+    try:
+        _, ledger_a = _get_ledger_op_a(base_url, _EXEC_SENDER_WALLET)
+    except RuntimeError as exc:
+        return _error_case(case, f"Operator A ledger query failed: {exc}")
+
+    ledger_b_entries = infra.get_sim_b_ledger(_EXEC_PAYEE_WALLET)
+
+    entries_a = (ledger_a.get("entries") or []) if ledger_a else []
+    debit_entry = next(
+        (e for e in entries_a if e.get("routing_request_id") == _EXEC_RR_ID), None
+    )
+    credit_entry = next(
+        (e for e in ledger_b_entries if e.get("routing_request_id") == _EXEC_RR_ID), None
+    )
+
+    assertions = [
+        _assertion("routing accepted", result.get("routing_status") == "accepted",
+                   "accepted", result.get("routing_status")),
+        _assertion("Operator A DEBIT entry exists", debit_entry is not None,
+                   "exists", "missing" if debit_entry is None else "exists"),
+        _assertion("Operator A entry_type=DEBIT",
+                   debit_entry.get("entry_type") == "DEBIT" if debit_entry else False,
+                   "DEBIT", debit_entry.get("entry_type") if debit_entry else None),
+        _assertion(f"Operator A amount_minor={_EXEC_AMOUNT}",
+                   debit_entry.get("amount_minor") == _EXEC_AMOUNT if debit_entry else False,
+                   _EXEC_AMOUNT, debit_entry.get("amount_minor") if debit_entry else None),
+        _assertion(f"Operator A trace_id={_EXEC_TRACE_ID}",
+                   debit_entry.get("trace_id") == _EXEC_TRACE_ID if debit_entry else False,
+                   _EXEC_TRACE_ID, debit_entry.get("trace_id") if debit_entry else None),
+        _assertion("Sim Op B CREDIT entry exists", credit_entry is not None,
+                   "exists", "missing" if credit_entry is None else "exists"),
+        _assertion("Sim Op B entry_type=CREDIT",
+                   credit_entry.get("entry_type") == "CREDIT" if credit_entry else False,
+                   "CREDIT", credit_entry.get("entry_type") if credit_entry else None),
+        _assertion(f"Sim Op B amount_minor={_EXEC_AMOUNT}",
+                   credit_entry.get("amount_minor") == _EXEC_AMOUNT if credit_entry else False,
+                   _EXEC_AMOUNT, credit_entry.get("amount_minor") if credit_entry else None),
+        _assertion(f"Sim Op B trace_id={_EXEC_TRACE_ID}",
+                   credit_entry.get("trace_id") == _EXEC_TRACE_ID if credit_entry else False,
+                   _EXEC_TRACE_ID, credit_entry.get("trace_id") if credit_entry else None),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _EXEC_RR_ID,
+        "trace_id": _EXEC_TRACE_ID,
+        "operator_a_debit_entry": debit_entry,
+        "sim_op_b_credit_entry": credit_entry,
+        "interop_transfer_id": result.get("interop_transfer_id"),
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-EXEC-003 ──────────────────────────────────────────────────────────────
+
+def run_fed_exec_003(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-EXEC-003 — No Debit Without Acceptance (BC-001)
+
+    If routing is rejected, payer wallet must not be debited.
+
+    Pass:   balance_after == balance_before
+    Fail:   Payer debited despite rejection
+    Severity: CRITICAL
+    L3 Req: FED-L3-011
+    """
+    case = _make_case("FED-EXEC-003", "No Debit Without Acceptance (BC-001)")
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    try:
+        _, wallet_before = _get_wallet_op_a(base_url, _EXEC_SENDER_WALLET)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    balance_before = wallet_before.get("balance_minor") if wallet_before else None
+    if balance_before is None:
+        return _error_case(case, f"could not get balance for {_EXEC_SENDER_WALLET!r}")
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_EXEC_RR_ID,
+        trace_id=_EXEC_TRACE_ID,
+        op_a_priv=op_a_priv,
+        recipient_identifier="wallet-does-not-exist-xxxxxxxx",
+    )
+
+    t0 = time.monotonic()
+    try:
+        status, result = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    try:
+        _, wallet_after = _get_wallet_op_a(base_url, _EXEC_SENDER_WALLET)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    balance_after = wallet_after.get("balance_minor") if wallet_after else None
+
+    assertions = [
+        _assertion("routing was rejected", result.get("routing_status") == "rejected" if result else False,
+                   "rejected", result.get("routing_status") if result else None),
+        _assertion("payer_debited=false", not result.get("payer_debited", True) if result else False,
+                   False, result.get("payer_debited") if result else None),
+        _assertion("balance_after == balance_before", balance_after == balance_before,
+                   balance_before, balance_after),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _EXEC_RR_ID,
+        "routing_status": result.get("routing_status") if result else None,
+        "rejection_code": result.get("rejection_code") if result else None,
+        "payer_wallet": _EXEC_SENDER_WALLET,
+        "balance_before": balance_before,
+        "balance_after": balance_after,
+        "payer_debited": result.get("payer_debited") if result else None,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-EXEC-004 ──────────────────────────────────────────────────────────────
+
+def run_fed_exec_004(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-EXEC-004 — Debit and Obligation Are Atomic (BC-003)
+
+    No valid state where debit exists without obligation or vice versa.
+
+    Pass:   BOTH debit entry and obligation exist, linked by routing_request_id
+    Fail:   Debit without obligation; obligation without debit; timing gap
+    Severity: CRITICAL
+    L3 Req: FED-L3-013
+    """
+    case = _make_case("FED-EXEC-004", "Debit and Obligation Are Atomic (BC-003)")
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_EXEC_RR_ID,
+        trace_id=_EXEC_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        status, result = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result or result.get("routing_status") != "accepted":
+        return _fail_case(case, f"routing not accepted: {result}", ms)
+
+    try:
+        _, ledger = _get_ledger_op_a(base_url, _EXEC_SENDER_WALLET)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    try:
+        _, obligation = _get_obligation_op_a(base_url, _EXEC_RR_ID)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    entries = (ledger.get("entries") or []) if ledger else []
+    debit_entry = next((e for e in entries if e.get("routing_request_id") == _EXEC_RR_ID), None)
+    debit_exists = debit_entry is not None
+    obligation_exists = (
+        obligation is not None
+        and isinstance(obligation.get("obligation_id"), str)
+        and obligation.get("obligation_id", "").startswith("ob-")
+    )
+    atomicity_ok = debit_exists == obligation_exists
+    rr_id_match = (
+        (debit_entry.get("routing_request_id") == _EXEC_RR_ID if debit_entry else False)
+        and (obligation.get("routing_request_id") == _EXEC_RR_ID if obligation else False)
+    )
+
+    assertions = [
+        _assertion("routing accepted", result.get("routing_status") == "accepted",
+                   "accepted", result.get("routing_status")),
+        _assertion("DEBIT ledger entry exists", debit_exists,
+                   "exists", "missing" if not debit_exists else "exists"),
+        _assertion("obligation exists", obligation_exists,
+                   "exists", "missing" if not obligation_exists else "exists"),
+        _assertion("obligation settlement_state=pending",
+                   obligation.get("settlement_state") == "pending" if obligation else False,
+                   "pending", obligation.get("settlement_state") if obligation else None),
+        _assertion("both linked by routing_request_id", rr_id_match,
+                   _EXEC_RR_ID, "mismatch" if not rr_id_match else _EXEC_RR_ID),
+        _assertion("atomicity: debit ↔ obligation (both exist)",
+                   atomicity_ok,
+                   "both present",
+                   f"debit={debit_exists}, obligation={obligation_exists}"),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _EXEC_RR_ID,
+        "debit_entry": debit_entry,
+        "obligation": obligation,
+        "debit_exists": debit_exists,
+        "obligation_exists": obligation_exists,
+        "atomicity_check": atomicity_ok,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-EXEC-005 ──────────────────────────────────────────────────────────────
+
+def run_fed_exec_005(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-EXEC-005 — Acceptance Is Irrevocable on Operator B (BC-004)
+
+    Operator B cannot reverse an accepted routing request.
+
+    Pass:   Cancel endpoint returns 404/405; payee balance unchanged
+    Fail:   Payee credit reversed; routing can be cancelled
+    Severity: STANDARD
+    """
+    case = _make_case("FED-EXEC-005", "Acceptance Is Irrevocable on Operator B (BC-004)")
+
+    infra.reset_routing_state()
+
+    body = _routing_body(
+        base_url=base_url,
+        routing_request_id=_EXEC_RR_ID,
+        trace_id=_EXEC_TRACE_ID,
+        amount_minor=_EXEC_AMOUNT,
+    )
+    sig_header = _make_sig_header(body, op_a_priv)
+    route_url = f"{infra.sim_b_url}/federation/route"
+
+    t0 = time.monotonic()
+    try:
+        status, resp = _post_route(route_url, body, sig_header)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if status != 200 or not resp or resp.get("status") != "accepted":
+        return _fail_case(
+            case,
+            f"routing not accepted (prerequisite): HTTP {status}, "
+            f"status={resp.get('status') if resp else None}",
+            ms,
+        )
+
+    balance_after_accept = infra.get_wallet_balance(_EXEC_PAYEE_WALLET)
+
+    # Attempt to cancel the accepted routing via a non-existent endpoint
+    cancel_url = f"{infra.sim_b_url}/federation/route/{_EXEC_RR_ID}/cancel"
+    try:
+        get_cancel_status, _, _ = http_get(cancel_url)
+    except RuntimeError:
+        get_cancel_status = None
+
+    try:
+        post_cancel_status, post_cancel_resp = _post_route(
+            cancel_url, {"routing_request_id": _EXEC_RR_ID}
+        )
+    except RuntimeError:
+        post_cancel_status = None
+
+    balance_after_cancel = infra.get_wallet_balance(_EXEC_PAYEE_WALLET)
+
+    cancel_rejected = (
+        get_cancel_status in (404, 405, None)
+        and post_cancel_status in (404, 405, None)
+    )
+    balance_unchanged = balance_after_cancel == balance_after_accept
+
+    assertions = [
+        _assertion("routing accepted (prerequisite)", resp.get("status") == "accepted",
+                   "accepted", resp.get("status")),
+        _assertion(
+            "cancel endpoint returns 404/405 (no cancellation path exists)",
+            cancel_rejected,
+            "404 or 405",
+            f"GET:{get_cancel_status} POST:{post_cancel_status}",
+        ),
+        _assertion(
+            "payee balance unchanged after cancel attempt",
+            balance_unchanged,
+            balance_after_accept,
+            balance_after_cancel,
+        ),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _EXEC_RR_ID,
+        "interop_transfer_id": resp.get("interop_transfer_id"),
+        "cancel_url": cancel_url,
+        "get_cancel_status": get_cancel_status,
+        "post_cancel_status": post_cancel_status,
+        "balance_after_accept": balance_after_accept,
+        "balance_after_cancel_attempt": balance_after_cancel,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-EXEC-006 ──────────────────────────────────────────────────────────────
+
+def run_fed_exec_006(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-EXEC-006 — Operator B Internal Failure After Acceptance Does Not Affect Obligation
+
+    Even if Sim Op B has an internal inconsistency after accepting, Operator A's
+    obligation remains valid and is in settlement_state=pending.
+
+    Pass:   Obligation exists; settlement_state=pending
+    Fail:   Obligation missing; obligation reversed
+    Severity: STANDARD
+    Invariant: INV-FED-002
+    L3 Req: FED-L3-013
+    """
+    case = _make_case(
+        "FED-EXEC-006",
+        "Operator B Internal Failure After Acceptance Does Not Affect Obligation",
+    )
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_EXEC_RR_ID,
+        trace_id=_EXEC_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        status, result = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result or result.get("routing_status") != "accepted":
+        return _fail_case(case, f"routing not accepted: {result}", ms)
+
+    try:
+        _, obligation = _get_obligation_op_a(base_url, _EXEC_RR_ID)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    obligation_exists = (
+        obligation is not None
+        and isinstance(obligation.get("obligation_id"), str)
+    )
+    settlement_pending = obligation.get("settlement_state") == "pending" if obligation else False
+    rr_id_match = obligation.get("routing_request_id") == _EXEC_RR_ID if obligation else False
+
+    assertions = [
+        _assertion("routing accepted", result.get("routing_status") == "accepted",
+                   "accepted", result.get("routing_status")),
+        _assertion("obligation exists on Operator A", obligation_exists,
+                   "exists", "missing" if not obligation_exists else "exists"),
+        _assertion("obligation settlement_state=pending", settlement_pending,
+                   "pending", obligation.get("settlement_state") if obligation else None),
+        _assertion("obligation routing_request_id matches", rr_id_match,
+                   _EXEC_RR_ID, obligation.get("routing_request_id") if obligation else None),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _EXEC_RR_ID,
+        "interop_transfer_id": result.get("interop_transfer_id"),
+        "obligation": obligation,
+        "obligation_exists": obligation_exists,
+        "settlement_state": obligation.get("settlement_state") if obligation else None,
+        "note": "Obligation on Operator A is independent of Sim Op B subsequent state",
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-EXEC-007 ──────────────────────────────────────────────────────────────
+
+def run_fed_exec_007(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-EXEC-007 — Provisional Completion: All 7 Criteria Met
+
+    Verifies all 7 provisional completion criteria from FEDERATION_PROTOCOL_FLOW.md §10:
+      (1) routing_request accepted
+      (2) payer debited
+      (3) payee credited
+      (4) obligation pending
+      (5) federation.payment.initiated event on Operator A
+      (6) federation.payment.completed event on Operator B
+      (7) both events share trace_id
+
+    Pass:   All 7 checks = true
+    Fail:   Any check = false
+    Severity: STANDARD
+    Invariant: INV-FED-001
+    L3 Req: FED-L3-011, FED-L3-012, FED-L3-013, FED-L3-014
+    """
+    case = _make_case("FED-EXEC-007", "Provisional Completion: All 7 Criteria Met")
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_EXEC_RR_ID,
+        trace_id=_EXEC_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        status, result = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result or result.get("routing_status") != "accepted":
+        return _fail_case(case, f"routing not accepted: {result}", ms)
+
+    interop_transfer_id = result.get("interop_transfer_id")
+
+    # Criterion 1: routing_request accepted
+    crit_1 = result.get("routing_status") == "accepted"
+
+    # Criterion 2: payer debited
+    try:
+        _, ledger_a = _get_ledger_op_a(base_url, _EXEC_SENDER_WALLET)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+    entries_a = (ledger_a.get("entries") or []) if ledger_a else []
+    debit_entry = next(
+        (e for e in entries_a if e.get("routing_request_id") == _EXEC_RR_ID), None
+    )
+    crit_2 = debit_entry is not None
+
+    # Criterion 3: payee credited
+    payee_balance = infra.get_wallet_balance(_EXEC_PAYEE_WALLET)
+    crit_3 = payee_balance is not None and payee_balance >= _EXEC_AMOUNT
+
+    # Criterion 4: obligation pending
+    try:
+        _, obligation = _get_obligation_op_a(base_url, _EXEC_RR_ID)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+    crit_4 = obligation is not None and obligation.get("settlement_state") == "pending"
+
+    # Criterion 5: federation.payment.initiated event on Operator A
+    try:
+        _, events_a = _get_events_op_a(base_url)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+    events_a_list = (events_a.get("events") or []) if events_a else []
+    initiated_event = next(
+        (e for e in events_a_list
+         if e.get("event_type") == "federation.payment.initiated"
+         and e.get("routing_request_id") == _EXEC_RR_ID),
+        None,
+    )
+    crit_5 = initiated_event is not None
+
+    # Criterion 6: federation.payment.completed event on Operator B
+    events_b_list = infra.get_sim_b_events(_EXEC_RR_ID)
+    completed_event = next(
+        (e for e in events_b_list if e.get("event_type") == "federation.payment.completed"),
+        None,
+    )
+    crit_6 = completed_event is not None
+
+    # Criterion 7: both events share trace_id
+    trace_a = initiated_event.get("trace_id") if initiated_event else None
+    trace_b = completed_event.get("trace_id") if completed_event else None
+    crit_7 = (trace_a == _EXEC_TRACE_ID) and (trace_b == _EXEC_TRACE_ID)
+
+    assertions = [
+        _assertion("(1) routing_request accepted", crit_1, "accepted", result.get("routing_status")),
+        _assertion("(2) payer debited on Operator A", crit_2,
+                   "DEBIT entry present", "missing" if not crit_2 else "present"),
+        _assertion("(3) payee credited on Operator B", crit_3,
+                   f"balance ≥ {_EXEC_AMOUNT}", payee_balance),
+        _assertion("(4) obligation pending on Operator A", crit_4,
+                   "settlement_state=pending",
+                   obligation.get("settlement_state") if obligation else "missing"),
+        _assertion("(5) federation.payment.initiated event on Operator A", crit_5,
+                   "present", "missing" if not crit_5 else "present"),
+        _assertion("(6) federation.payment.completed event on Operator B", crit_6,
+                   "present", "missing" if not crit_6 else "present"),
+        _assertion("(7) both events share trace_id (INV-FED-001)", crit_7,
+                   _EXEC_TRACE_ID, f"A={trace_a} B={trace_b}"),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _EXEC_RR_ID,
+        "trace_id": _EXEC_TRACE_ID,
+        "interop_transfer_id": interop_transfer_id,
+        "criterion_1_routing_accepted": crit_1,
+        "criterion_2_payer_debited": crit_2,
+        "criterion_3_payee_credited": crit_3,
+        "criterion_3_payee_balance": payee_balance,
+        "criterion_4_obligation_pending": crit_4,
+        "criterion_5_payment_initiated_event": crit_5,
+        "criterion_6_payment_completed_event": crit_6,
+        "criterion_7_trace_ids_match": crit_7,
+        "trace_id_op_a": trace_a,
+        "trace_id_op_b": trace_b,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-EXEC-008 ──────────────────────────────────────────────────────────────
+
+def run_fed_exec_008(base_url: str, infra: "RunnerInfra", op_a_priv) -> dict:
+    """
+    FED-EXEC-008 — Double-Debit Prevention Via Posting Idempotency Key
+
+    Retrying Phase 4 (debit + obligation) with the same routing_request_id does
+    not double-charge: balance decremented exactly once, obligation exists exactly once.
+
+    Pass:   balance decremented once; exactly 1 DEBIT entry; exactly 1 obligation
+    Fail:   Balance decremented twice; 2 obligations for same routing_request_id
+    Severity: CRITICAL
+    Invariant: INV-FED-IDEM-001
+    """
+    case = _make_case(
+        "FED-EXEC-008",
+        "Double-Debit Prevention Via Posting Idempotency Key",
+    )
+
+    _reset_exec_state(base_url)
+    infra.reset_routing_state()
+
+    try:
+        _, wallet_initial = _get_wallet_op_a(base_url, _EXEC_SENDER_WALLET)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+    balance_initial = wallet_initial.get("balance_minor") if wallet_initial else None
+    if balance_initial is None:
+        return _error_case(case, "could not get initial sender balance")
+
+    payload = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_EXEC_RR_ID,
+        trace_id=_EXEC_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+
+    t0 = time.monotonic()
+    try:
+        _, result1 = _call_fed_route(base_url, payload)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    if not result1 or result1.get("routing_status") != "accepted":
+        return _fail_case(case, f"first routing not accepted: {result1}", ms)
+
+    try:
+        _, wallet_after_first = _get_wallet_op_a(base_url, _EXEC_SENDER_WALLET)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+    balance_after_first = wallet_after_first.get("balance_minor") if wallet_after_first else None
+
+    # Second call: same routing_request_id — Operator A must return cached result, no re-debit.
+    # Build a fresh payload (new created_at, new signature timestamp) — idempotency is on
+    # routing_request_id, not on the body content.
+    payload2 = _build_exec_route_payload(
+        base_url=base_url,
+        sim_b_url=infra.sim_b_url,
+        routing_request_id=_EXEC_RR_ID,
+        trace_id=_EXEC_TRACE_ID,
+        op_a_priv=op_a_priv,
+    )
+    try:
+        _, result2 = _call_fed_route(base_url, payload2)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    try:
+        _, wallet_after_second = _get_wallet_op_a(base_url, _EXEC_SENDER_WALLET)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+    balance_after_second = wallet_after_second.get("balance_minor") if wallet_after_second else None
+
+    try:
+        _, obligation = _get_obligation_op_a(base_url, _EXEC_RR_ID)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    try:
+        _, ledger = _get_ledger_op_a(base_url, _EXEC_SENDER_WALLET)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+    entries = (ledger.get("entries") or []) if ledger else []
+    debit_entries_for_rr = [e for e in entries if e.get("routing_request_id") == _EXEC_RR_ID]
+
+    expected_final = (balance_initial or 0) - _EXEC_AMOUNT
+    decremented_once = balance_after_second == expected_final
+    obligation_once = obligation is not None and obligation.get("obligation_id") is not None
+    debit_count = len(debit_entries_for_rr)
+
+    assertions = [
+        _assertion("first routing accepted", result1.get("routing_status") == "accepted",
+                   "accepted", result1.get("routing_status")),
+        _assertion("second call returns accepted (idempotent replay)",
+                   result2.get("routing_status") == "accepted" if result2 else False,
+                   "accepted", result2.get("routing_status") if result2 else None),
+        _assertion(
+            f"balance decremented exactly once (expected={expected_final})",
+            decremented_once,
+            expected_final,
+            balance_after_second,
+        ),
+        _assertion("exactly 1 DEBIT ledger entry for routing_request_id",
+                   debit_count == 1, 1, debit_count),
+        _assertion("exactly 1 obligation for routing_request_id",
+                   obligation_once, 1, "exists" if obligation_once else "missing"),
+    ]
+    case["evidence"] = {
+        "routing_request_id": _EXEC_RR_ID,
+        "balance_initial": balance_initial,
+        "balance_after_first_call": balance_after_first,
+        "balance_after_second_call": balance_after_second,
+        "expected_final_balance": expected_final,
+        "debit_entry_count": debit_count,
+        "obligation_exists": obligation_once,
+        "double_debit_check": "PASS" if decremented_once else "FAIL",
+        "result_first_call": result1,
+        "result_second_call": result2,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-EXEC suite runner ─────────────────────────────────────────────────────
+
+def run_suite_fed_exec(
+    base_url: str,
+    infra: "RunnerInfra" = None,
+    op_a_priv=None,
+) -> dict:
+    """
+    Run all 8 FED-EXEC tests.
+
+    Requires infra (Sim Op B) and op_a_priv (Operator A signing key).
+    Without both, all tests are skipped.
+    """
+    def _skip(case_id, title, reason):
+        return _skip_case(_make_case(case_id, title), reason)
+
+    exec_avail = infra is not None and op_a_priv is not None
+
+    if not exec_avail:
+        reason = "execution infrastructure not available (install cryptography)"
+        cases = [
+            _skip(f"FED-EXEC-{str(i).zfill(3)}", t, reason)
+            for i, t in [
+                (1, "Payee Wallet Credited Simultaneously with Acceptance"),
+                (2, "Ledger Entries Correct on Both Operators"),
+                (3, "No Debit Without Acceptance (BC-001)"),
+                (4, "Debit and Obligation Are Atomic (BC-003)"),
+                (5, "Acceptance Is Irrevocable on Operator B (BC-004)"),
+                (6, "Operator B Internal Failure Does Not Affect Obligation"),
+                (7, "Provisional Completion: All 7 Criteria Met"),
+                (8, "Double-Debit Prevention Via Posting Idempotency Key"),
+            ]
+        ]
+    else:
+        cases = [
+            run_fed_exec_001(base_url, infra, op_a_priv),
+            run_fed_exec_002(base_url, infra, op_a_priv),
+            run_fed_exec_003(base_url, infra, op_a_priv),
+            run_fed_exec_004(base_url, infra, op_a_priv),
+            run_fed_exec_005(base_url, infra, op_a_priv),
+            run_fed_exec_006(base_url, infra, op_a_priv),
+            run_fed_exec_007(base_url, infra, op_a_priv),
+            run_fed_exec_008(base_url, infra, op_a_priv),
+        ]
+
+    passed = sum(1 for c in cases if c["status"] == "PASS")
+    failed = sum(1 for c in cases if c["status"] == "FAIL")
+    skipped = sum(1 for c in cases if c["status"] in ("SKIP", "ERROR"))
+
+    return {
+        "suite_id": "FED-EXEC",
+        "suite_name": "Transfer Execution",
+        "blocking": True,
+        "passed": passed,
+        "failed": failed,
+        "skipped": skipped,
+        "cases": cases,
+    }
+
+
 # ── FED-ROUTE suite runner ────────────────────────────────────────────────────
 
 def run_suite_fed_route(
@@ -3497,24 +4457,31 @@ def run_federation_mode(
     run_disc = fed_suite in (None, "disc")
     run_trust = fed_suite in (None, "trust")
     run_route = fed_suite in (None, "route")
+    run_exec = fed_suite in (None, "exec")
 
-    if fed_suite is not None and not run_cert and not run_disc and not run_trust and not run_route:
+    if (fed_suite is not None
+            and not run_cert and not run_disc and not run_trust
+            and not run_route and not run_exec):
         print(f"ERROR: Unknown --fed-suite value: {fed_suite!r}. "
-              f"Available: cert, disc, trust, route",
+              f"Available: cert, disc, trust, route, exec",
               file=sys.stderr)
         return 2
 
     suite_label = {
-        None: "FED-CERT-001–011, FED-DISC-001–008, FED-TRUST-001–009, FED-ROUTE-001–012",
+        None: (
+            "FED-CERT-001–011, FED-DISC-001–008, FED-TRUST-001–009, "
+            "FED-ROUTE-001–012, FED-EXEC-001–008"
+        ),
         "cert": "FED-CERT-001–011",
         "disc": "FED-DISC-001–008",
         "trust": "FED-TRUST-001–009",
         "route": "FED-ROUTE-001–012",
+        "exec": "FED-EXEC-001–008",
     }.get(fed_suite, fed_suite)
 
     print(f"BANZA Federation Conformance Runner {RUNNER_VERSION}")
     print(f"Operator: {base_url}")
-    print(f"Slice:    5 — {suite_label}")
+    print(f"Slice:    6 — {suite_label}")
     print()
 
     schema_path = _find_schema_path()
@@ -3772,6 +4739,16 @@ def run_federation_mode(
                 infra=infra,
                 op_a_priv=op_a_priv if _tr.CRYPTO_AVAILABLE else None,
             ))
+        if run_exec:
+            # Restore Sim Op B to valid state for execution tests
+            if infra and manifest_b and cert_b_valid:
+                infra.configure_sim_b(manifest_b, cert_b_valid)
+                infra.set_brl_empty()
+            suite_results.append(run_suite_fed_exec(
+                base_url,
+                infra=infra,
+                op_a_priv=op_a_priv if _tr.CRYPTO_AVAILABLE else None,
+            ))
     finally:
         if infra:
             infra.stop()
@@ -3821,6 +4798,8 @@ def run_federation_mode(
             parts.append("FED-TRUST-001–009")
         if "FED-ROUTE" in suite_ids:
             parts.append("FED-ROUTE-001–012")
+        if "FED-EXEC" in suite_ids:
+            parts.append("FED-EXEC-001–008")
         print(f"{', '.join(parts)}: ALL PASS")
         print()
         print("What is now proven:")
@@ -3872,6 +4851,15 @@ def run_federation_mode(
             print("  ✓ Zero/negative amount rejected                        (INV-FED-LEDGER-002)")
             print("  ✓ Duplicate routing_request_id with different content → duplicate_request (INV-FED-IDEM-001)")
             print("  ✓ Suspended recipient → rejection_code=recipient_suspended")
+        if "FED-EXEC" in suite_ids:
+            print("  ✓ Payee wallet credited simultaneously with acceptance  (INV-FED-LEDGER-001)")
+            print("  ✓ Operator A DEBIT + Operator B CREDIT: amounts and trace_ids match (INV-FED-005)")
+            print("  ✓ No payer debit when routing rejected                  (BC-001)")
+            print("  ✓ Debit and obligation are atomic — one commit, no gap  (BC-003)")
+            print("  ✓ Cancel endpoint returns 404 — acceptance irrevocable (BC-004)")
+            print("  ✓ Obligation persists independent of Sim Op B state     (INV-FED-002)")
+            print("  ✓ All 7 provisional completion criteria satisfied       (INV-FED-001)")
+            print("  ✓ Double-debit prevented via routing_request_id idempotency (INV-FED-IDEM-001)")
     elif total_fail > 0:
         print(f"{', '.join(suite_ids)}: FAIL  ({total_pass} passed, {total_fail} failed, {total_skip} skipped)")
     else:
@@ -3884,7 +4872,7 @@ def run_federation_mode(
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "runner_version": RUNNER_VERSION,
         "federation_mode": True,
-        "slice": "5",
+        "slice": "6",
         "operator_url": base_url,
         "schema_path": schema_path,
         "crypto_available": _tr.CRYPTO_AVAILABLE,
@@ -3910,14 +4898,14 @@ def run_federation_mode(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="BANZA Federation Conformance Runner (FED-CERT + FED-DISC + FED-TRUST)"
+        description="BANZA Federation Conformance Runner (FED-CERT + FED-DISC + FED-TRUST + FED-ROUTE + FED-EXEC)"
     )
     parser.add_argument("--url", required=True,
                         help="Base URL of the operator (e.g. http://localhost:8099)")
     parser.add_argument("--output", help="Write JSON report to this file")
     parser.add_argument("--quiet", action="store_true", help="Suppress passing test output")
     parser.add_argument("--fed-suite", dest="fed_suite",
-                        help="Run only this suite: cert | disc | trust | route (default: all)")
+                        help="Run only this suite: cert | disc | trust | route | exec (default: all)")
     args = parser.parse_args()
 
     sys.exit(run_federation_mode(

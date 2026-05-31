@@ -4,11 +4,18 @@ BANZA Federation Fixture Server
 Minimal local HTTP server that acts as "Operator A" in federation conformance tests.
 
 Routes:
-  POST /conformance/setup                      accept cert + trust config from runner
-  POST /conformance/federation/verify-peer     run ADR-026 trust protocol against a peer
-  GET  /.well-known/banza/certificate.json     serve current operator certificate
-  GET  /.well-known/banza/operator.json        serve federation manifest (FED-DISC)
-  GET  /health                                 sandbox health response
+  POST /conformance/setup                          accept cert + trust config from runner
+  POST /conformance/federation/verify-peer         run ADR-026 trust protocol against a peer
+  POST /conformance/federation/route               execute routing flow + debit + obligation (FED-EXEC)
+  POST /conformance/federation/reset               reset federation execution state (FED-EXEC)
+  GET  /conformance/federation/wallet/{id}         payer wallet balance query (FED-EXEC)
+  GET  /conformance/federation/ledger/{wallet_id}  ledger entries for wallet (FED-EXEC)
+  GET  /conformance/federation/obligations/{rr_id} obligation by routing_request_id (FED-EXEC)
+  GET  /conformance/federation/obligations         all obligations (FED-EXEC)
+  GET  /conformance/federation/events              federation events emitted by Operator A (FED-EXEC)
+  GET  /.well-known/banza/certificate.json         serve current operator certificate
+  GET  /.well-known/banza/operator.json            serve federation manifest (FED-DISC)
+  GET  /health                                     sandbox health response
   *    → 404
 
 The trust engine (POST /conformance/federation/verify-peer) implements the
@@ -31,6 +38,7 @@ import json
 import os
 import sys
 import threading
+import uuid
 import urllib.request
 import urllib.error
 from datetime import datetime, timezone
@@ -265,6 +273,19 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
             self._serve_manifest()
         elif self.path == "/health":
             self._serve_health()
+        elif self.path.startswith("/conformance/federation/wallet/"):
+            wallet_id = self.path[len("/conformance/federation/wallet/"):]
+            self._handle_fed_wallet(wallet_id)
+        elif self.path.startswith("/conformance/federation/ledger/"):
+            wallet_id = self.path[len("/conformance/federation/ledger/"):]
+            self._handle_fed_ledger(wallet_id)
+        elif self.path.startswith("/conformance/federation/obligations/"):
+            rr_id = self.path[len("/conformance/federation/obligations/"):]
+            self._handle_fed_obligation(rr_id)
+        elif self.path == "/conformance/federation/obligations":
+            self._handle_fed_obligations_all()
+        elif self.path == "/conformance/federation/events":
+            self._handle_fed_events()
         else:
             self._respond_json(404, {"error": "not_found", "path": self.path})
 
@@ -332,6 +353,48 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    # ── FED-EXEC query endpoints ──────────────────────────────────────────────
+
+    def _handle_fed_wallet(self, wallet_id: str):
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+            wallet = fed["wallets"].get(wallet_id)
+        if wallet is None:
+            self._respond_json(404, {"error": "not_found", "wallet_id": wallet_id})
+        else:
+            self._respond_json(200, {
+                "wallet_id": wallet_id,
+                "balance_minor": wallet["balance_minor"],
+                "currency": wallet.get("currency", "AOA"),
+            })
+
+    def _handle_fed_ledger(self, wallet_id: str):
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+            entries = [e for e in fed["ledger"] if e.get("wallet_id") == wallet_id]
+        self._respond_json(200, {"wallet_id": wallet_id, "entries": entries})
+
+    def _handle_fed_obligation(self, routing_request_id: str):
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+            obligation = fed["obligations"].get(routing_request_id)
+        if obligation is None:
+            self._respond_json(404, {"error": "not_found", "routing_request_id": routing_request_id})
+        else:
+            self._respond_json(200, obligation)
+
+    def _handle_fed_obligations_all(self):
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+            obligations = list(fed["obligations"].values())
+        self._respond_json(200, {"obligations": obligations, "count": len(obligations)})
+
+    def _handle_fed_events(self):
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+            events = list(fed["events"])
+        self._respond_json(200, {"events": events})
+
     # ── POST ──────────────────────────────────────────────────────────────────
 
     def do_POST(self):
@@ -339,6 +402,10 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
             self._handle_setup()
         elif self.path == "/conformance/federation/verify-peer":
             self._handle_verify_peer()
+        elif self.path == "/conformance/federation/route":
+            self._handle_fed_route()
+        elif self.path == "/conformance/federation/reset":
+            self._handle_fed_reset()
         else:
             self._respond_json(404, {"error": "not_found", "path": self.path})
 
@@ -425,6 +492,197 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
         result["peer_manifest_url"] = peer_manifest_url
         self._respond_json(200, result)
 
+    # ── FED-EXEC execution endpoint ───────────────────────────────────────────
+
+    def _handle_fed_route(self):
+        """
+        POST /conformance/federation/route
+
+        Executes a full federation routing flow on behalf of Operator A:
+          1. Idempotency check (routing_commits keyed by routing_request_id)
+          2. Sender balance check
+          3. Forward pre-signed RoutingRequest to Sim Op B
+          4. On acceptance: atomically debit + record obligation + emit event
+
+        Body:
+          {
+            "routing_request_id": "rr-...",
+            "trace_id": "tr-...",
+            "sender_wallet_id": "wallet-sender-test-001",
+            "routing_body": { ...RoutingRequest... },
+            "signature_header": "t=...,v1=...",
+            "sim_b_route_url": "http://localhost:PORT/federation/route"
+          }
+        """
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            payload = json.loads(self.rfile.read(length))
+        except Exception as exc:
+            return self._respond_json(400, {"ok": False, "error": str(exc)})
+
+        routing_request_id = payload.get("routing_request_id", "")
+        trace_id = payload.get("trace_id", "")
+        sender_wallet_id = payload.get("sender_wallet_id", "wallet-sender-test-001")
+        routing_body = payload.get("routing_body")
+        signature_header = payload.get("signature_header", "")
+        sim_b_route_url = payload.get("sim_b_route_url", "")
+
+        if not routing_request_id or not routing_body or not sim_b_route_url:
+            return self._respond_json(400, {
+                "ok": False,
+                "error": "routing_request_id, routing_body, sim_b_route_url are required",
+            })
+
+        amount = routing_body.get("amount", {}) if isinstance(routing_body, dict) else {}
+        amount_minor = amount.get("minor", 0)
+        currency = amount.get("currency", "AOA")
+        from_operator_id = routing_body.get("from_operator_id", "operator-a-test") \
+            if isinstance(routing_body, dict) else "operator-a-test"
+        to_operator_id = routing_body.get("to_operator_id", "") \
+            if isinstance(routing_body, dict) else ""
+
+        # Phase 1 (under lock): idempotency + balance check
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+
+            # Idempotency: already committed → replay result
+            if routing_request_id in fed["routing_commits"]:
+                return self._respond_json(200, fed["routing_commits"][routing_request_id])
+
+            # Sender balance check
+            wallet = fed["wallets"].get(sender_wallet_id)
+            if wallet is None:
+                return self._respond_json(400, {
+                    "ok": False,
+                    "error": f"sender wallet {sender_wallet_id!r} not found",
+                })
+            if wallet["balance_minor"] < amount_minor:
+                result = {
+                    "routing_request_id": routing_request_id,
+                    "routing_status": "failed",
+                    "error": "insufficient_balance",
+                    "balance_minor": wallet["balance_minor"],
+                    "required_minor": amount_minor,
+                    "payer_debited": False,
+                    "obligation_recorded": False,
+                    "event_emitted": False,
+                    "trace_id": trace_id,
+                }
+                fed["routing_commits"][routing_request_id] = result
+                return self._respond_json(200, result)
+
+        # Phase 2 (outside lock): forward routing request to Sim Op B
+        body_bytes = json.dumps(routing_body).encode("utf-8")
+        req_headers = {"Content-Type": "application/json", "Accept": "application/json"}
+        if signature_header:
+            req_headers["Banza-Federation-Signature"] = signature_header
+
+        try:
+            req = urllib.request.Request(
+                sim_b_route_url, data=body_bytes, headers=req_headers, method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                raw = resp.read().decode("utf-8", errors="replace")
+                routing_response = json.loads(raw)
+        except urllib.error.HTTPError as e:
+            raw = e.read().decode("utf-8", errors="replace")
+            try:
+                routing_response = json.loads(raw)
+            except Exception:
+                routing_response = {"status": "rejected", "error": raw}
+        except Exception as exc:
+            return self._respond_json(500, {"ok": False, "error": f"routing request failed: {exc}"})
+
+        routing_status = routing_response.get("status", "rejected") \
+            if isinstance(routing_response, dict) else "rejected"
+        interop_transfer_id = routing_response.get("interop_transfer_id") \
+            if isinstance(routing_response, dict) else None
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        # Phase 3 (under lock): commit debit + obligation + event atomically
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+
+            # Re-check idempotency (guard against concurrent calls)
+            if routing_request_id in fed["routing_commits"]:
+                return self._respond_json(200, fed["routing_commits"][routing_request_id])
+
+            if routing_status == "accepted" and interop_transfer_id:
+                wallet = fed["wallets"][sender_wallet_id]
+                wallet["balance_minor"] -= amount_minor
+
+                fed["ledger"].append({
+                    "wallet_id": sender_wallet_id,
+                    "entry_type": "DEBIT",
+                    "amount_minor": amount_minor,
+                    "currency": currency,
+                    "trace_id": trace_id,
+                    "routing_request_id": routing_request_id,
+                    "interop_transfer_id": interop_transfer_id,
+                    "recorded_at": now_str,
+                })
+
+                obligation_id = f"ob-{uuid.uuid4()}"
+                obligation = {
+                    "schema_version": "1",
+                    "obligation_id": obligation_id,
+                    "from_operator_id": from_operator_id,
+                    "to_operator_id": to_operator_id,
+                    "amount": {"minor": amount_minor, "currency": currency},
+                    "routing_request_id": routing_request_id,
+                    "interop_transfer_id": interop_transfer_id,
+                    "trace_id": trace_id,
+                    "recorded_at": now_str,
+                    "settlement_state": "pending",
+                }
+                fed["obligations"][routing_request_id] = obligation
+
+                fed["events"].append({
+                    "event_type": "federation.payment.initiated",
+                    "routing_request_id": routing_request_id,
+                    "interop_transfer_id": interop_transfer_id,
+                    "trace_id": trace_id,
+                    "emitted_at": now_str,
+                })
+
+                result = {
+                    "routing_request_id": routing_request_id,
+                    "routing_status": "accepted",
+                    "interop_transfer_id": interop_transfer_id,
+                    "payer_debited": True,
+                    "obligation_recorded": True,
+                    "obligation_id": obligation_id,
+                    "event_emitted": True,
+                    "trace_id": trace_id,
+                }
+            else:
+                result = {
+                    "routing_request_id": routing_request_id,
+                    "routing_status": routing_status,
+                    "rejection_code": routing_response.get("rejection_code")
+                        if isinstance(routing_response, dict) else None,
+                    "interop_transfer_id": None,
+                    "payer_debited": False,
+                    "obligation_recorded": False,
+                    "event_emitted": False,
+                    "trace_id": trace_id,
+                }
+
+            fed["routing_commits"][routing_request_id] = result
+
+        self._respond_json(200, result)
+
+    def _handle_fed_reset(self):
+        """
+        POST /conformance/federation/reset
+
+        Resets all federation execution state: wallet balances, ledger, obligations,
+        routing_commits, events. Does not affect the certificate or trust config.
+        """
+        with self.server.state_lock:
+            self.server.state["fed_exec"] = _initial_fed_exec_state()
+        self._respond_json(200, {"ok": True, "message": "federation execution state reset"})
+
     # ── Response helper ───────────────────────────────────────────────────────
 
     def _respond_json(self, status: int, body: dict):
@@ -434,6 +692,21 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
         self.wfile.write(encoded)
+
+
+# ── Federation execution state ────────────────────────────────────────────────
+
+def _initial_fed_exec_state() -> dict:
+    """Initial in-memory federation execution state for Operator A conformance tests."""
+    return {
+        "wallets": {
+            "wallet-sender-test-001": {"balance_minor": 500000, "currency": "AOA"},
+        },
+        "ledger": [],
+        "obligations": {},
+        "routing_commits": {},
+        "events": [],
+    }
 
 
 # ── Server startup ────────────────────────────────────────────────────────────
@@ -447,6 +720,7 @@ def run_server(port: int) -> None:
         "banza_root_keys": {},
         "brl_url": "",
         "key_manifest_url": "",
+        "fed_exec": _initial_fed_exec_state(),
     }
 
     # ThreadingHTTPServer: each request in its own thread, preventing deadlock
