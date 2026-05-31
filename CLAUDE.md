@@ -123,11 +123,28 @@ The protocol kernel components are deployed via `./deploy.sh` in `~/banza` (the 
 
 ---
 
+## Operator Neutrality Rule (Enforced)
+
+**No specific commercial operator brand may appear in this repository.**
+
+BANZA is an open protocol. It must be buildable, understandable, and governable without any knowledge of any specific operator. Use these terms instead:
+
+| Forbidden | Use instead |
+|-----------|-------------|
+| *(specific operator name)* | certified operator |
+| *(specific operator name)* | reference operator |
+| *(specific operator name)* | operator implementation |
+| *(specific operator name)* | federation member |
+
+**Automated enforcement:** `make identity-check` and the `identity-guard` CI job on every push and pull request.
+
+---
+
 ## What This Repository Is NOT
 
 - Not a consumer app
 - Not a merchant dashboard
-- Not the reference operator's private implementation
+- Not any operator's private implementation
 - Not a proprietary product
 - Not a wallet interface
 - Not BanzAI (that is `~/banzai`)

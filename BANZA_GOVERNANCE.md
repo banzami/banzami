@@ -182,3 +182,30 @@ ADRs record decisions after they are made. RFCs propose changes before they are 
 - RFC proposals: open a PR to `docs/rfc/`
 - Security issues: security@banza.network (see [BANZA_SECURITY.md](BANZA_SECURITY.md))
 - Code of conduct: conduct@banza.network
+
+---
+
+## Operator Neutrality — Automated Enforcement
+
+**Rule:** No specific commercial operator brand may appear in the BANZA repository.
+
+BANZA is an open protocol. Any operator may build on it. No single operator's name, domain, or brand belongs in the protocol specifications, kernel, SDKs, contracts, conformance tests, or documentation.
+
+**Enforcement mechanism:**
+
+| Check | Command | Trigger |
+|-------|---------|---------|
+| Local | `make identity-check` | Before every commit |
+| CI | `identity-guard` workflow | Every push and pull request |
+| Pre-commit | `scripts/check-operator-contamination.sh --staged` | Optional pre-commit hook |
+
+**Replacement vocabulary:**
+
+| Forbidden | Use instead |
+|-----------|-------------|
+| *(specific operator brand)* | certified operator |
+| *(specific operator brand)* | reference operator |
+| *(specific operator brand)* | operator implementation |
+| *(specific operator brand)* | federation member |
+
+Violations fail both local checks and CI. No PR that introduces an operator brand can be merged.

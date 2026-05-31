@@ -1,0 +1,80 @@
+name: Identity Guard
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+# Runs before any other workflow to fail fast on contamination
+concurrency:
+  group: identity-guard-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  operator-contamination-check:
+    name: No operator-specific brand in BANZA
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ripgrep
+        run: |
+          apt-get update -qq && apt-get install -y -qq ripgrep 2>/dev/null || \
+          (curl -LO https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep_14.1.1-1_amd64.deb \
+           && sudo dpkg -i ripgrep_14.1.1-1_amd64.deb)
+
+      - name: Check file contents for operator brand
+        run: |
+          echo "Checking for forbidden operator brand terms in file contents..."
+          HITS=$(rg -n -i "banzami|banzamia" . \
+            -g '!node_modules/**' \
+            -g '!target/**' \
+            -g '!dist/**' \
+            -g '!build/**' \
+            -g '!.next/**' \
+            -g '!coverage/**' \
+            -g '!.git/**' \
+            2>/dev/null || true)
+
+          if [ -n "$HITS" ]; then
+            echo "FAIL: Forbidden operator brand found in file contents:"
+            echo ""
+            echo "$HITS"
+            echo ""
+            echo "Fix: replace operator-brand names with protocol-neutral terms:"
+            echo "  'certified operator', 'reference operator', 'operator implementation'"
+            exit 1
+          fi
+          echo "PASS: no forbidden operator brand in file contents"
+
+      - name: Check filenames and directory names for operator brand
+        run: |
+          echo "Checking for forbidden operator brand terms in filenames..."
+          HITS=$(find . \
+            -path "./.git" -prune -o \
+            -path "./node_modules" -prune -o \
+            -path "./target" -prune -o \
+            -path "./dist" -prune -o \
+            -path "./build" -prune -o \
+            -path "./.next" -prune -o \
+            -path "./coverage" -prune -o \
+            \( -iname "*banzami*" -o -iname "*banzamia*" \) \
+            -print 2>/dev/null || true)
+
+          if [ -n "$HITS" ]; then
+            echo "FAIL: Forbidden operator brand found in filenames/directories:"
+            echo ""
+            echo "$HITS"
+            exit 1
+          fi
+          echo "PASS: no forbidden operator brand in filenames or directory names"
+
+      - name: Identity guard passed
+        run: |
+          echo ""
+          echo "══════════════════════════════════════════════"
+          echo "  BANZA IDENTITY GUARD: PASS"
+          echo "  BANZA remains protocol-pure."
+          echo "══════════════════════════════════════════════"
