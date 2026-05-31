@@ -154,6 +154,21 @@ class RunnerInfra:
         with self._lock:
             self._trust_root_state["brl"] = self._empty_brl()
 
+    def set_brl_expired(self) -> None:
+        """BRL that expired 1 hour ago (for FED-TRUST-009 — INV-TRUST-006)."""
+        now = datetime.now(timezone.utc)
+        from datetime import timedelta
+        issued_at = (now - timedelta(hours=8)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        expires_at = (now - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        with self._lock:
+            self._trust_root_state["brl"] = {
+                "schema_version": "1",
+                "issued_at": issued_at,
+                "expires_at": expires_at,
+                "revoked": [],
+                "signature": "A" * 86,
+            }
+
     def set_brl_revoked(self, operator_id: str) -> None:
         """BRL that lists operator_id as revoked (FED-CERT-009)."""
         now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")

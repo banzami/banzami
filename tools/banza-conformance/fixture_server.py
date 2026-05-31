@@ -184,17 +184,43 @@ def trust_verify_peer(peer_manifest_url: str, state: dict) -> dict:
                      certification_level=level, required=3)
     _pass("2.5", "level_check", certification_level=level)
 
-    # Step 2.6 — BRL check
+    # Step 2.6 — BRL check (INV-TRUST-003, INV-TRUST-006)
     if not brl_url:
         return _fail("2.6", "brl_check", "brl_url_not_configured")
     try:
         brl = _fetch_json(brl_url)
+        brl_fetched_at = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        brl_expires_str = brl.get("expires_at", "")
+        brl_issued_str = brl.get("issued_at", "")
+
+        # INV-TRUST-006: BRL must not be older than 6 hours (expired BRL = stale)
+        if brl_expires_str:
+            try:
+                brl_exp = _parse_iso(brl_expires_str)
+                if brl_exp <= now:
+                    brl_age_s = int((now - _parse_iso(brl_issued_str)).total_seconds()) \
+                        if brl_issued_str else None
+                    return _fail("2.6", "brl_check", "brl_expired",
+                                 brl_expires_at=brl_expires_str,
+                                 brl_issued_at=brl_issued_str,
+                                 brl_fetched_at=brl_fetched_at,
+                                 brl_age_seconds=brl_age_s,
+                                 now=now.strftime("%Y-%m-%dT%H:%M:%SZ"))
+            except Exception as exc:
+                return _fail("2.6", "brl_check", "brl_timestamp_invalid",
+                             brl_expires_at=brl_expires_str, detail=str(exc))
+
         revoked_ids = {r.get("operator_id") for r in brl.get("revoked", [])}
         cert_op_id = cert.get("operator_id", "")
         if cert_op_id in revoked_ids:
             return _fail("2.6", "brl_check", "operator_revoked",
-                         operator_id=cert_op_id, brl_expires_at=brl.get("expires_at"))
-        _pass("2.6", "brl_check", brl_expires_at=brl.get("expires_at"),
+                         operator_id=cert_op_id,
+                         brl_expires_at=brl_expires_str,
+                         brl_fetched_at=brl_fetched_at)
+        _pass("2.6", "brl_check",
+              brl_expires_at=brl_expires_str,
+              brl_issued_at=brl_issued_str,
+              brl_fetched_at=brl_fetched_at,
               revoked_count=len(revoked_ids))
     except Exception as exc:
         return _fail("2.6", "brl_check", "brl_fetch_failed", detail=str(exc))

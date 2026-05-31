@@ -1,5 +1,5 @@
 """
-BANZA Federation Conformance Runner — Slice 3
+BANZA Federation Conformance Runner — Slice 4
 
 Implements:
   FED-CERT-001  Certificate Present at Well-Known URL                    (Slice 0)
@@ -21,21 +21,23 @@ Implements:
   FED-DISC-006  supported_currencies Non-Empty                           (Slice 3)
   FED-DISC-007  supports_federation Cannot Be True Without Valid L3+ Cert(Slice 3)
   FED-DISC-008  netting_interval_hours Within Bounds                     (Slice 3)
+  FED-TRUST-001 Full 9-Step Trust Protocol Passes for Valid Operator     (Slice 4)
+  FED-TRUST-002 Step 2.3 Fails on Invalid Certificate Signature          (Slice 4)
+  FED-TRUST-003 Step 2.4 Fails on Expired Certificate                    (Slice 4)
+  FED-TRUST-004 Step 2.5 Fails on certification_level < 3               (Slice 4)
+  FED-TRUST-005 Step 2.6 Fails When Operator in BRL                      (Slice 4)
+  FED-TRUST-006 Step 2.7 Fails When supports_federation Missing          (Slice 4)
+  FED-TRUST-007 Step 2.8 Fails When cross_operator_routing Not in Cert   (Slice 4)
+  FED-TRUST-008 Step 2.9 Fails on cert/manifest operator_id Mismatch     (Slice 4)
+  FED-TRUST-009 BRL Staleness Enforcement (INV-TRUST-006)                (Slice 4)
 
-FED-CERT-008 through 011 require:
-  - Simulated Operator B (runner_infra.RunnerInfra)
-  - Operator A trust engine (fixture_server POST /conformance/federation/verify-peer)
-  - ADR-026 9-step trust protocol
-
-FED-DISC-007 requires:
-  - Simulated Operator B serving a manifest with supports_federation=true + L2 cert
-
-Spec: FEDERATION_TEST_SUITE_SPEC.md §Suite FED-CERT, §Suite FED-DISC
+Spec: FEDERATION_TEST_SUITE_SPEC.md §Suite FED-CERT, §Suite FED-DISC, §Suite FED-TRUST
 Contracts: contracts/federation/operator-certificate.json,
            contracts/federation/federation-manifest.json
 
 Requires:
-  cryptography>=41.0.0  for FED-CERT-002 and FED-CERT-008–011, FED-DISC-007
+  cryptography>=41.0.0  for FED-CERT-002, FED-CERT-008–011, FED-DISC-007,
+                        and all FED-TRUST tests
 """
 
 import argparse
@@ -54,7 +56,7 @@ from typing import Optional
 import trust_root as _tr
 from runner_infra import RunnerInfra
 
-RUNNER_VERSION = "0.4.0-slice3"
+RUNNER_VERSION = "0.5.0-slice4"
 
 # ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -1663,6 +1665,747 @@ def run_fed_disc_008(base_url: str) -> dict:
     return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
 
 
+# ── FED-TRUST-001 ────────────────────────────────────────────────────────────
+
+def run_fed_trust_001(
+    base_url: str,
+    infra: "RunnerInfra",
+    manifest_b: dict,
+    cert_b_valid: dict,
+) -> dict:
+    """
+    FED-TRUST-001 — Full 9-Step Trust Protocol Passes for Valid Operator
+
+    All 9 trust steps pass when Operator B is correctly configured.
+    Pass:   trusted=true AND all 9 steps present with status=pass.
+    Fail:   Any step fails; trust result != TRUSTED.
+    Severity: STANDARD
+    Invariants: INV-TRUST-001 through INV-TRUST-007
+    L3 Req: FED-L3-009, FED-L3-010
+    """
+    case = _make_case("FED-TRUST-001", "Full 9-Step Trust Protocol Passes for Valid Operator")
+
+    infra.configure_sim_b(manifest_b, cert_b_valid)
+    infra.set_brl_empty()
+
+    peer_url = f"{infra.sim_b_url}/.well-known/banza/operator.json"
+    t0 = time.monotonic()
+    try:
+        status, result = _call_verify_peer(base_url, peer_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": f"{base_url}/conformance/federation/verify-peer",
+                       "body": {"peer_manifest_url": peer_url}}
+    case["response"] = {"status": status}
+
+    if result is None:
+        return _fail_case(case, "verify-peer response not valid JSON", ms)
+
+    trusted = result.get("trusted")
+    steps = result.get("steps", [])
+    steps_by_id = {s.get("step"): s for s in steps}
+
+    assertions = [
+        _assertion("Operator A returns trusted=true", trusted is True, True, trusted),
+    ]
+
+    expected_steps = ["2.1", "2.2", "2.3", "2.4", "2.5", "2.6", "2.7", "2.8", "2.9"]
+    for sid in expected_steps:
+        s = steps_by_id.get(sid, {})
+        assertions.append(_assertion(
+            f"step {sid} ({s.get('name', 'unknown')}) status=pass",
+            s.get("status") == "pass",
+            "pass", s.get("status", "(absent)"),
+        ))
+
+    case["evidence"] = {
+        "peer_manifest_url": peer_url,
+        "trusted": trusted,
+        "rejection_reason": result.get("rejection_reason"),
+        "trust_step_results": steps,
+        "all_9_steps_present": all(sid in steps_by_id for sid in expected_steps),
+        "issuer_key_id": cert_b_valid.get("issuer_key_id"),
+        "issuer_key_source": "local_registry",
+        "final_trusted_decision": trusted,
+        "brl_fetched_at": steps_by_id.get("2.6", {}).get("brl_fetched_at"),
+        "brl_expires_at": steps_by_id.get("2.6", {}).get("brl_expires_at"),
+        "revoked_count": steps_by_id.get("2.6", {}).get("revoked_count"),
+        "revocation_status": "not_revoked",
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-TRUST-002 ────────────────────────────────────────────────────────────
+
+def run_fed_trust_002(
+    base_url: str,
+    infra: "RunnerInfra",
+    manifest_b: dict,
+    cert_b_invalid_sig: dict,
+) -> dict:
+    """
+    FED-TRUST-002 — Step 2.3 Fails on Invalid Certificate Signature
+
+    Tampered certificate is rejected at signature verification step (INV-TRUST-001).
+    Pass:   trusted=false AND step 2.3 status=fail AND reason=signature_invalid.
+    Fail:   Operator proceeds past step 2.3 with invalid signature.
+    Severity: CRITICAL
+    Invariant: INV-TRUST-001
+    """
+    case = _make_case("FED-TRUST-002", "Step 2.3 Fails on Invalid Certificate Signature")
+
+    infra.configure_sim_b(manifest_b, cert_b_invalid_sig)
+    infra.set_brl_empty()
+
+    peer_url = f"{infra.sim_b_url}/.well-known/banza/operator.json"
+    t0 = time.monotonic()
+    try:
+        status, result = _call_verify_peer(base_url, peer_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": f"{base_url}/conformance/federation/verify-peer",
+                       "body": {"peer_manifest_url": peer_url}}
+    case["response"] = {"status": status}
+
+    if result is None:
+        return _fail_case(case, "verify-peer response not valid JSON", ms)
+
+    trusted = result.get("trusted")
+    rejection = result.get("rejection_reason", "")
+    steps_by_id = {s.get("step"): s for s in result.get("steps", [])}
+    step_23 = steps_by_id.get("2.3", {})
+
+    assertions = [
+        _assertion("Operator A returns trusted=false", trusted is False, False, trusted),
+        _assertion("step 2.3 (signature_verify) status=fail",
+                   step_23.get("status") == "fail", "fail", step_23.get("status")),
+        _assertion("rejection_reason is signature_invalid",
+                   rejection == "signature_invalid", "signature_invalid", rejection or "(none)"),
+    ]
+
+    case["evidence"] = {
+        "peer_manifest_url": peer_url,
+        "trusted": trusted,
+        "rejection_reason": rejection,
+        "issuer_key_id": cert_b_invalid_sig.get("issuer_key_id"),
+        "issuer_key_source": "local_registry",
+        "final_trusted_decision": trusted,
+        "trust_step_results": result.get("steps", []),
+        "step_2.3": step_23,
+        "cert_signature_length": len(cert_b_invalid_sig.get("signature", "")),
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-TRUST-003 ────────────────────────────────────────────────────────────
+
+def run_fed_trust_003(
+    base_url: str,
+    infra: "RunnerInfra",
+    manifest_b: dict,
+    cert_b_expired: dict,
+) -> dict:
+    """
+    FED-TRUST-003 — Step 2.4 Fails on Expired Certificate
+
+    Expired certificate is rejected at expiry check (INV-TRUST-002).
+    Pass:   trusted=false AND step 2.4 status=fail AND reason=certificate_expired.
+    Fail:   Operator proceeds past step 2.4 with expired cert; grace period applied.
+    Severity: CRITICAL
+    Invariant: INV-TRUST-002
+    """
+    case = _make_case("FED-TRUST-003", "Step 2.4 Fails on Expired Certificate")
+
+    infra.configure_sim_b(manifest_b, cert_b_expired)
+    infra.set_brl_empty()
+
+    peer_url = f"{infra.sim_b_url}/.well-known/banza/operator.json"
+    t0 = time.monotonic()
+    try:
+        status, result = _call_verify_peer(base_url, peer_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": f"{base_url}/conformance/federation/verify-peer",
+                       "body": {"peer_manifest_url": peer_url}}
+    case["response"] = {"status": status}
+
+    if result is None:
+        return _fail_case(case, "verify-peer response not valid JSON", ms)
+
+    trusted = result.get("trusted")
+    rejection = result.get("rejection_reason", "")
+    steps_by_id = {s.get("step"): s for s in result.get("steps", [])}
+    step_24 = steps_by_id.get("2.4", {})
+
+    assertions = [
+        _assertion("Operator A returns trusted=false", trusted is False, False, trusted),
+        _assertion("step 2.4 (expiry_check) status=fail",
+                   step_24.get("status") == "fail", "fail", step_24.get("status")),
+        _assertion("rejection_reason indicates certificate expiry",
+                   rejection in ("certificate_expired", "certificate_future_dated")
+                   or "expire" in str(rejection).lower(),
+                   "certificate_expired", rejection or "(none)"),
+    ]
+
+    case["evidence"] = {
+        "peer_manifest_url": peer_url,
+        "trusted": trusted,
+        "rejection_reason": rejection,
+        "cert_expires_at": cert_b_expired.get("expires_at"),
+        "final_trusted_decision": trusted,
+        "trust_step_results": result.get("steps", []),
+        "step_2.4": step_24,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-TRUST-004 ────────────────────────────────────────────────────────────
+
+def run_fed_trust_004(
+    base_url: str,
+    infra: "RunnerInfra",
+    manifest_b: dict,
+    cert_b_l2: dict,
+) -> dict:
+    """
+    FED-TRUST-004 — Step 2.5 Fails on certification_level < 3
+
+    An L2 certificate does not grant federation participation.
+    Pass:   trusted=false AND step 2.5 status=fail AND reason=certification_level_insufficient.
+    Fail:   L2 certificate accepted for federation routing.
+    Severity: CRITICAL
+    """
+    case = _make_case("FED-TRUST-004", "Step 2.5 Fails on certification_level < 3")
+
+    infra.configure_sim_b(manifest_b, cert_b_l2)
+    infra.set_brl_empty()
+
+    peer_url = f"{infra.sim_b_url}/.well-known/banza/operator.json"
+    t0 = time.monotonic()
+    try:
+        status, result = _call_verify_peer(base_url, peer_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": f"{base_url}/conformance/federation/verify-peer",
+                       "body": {"peer_manifest_url": peer_url}}
+    case["response"] = {"status": status}
+
+    if result is None:
+        return _fail_case(case, "verify-peer response not valid JSON", ms)
+
+    trusted = result.get("trusted")
+    rejection = result.get("rejection_reason", "")
+    steps_by_id = {s.get("step"): s for s in result.get("steps", [])}
+    step_25 = steps_by_id.get("2.5", {})
+
+    assertions = [
+        _assertion("Operator A returns trusted=false", trusted is False, False, trusted),
+        _assertion("step 2.5 (level_check) status=fail",
+                   step_25.get("status") == "fail", "fail", step_25.get("status")),
+        _assertion("rejection_reason is certification_level_insufficient",
+                   rejection == "certification_level_insufficient",
+                   "certification_level_insufficient", rejection or "(none)"),
+    ]
+
+    case["evidence"] = {
+        "peer_manifest_url": peer_url,
+        "trusted": trusted,
+        "rejection_reason": rejection,
+        "cert_certification_level": cert_b_l2.get("certification_level"),
+        "required_level": 3,
+        "final_trusted_decision": trusted,
+        "trust_step_results": result.get("steps", []),
+        "step_2.5": step_25,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-TRUST-005 ────────────────────────────────────────────────────────────
+
+def run_fed_trust_005(
+    base_url: str,
+    infra: "RunnerInfra",
+    manifest_b: dict,
+    cert_b_valid: dict,
+) -> dict:
+    """
+    FED-TRUST-005 — Step 2.6 Fails When Operator in BRL (INV-TRUST-003)
+
+    Operator in BRL is rejected at Step 2.6 despite valid certificate.
+    Steps 2.3-2.5 must PASS before BRL check fails at 2.6.
+    Pass:   steps 2.3-2.5 = pass AND step 2.6 status=fail AND reason=operator_revoked.
+    Fail:   Routing proceeds despite BRL entry; rejected before step 2.6.
+    Severity: CRITICAL
+    Invariant: INV-TRUST-003, INV-FED-007
+    """
+    case = _make_case("FED-TRUST-005", "Step 2.6 Fails When Operator in BRL (INV-TRUST-003)")
+
+    infra.configure_sim_b(manifest_b, cert_b_valid)
+    infra.set_brl_revoked("operator-b-test")
+
+    peer_url = f"{infra.sim_b_url}/.well-known/banza/operator.json"
+    t0 = time.monotonic()
+    try:
+        status, result = _call_verify_peer(base_url, peer_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": f"{base_url}/conformance/federation/verify-peer",
+                       "body": {"peer_manifest_url": peer_url}}
+    case["response"] = {"status": status}
+
+    if result is None:
+        return _fail_case(case, "verify-peer response not valid JSON", ms)
+
+    trusted = result.get("trusted")
+    rejection = result.get("rejection_reason", "")
+    steps_by_id = {s.get("step"): s for s in result.get("steps", [])}
+    step_23 = steps_by_id.get("2.3", {})
+    step_24 = steps_by_id.get("2.4", {})
+    step_25 = steps_by_id.get("2.5", {})
+    step_26 = steps_by_id.get("2.6", {})
+
+    assertions = [
+        _assertion("Operator A returns trusted=false", trusted is False, False, trusted),
+        _assertion("step 2.3 (signature_verify) passed before BRL check",
+                   step_23.get("status") == "pass", "pass", step_23.get("status")),
+        _assertion("step 2.4 (expiry_check) passed before BRL check",
+                   step_24.get("status") == "pass", "pass", step_24.get("status")),
+        _assertion("step 2.5 (level_check) passed before BRL check",
+                   step_25.get("status") == "pass", "pass", step_25.get("status")),
+        _assertion("step 2.6 (brl_check) status=fail",
+                   step_26.get("status") == "fail", "fail", step_26.get("status")),
+        _assertion("rejection_reason is operator_revoked",
+                   rejection == "operator_revoked", "operator_revoked", rejection or "(none)"),
+    ]
+
+    case["evidence"] = {
+        "peer_manifest_url": peer_url,
+        "trusted": trusted,
+        "rejection_reason": rejection,
+        "brl_revoked": ["operator-b-test"],
+        "brl_fetched_at": step_26.get("brl_fetched_at"),
+        "brl_expires_at": step_26.get("brl_expires_at"),
+        "revocation_status": "revoked",
+        "final_trusted_decision": trusted,
+        "trust_step_results": result.get("steps", []),
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-TRUST-006 ────────────────────────────────────────────────────────────
+
+def run_fed_trust_006(
+    base_url: str,
+    infra: "RunnerInfra",
+    manifest_b_no_fed: dict,
+    cert_b_valid: dict,
+) -> dict:
+    """
+    FED-TRUST-006 — Step 2.7 Fails When supports_federation Missing
+
+    Operator that has certificate but doesn't declare federation support is rejected.
+    Steps 2.3-2.6 must PASS; step 2.7 must FAIL.
+    Pass:   step 2.7 status=fail AND reason=federation_not_declared_in_manifest.
+    Fail:   Routing accepted despite supports_federation=false.
+    Severity: STANDARD
+    Invariant: INV-TRUST-004
+    """
+    case = _make_case("FED-TRUST-006", "Step 2.7 Fails When supports_federation Missing")
+
+    infra.configure_sim_b(manifest_b_no_fed, cert_b_valid)
+    infra.set_brl_empty()
+
+    peer_url = f"{infra.sim_b_url}/.well-known/banza/operator.json"
+    t0 = time.monotonic()
+    try:
+        status, result = _call_verify_peer(base_url, peer_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": f"{base_url}/conformance/federation/verify-peer",
+                       "body": {"peer_manifest_url": peer_url}}
+    case["response"] = {"status": status}
+
+    if result is None:
+        return _fail_case(case, "verify-peer response not valid JSON", ms)
+
+    trusted = result.get("trusted")
+    rejection = result.get("rejection_reason", "")
+    steps_by_id = {s.get("step"): s for s in result.get("steps", [])}
+    step_26 = steps_by_id.get("2.6", {})
+    step_27 = steps_by_id.get("2.7", {})
+
+    assertions = [
+        _assertion("Operator A returns trusted=false", trusted is False, False, trusted),
+        _assertion("step 2.6 (brl_check) passed before federation check",
+                   step_26.get("status") == "pass", "pass", step_26.get("status")),
+        _assertion("step 2.7 (federation_support_check) status=fail",
+                   step_27.get("status") == "fail", "fail", step_27.get("status")),
+        _assertion("rejection_reason is federation_not_declared_in_manifest",
+                   rejection == "federation_not_declared_in_manifest",
+                   "federation_not_declared_in_manifest", rejection or "(none)"),
+    ]
+
+    case["evidence"] = {
+        "peer_manifest_url": peer_url,
+        "trusted": trusted,
+        "rejection_reason": rejection,
+        "manifest_supports_federation": manifest_b_no_fed.get("supports_federation"),
+        "manifest_cross_operator_routing": manifest_b_no_fed.get("cross_operator_routing"),
+        "final_trusted_decision": trusted,
+        "trust_step_results": result.get("steps", []),
+        "step_2.7": step_27,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-TRUST-007 ────────────────────────────────────────────────────────────
+
+def run_fed_trust_007(
+    base_url: str,
+    infra: "RunnerInfra",
+    manifest_b: dict,
+    cert_b_no_routing_cap: dict,
+) -> dict:
+    """
+    FED-TRUST-007 — Step 2.8 Fails When cross_operator_routing Not in Certificate Capabilities
+
+    Certificate's capabilities array must include "cross_operator_routing".
+    Steps 2.3-2.7 must PASS; step 2.8 must FAIL.
+    Pass:   step 2.8 status=fail AND reason indicates missing routing capability.
+    Fail:   Routing accepted despite missing capability.
+    Severity: STANDARD
+    Invariant: INV-TRUST-004
+    """
+    case = _make_case(
+        "FED-TRUST-007",
+        "Step 2.8 Fails When cross_operator_routing Not in Certificate Capabilities",
+    )
+
+    infra.configure_sim_b(manifest_b, cert_b_no_routing_cap)
+    infra.set_brl_empty()
+
+    peer_url = f"{infra.sim_b_url}/.well-known/banza/operator.json"
+    t0 = time.monotonic()
+    try:
+        status, result = _call_verify_peer(base_url, peer_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": f"{base_url}/conformance/federation/verify-peer",
+                       "body": {"peer_manifest_url": peer_url}}
+    case["response"] = {"status": status}
+
+    if result is None:
+        return _fail_case(case, "verify-peer response not valid JSON", ms)
+
+    trusted = result.get("trusted")
+    rejection = result.get("rejection_reason", "")
+    steps_by_id = {s.get("step"): s for s in result.get("steps", [])}
+    step_27 = steps_by_id.get("2.7", {})
+    step_28 = steps_by_id.get("2.8", {})
+
+    assertions = [
+        _assertion("Operator A returns trusted=false", trusted is False, False, trusted),
+        _assertion("step 2.7 (federation_support_check) passed before capability check",
+                   step_27.get("status") == "pass", "pass", step_27.get("status")),
+        _assertion("step 2.8 (routing_capability_check) status=fail",
+                   step_28.get("status") == "fail", "fail", step_28.get("status")),
+        _assertion("rejection_reason indicates missing routing capability",
+                   rejection == "cross_operator_routing_missing_from_cert_capabilities",
+                   "cross_operator_routing_missing_from_cert_capabilities", rejection or "(none)"),
+    ]
+
+    case["evidence"] = {
+        "peer_manifest_url": peer_url,
+        "trusted": trusted,
+        "rejection_reason": rejection,
+        "cert_capabilities": cert_b_no_routing_cap.get("capabilities"),
+        "cert_certification_level": cert_b_no_routing_cap.get("certification_level"),
+        "final_trusted_decision": trusted,
+        "trust_step_results": result.get("steps", []),
+        "step_2.8": step_28,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-TRUST-008 ────────────────────────────────────────────────────────────
+
+def run_fed_trust_008(
+    base_url: str,
+    infra: "RunnerInfra",
+    manifest_b: dict,
+    cert_b_mismatched: dict,
+) -> dict:
+    """
+    FED-TRUST-008 — Step 2.9 Fails on cert/manifest operator_id Mismatch
+
+    Certificate and manifest must describe the same operator.
+    Steps 2.3-2.8 must PASS; step 2.9 must FAIL.
+    Pass:   step 2.9 status=fail AND both operator_ids logged.
+    Fail:   Trust passes despite mismatch.
+    Severity: CRITICAL
+    Invariant: INV-TRUST-001
+    L3 Req: FED-L3-005
+    """
+    case = _make_case("FED-TRUST-008", "Step 2.9 Fails on cert/manifest operator_id Mismatch")
+
+    infra.configure_sim_b(manifest_b, cert_b_mismatched)
+    infra.set_brl_empty()
+
+    peer_url = f"{infra.sim_b_url}/.well-known/banza/operator.json"
+    t0 = time.monotonic()
+    try:
+        status, result = _call_verify_peer(base_url, peer_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": f"{base_url}/conformance/federation/verify-peer",
+                       "body": {"peer_manifest_url": peer_url}}
+    case["response"] = {"status": status}
+
+    if result is None:
+        return _fail_case(case, "verify-peer response not valid JSON", ms)
+
+    trusted = result.get("trusted")
+    rejection = result.get("rejection_reason", "")
+    steps_by_id = {s.get("step"): s for s in result.get("steps", [])}
+    step_28 = steps_by_id.get("2.8", {})
+    step_29 = steps_by_id.get("2.9", {})
+
+    cert_op = cert_b_mismatched.get("operator_id", "")
+    manifest_op = manifest_b.get("operator_id", "")
+
+    assertions = [
+        _assertion("Operator A returns trusted=false", trusted is False, False, trusted),
+        _assertion("step 2.8 (routing_capability_check) passed before binding check",
+                   step_28.get("status") == "pass", "pass", step_28.get("status")),
+        _assertion("step 2.9 (operator_id_binding) status=fail",
+                   step_29.get("status") == "fail", "fail", step_29.get("status")),
+        _assertion("rejection_reason is operator_id_mismatch",
+                   rejection == "operator_id_mismatch",
+                   "operator_id_mismatch", rejection or "(none)"),
+        _assertion(f"cert operator_id ({cert_op!r}) differs from manifest operator_id ({manifest_op!r})",
+                   cert_op != manifest_op, "different",
+                   f"cert={cert_op!r} manifest={manifest_op!r}"),
+    ]
+
+    case["evidence"] = {
+        "peer_manifest_url": peer_url,
+        "trusted": trusted,
+        "rejection_reason": rejection,
+        "cert_operator_id": cert_op,
+        "manifest_operator_id": manifest_op,
+        "final_trusted_decision": trusted,
+        "trust_step_results": result.get("steps", []),
+        "step_2.9": step_29,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-TRUST-009 ────────────────────────────────────────────────────────────
+
+def run_fed_trust_009(
+    base_url: str,
+    infra: "RunnerInfra",
+    manifest_b: dict,
+    cert_b_valid: dict,
+) -> dict:
+    """
+    FED-TRUST-009 — BRL Staleness Enforcement (INV-TRUST-006)
+
+    Routing must be refused when the BRL is expired (> 6 hours old).
+    Runner sets the BRL to an expired state before calling verify-peer.
+    Pass:   trusted=false AND step 2.6 fails with brl_expired.
+    Fail:   Routing accepted with stale BRL; no BRL check performed.
+    Severity: CRITICAL
+    Invariant: INV-TRUST-006
+    """
+    case = _make_case("FED-TRUST-009", "BRL Staleness Enforcement (INV-TRUST-006)")
+
+    infra.configure_sim_b(manifest_b, cert_b_valid)
+    infra.set_brl_expired()
+
+    peer_url = f"{infra.sim_b_url}/.well-known/banza/operator.json"
+    t0 = time.monotonic()
+    try:
+        status, result = _call_verify_peer(base_url, peer_url)
+        ms = int((time.monotonic() - t0) * 1000)
+    except RuntimeError as exc:
+        return _error_case(case, str(exc))
+
+    case["request"] = {"method": "POST", "url": f"{base_url}/conformance/federation/verify-peer",
+                       "body": {"peer_manifest_url": peer_url}}
+    case["response"] = {"status": status}
+
+    if result is None:
+        return _fail_case(case, "verify-peer response not valid JSON", ms)
+
+    trusted = result.get("trusted")
+    rejection = result.get("rejection_reason", "")
+    steps_by_id = {s.get("step"): s for s in result.get("steps", [])}
+    step_23 = steps_by_id.get("2.3", {})
+    step_26 = steps_by_id.get("2.6", {})
+
+    brl_expires_at = step_26.get("brl_expires_at", "")
+    brl_issued_at = step_26.get("brl_issued_at", "")
+    brl_fetched_at = step_26.get("brl_fetched_at", "")
+    brl_age_seconds = step_26.get("brl_age_seconds")
+
+    assertions = [
+        _assertion("Operator A returns trusted=false", trusted is False, False, trusted),
+        _assertion("step 2.3 (signature_verify) passed (cert signature is valid)",
+                   step_23.get("status") == "pass", "pass", step_23.get("status")),
+        _assertion("step 2.6 (brl_check) status=fail",
+                   step_26.get("status") == "fail", "fail", step_26.get("status")),
+        _assertion("rejection_reason is brl_expired",
+                   rejection == "brl_expired", "brl_expired", rejection or "(none)"),
+    ]
+
+    case["evidence"] = {
+        "peer_manifest_url": peer_url,
+        "trusted": trusted,
+        "rejection_reason": rejection,
+        "brl_expires_at": brl_expires_at,
+        "brl_issued_at": brl_issued_at,
+        "brl_fetched_at": brl_fetched_at,
+        "brl_age_seconds": brl_age_seconds,
+        "brl_signature_valid": "not_checked",
+        "revocation_status": "brl_too_stale_to_check",
+        "final_trusted_decision": trusted,
+        "trust_step_results": result.get("steps", []),
+        "step_2.6": step_26,
+    }
+
+    if all(a["passed"] for a in assertions):
+        return _pass_case(case, ms, assertions)
+    failed = [a["assertion"] for a in assertions if not a["passed"]]
+    return _fail_case(case, f"failed: {'; '.join(failed)}", ms, assertions)
+
+
+# ── FED-TRUST suite runner ────────────────────────────────────────────────────
+
+def run_suite_fed_trust(
+    base_url: str,
+    infra: "RunnerInfra" = None,
+    manifest_b: dict = None,
+    manifest_b_no_fed: dict = None,
+    cert_b_valid: dict = None,
+    cert_b_invalid_sig: dict = None,
+    cert_b_expired: dict = None,
+    cert_b_l2: dict = None,
+    cert_b_no_routing_cap: dict = None,
+    cert_b_mismatched: dict = None,
+) -> dict:
+    """
+    Run all 9 FED-TRUST tests.
+
+    All tests require infra + cert fixtures. If infra is unavailable, all are skipped.
+    """
+    def _skip(case_id, title, reason):
+        return _skip_case(_make_case(case_id, title), reason)
+
+    trust_avail = (
+        infra is not None
+        and manifest_b is not None
+        and manifest_b_no_fed is not None
+        and cert_b_valid is not None
+        and cert_b_invalid_sig is not None
+        and cert_b_expired is not None
+        and cert_b_l2 is not None
+        and cert_b_no_routing_cap is not None
+        and cert_b_mismatched is not None
+    )
+
+    if not trust_avail:
+        reason = "runner infrastructure not available (install cryptography)"
+        cases = [
+            _skip(f"FED-TRUST-{str(i).zfill(3)}", t, reason)
+            for i, t in [
+                (1, "Full 9-Step Trust Protocol Passes for Valid Operator"),
+                (2, "Step 2.3 Fails on Invalid Certificate Signature"),
+                (3, "Step 2.4 Fails on Expired Certificate"),
+                (4, "Step 2.5 Fails on certification_level < 3"),
+                (5, "Step 2.6 Fails When Operator in BRL (INV-TRUST-003)"),
+                (6, "Step 2.7 Fails When supports_federation Missing"),
+                (7, "Step 2.8 Fails When cross_operator_routing Not in Certificate Capabilities"),
+                (8, "Step 2.9 Fails on cert/manifest operator_id Mismatch"),
+                (9, "BRL Staleness Enforcement (INV-TRUST-006)"),
+            ]
+        ]
+    else:
+        cases = [
+            run_fed_trust_001(base_url, infra, manifest_b, cert_b_valid),
+            run_fed_trust_002(base_url, infra, manifest_b, cert_b_invalid_sig),
+            run_fed_trust_003(base_url, infra, manifest_b, cert_b_expired),
+            run_fed_trust_004(base_url, infra, manifest_b, cert_b_l2),
+            run_fed_trust_005(base_url, infra, manifest_b, cert_b_valid),
+            run_fed_trust_006(base_url, infra, manifest_b_no_fed, cert_b_valid),
+            run_fed_trust_007(base_url, infra, manifest_b, cert_b_no_routing_cap),
+            run_fed_trust_008(base_url, infra, manifest_b, cert_b_mismatched),
+            run_fed_trust_009(base_url, infra, manifest_b, cert_b_valid),
+        ]
+
+    passed = sum(1 for c in cases if c["status"] == "PASS")
+    failed = sum(1 for c in cases if c["status"] == "FAIL")
+    skipped = sum(1 for c in cases if c["status"] in ("SKIP", "ERROR"))
+
+    return {
+        "suite_id": "FED-TRUST",
+        "suite_name": "Trust Establishment",
+        "blocking": True,
+        "passed": passed,
+        "failed": failed,
+        "skipped": skipped,
+        "cases": cases,
+    }
+
+
 # ── FED-DISC suite runner ─────────────────────────────────────────────────────
 
 def run_suite_fed_disc(
@@ -1796,27 +2539,30 @@ def run_federation_mode(
     fed_suite: str = None,
 ) -> int:
     """
-    Execute federation conformance tests (FED-CERT-001 through FED-DISC-008).
+    Execute federation conformance tests (FED-CERT-001 through FED-TRUST-009).
     Returns: 0 = all pass, 1 = failures/skips, 2 = runner error.
     """
     from datetime import timedelta
 
     run_cert = fed_suite in (None, "cert")
     run_disc = fed_suite in (None, "disc")
+    run_trust = fed_suite in (None, "trust")
 
-    if fed_suite is not None and not run_cert and not run_disc:
-        print(f"ERROR: Unknown --fed-suite value: {fed_suite!r}. Available: cert, disc", file=sys.stderr)
+    if fed_suite is not None and not run_cert and not run_disc and not run_trust:
+        print(f"ERROR: Unknown --fed-suite value: {fed_suite!r}. Available: cert, disc, trust",
+              file=sys.stderr)
         return 2
 
     suite_label = {
-        None: "FED-CERT-001–011, FED-DISC-001–008",
+        None: "FED-CERT-001–011, FED-DISC-001–008, FED-TRUST-001–009",
         "cert": "FED-CERT-001–011",
         "disc": "FED-DISC-001–008",
+        "trust": "FED-TRUST-001–009",
     }.get(fed_suite, fed_suite)
 
     print(f"BANZA Federation Conformance Runner {RUNNER_VERSION}")
     print(f"Operator: {base_url}")
-    print(f"Slice:    3 — {suite_label}")
+    print(f"Slice:    4 — {suite_label}")
     print()
 
     schema_path = _find_schema_path()
@@ -1833,11 +2579,14 @@ def run_federation_mode(
     # ── Start runner infrastructure (Slices 2–3) ──────────────────────────────
     infra = None
     manifest_b = None
+    manifest_b_no_fed = None
     cert_b_valid = None
     cert_b_expired = None
     cert_b_mismatched = None
     cert_b_secondary = None
     cert_b_l2 = None
+    cert_b_invalid_sig = None
+    cert_b_no_routing_cap = None
     secondary_key_id = None
     secondary_pub = None
     root_public_key_bytes = None
@@ -1928,7 +2677,7 @@ def run_federation_mode(
                 operator_public_key_bytes=op_b_pub,
             )
 
-            # CERT-B-L2: L2 cert for FED-DISC-007 (INV-TRUST-004 — level too low)
+            # CERT-B-L2: L2 cert for FED-DISC-007 / FED-TRUST-004 (INV-TRUST-004)
             cert_b_l2 = _tr.generate_test_certificate(
                 operator_id="operator-b-test",
                 certification_level=2,
@@ -1936,6 +2685,50 @@ def run_federation_mode(
                 issuer_key_id=key_id,
                 operator_public_key_bytes=op_b_pub,
             )
+
+            # CERT-B-INVALID-SIG: valid structure, zeroed signature → Step 2.3 fails
+            cert_b_invalid_sig = _tr.generate_test_certificate(
+                operator_id="operator-b-test",
+                root_private_key=None,  # placeholder sig (not signed by root)
+                issuer_key_id=key_id,
+                operator_public_key_bytes=op_b_pub,
+            )
+
+            # CERT-B-NO-ROUTING-CAP: L3 cert, capabilities=[] → Step 2.8 fails
+            cert_b_no_routing_cap = _tr.generate_test_certificate(
+                operator_id="operator-b-test",
+                certification_level=3,
+                root_private_key=root_priv,
+                issuer_key_id=key_id,
+                operator_public_key_bytes=op_b_pub,
+                capabilities=[],
+            )
+
+            # MANIFEST-B-NO-FEDERATION: supports_federation=false for FED-TRUST-006
+            # Must include certificate_url so steps 2.1-2.6 reach 2.7
+            manifest_b_no_fed = {
+                "operator_id": "operator-b-test",
+                "environment": "sandbox",
+                "simulated": True,
+                "production_allowed": False,
+                "protocol_version": "1.0",
+                "certification_level": 3,
+                "capabilities": {"supports_wallets": True, "supports_qr": True, "supports_settlement": True},
+                "operator_name": "Simulated Operator B (No Federation)",
+                "operator_url": infra.sim_b_url,
+                "federation_version": "1",
+                "certificate_url": f"{infra.sim_b_url}/.well-known/banza/certificate.json",
+                "interop_endpoint": infra.sim_b_url,
+                "supports_federation": False,
+                "cross_operator_routing": False,
+                "cross_operator_settlement": False,
+                "federation_capabilities": {
+                    "routing_version": "1",
+                    "settlement_version": "1",
+                    "supported_currencies": ["AOA"],
+                    "netting_interval_hours": 24,
+                },
+            }
 
             # Operator A cert
             cert_a = _tr.generate_test_certificate(
@@ -2000,6 +2793,19 @@ def run_federation_mode(
                 cert_b_l2=cert_b_l2,
                 manifest_b=manifest_b,
             ))
+        if run_trust:
+            suite_results.append(run_suite_fed_trust(
+                base_url,
+                infra=infra,
+                manifest_b=manifest_b,
+                manifest_b_no_fed=manifest_b_no_fed,
+                cert_b_valid=cert_b_valid,
+                cert_b_invalid_sig=cert_b_invalid_sig,
+                cert_b_expired=cert_b_expired,
+                cert_b_l2=cert_b_l2,
+                cert_b_no_routing_cap=cert_b_no_routing_cap,
+                cert_b_mismatched=cert_b_mismatched,
+            ))
     finally:
         if infra:
             infra.stop()
@@ -2040,12 +2846,14 @@ def run_federation_mode(
     suite_ids = [s["suite_id"] for s in suite_results]
     print("=" * 60)
     if total_fail == 0 and total_skip == 0:
-        if "FED-CERT" in suite_ids and "FED-DISC" in suite_ids:
-            print("FED-CERT-001–011 and FED-DISC-001–008: ALL PASS")
-        elif "FED-CERT" in suite_ids:
-            print("FED-CERT-001 through FED-CERT-011: ALL PASS")
-        elif "FED-DISC" in suite_ids:
-            print("FED-DISC-001 through FED-DISC-008: ALL PASS")
+        parts = []
+        if "FED-CERT" in suite_ids:
+            parts.append("FED-CERT-001–011")
+        if "FED-DISC" in suite_ids:
+            parts.append("FED-DISC-001–008")
+        if "FED-TRUST" in suite_ids:
+            parts.append("FED-TRUST-001–009")
+        print(f"{', '.join(parts)}: ALL PASS")
         print()
         print("What is now proven:")
         if "FED-CERT" in suite_ids:
@@ -2072,6 +2880,16 @@ def run_federation_mode(
             print("  ✓ supported_currencies non-empty, all ISO 4217")
             print("  ✓ L2 cert rejected at trust step 2.5                   (INV-TRUST-004)")
             print("  ✓ netting_interval_hours integer in [1, 168]")
+        if "FED-TRUST" in suite_ids:
+            print("  ✓ All 9 trust steps pass for correctly configured operator")
+            print("  ✓ Tampered signature rejected at step 2.3              (INV-TRUST-001)")
+            print("  ✓ Expired certificate rejected at step 2.4             (INV-TRUST-002)")
+            print("  ✓ L2 certificate rejected at step 2.5 (level check)")
+            print("  ✓ BRL-revoked operator rejected at step 2.6            (INV-TRUST-003)")
+            print("  ✓ supports_federation=false rejected at step 2.7       (INV-TRUST-004)")
+            print("  ✓ Missing routing capability rejected at step 2.8      (INV-TRUST-004)")
+            print("  ✓ cert/manifest operator_id mismatch rejected at 2.9   (INV-TRUST-001)")
+            print("  ✓ Expired BRL rejected — fail-closed enforced          (INV-TRUST-006)")
     elif total_fail > 0:
         print(f"{', '.join(suite_ids)}: FAIL  ({total_pass} passed, {total_fail} failed, {total_skip} skipped)")
     else:
@@ -2084,7 +2902,7 @@ def run_federation_mode(
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "runner_version": RUNNER_VERSION,
         "federation_mode": True,
-        "slice": "3",
+        "slice": "4",
         "operator_url": base_url,
         "schema_path": schema_path,
         "crypto_available": _tr.CRYPTO_AVAILABLE,
@@ -2110,14 +2928,14 @@ def run_federation_mode(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="BANZA Federation Conformance Runner (FED-CERT + FED-DISC)"
+        description="BANZA Federation Conformance Runner (FED-CERT + FED-DISC + FED-TRUST)"
     )
     parser.add_argument("--url", required=True,
                         help="Base URL of the operator (e.g. http://localhost:8099)")
     parser.add_argument("--output", help="Write JSON report to this file")
     parser.add_argument("--quiet", action="store_true", help="Suppress passing test output")
     parser.add_argument("--fed-suite", dest="fed_suite",
-                        help="Run only this suite: cert | disc (default: both)")
+                        help="Run only this suite: cert | disc | trust (default: all)")
     args = parser.parse_args()
 
     sys.exit(run_federation_mode(

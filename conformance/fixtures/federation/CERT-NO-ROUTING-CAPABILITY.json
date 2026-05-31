@@ -1,0 +1,13 @@
+{
+  "schema_version": "1",
+  "operator_id": "operator-b-test",
+  "certification_level": 3,
+  "protocol_version": "1.0",
+  "capabilities": [],
+  "public_key": "ed25519:<operator-b-ed25519-public-key-base64url>",
+  "issued_at": "<ISSUED_YESTERDAY>",
+  "expires_at": "<EXPIRES_89_DAYS>",
+  "issuer": "BANZA",
+  "issuer_key_id": "test-banza-key-2026-05",
+  "signature": "<ed25519-base64url-64-bytes>"
+}

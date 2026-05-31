@@ -202,6 +202,7 @@ def generate_test_certificate(
     operator_public_key_bytes: bytes = None,
     issued_at_override: "datetime | None" = None,
     expires_at_override: "datetime | None" = None,
+    capabilities: list = None,
 ) -> dict:
     """
     Generate a test certificate dict.
@@ -245,7 +246,7 @@ def generate_test_certificate(
         "operator_id": operator_id,
         "certification_level": certification_level,
         "protocol_version": "1.0",
-        "capabilities": ["cross_operator_routing", "cross_operator_settlement"],
+        "capabilities": capabilities if capabilities is not None else ["cross_operator_routing", "cross_operator_settlement"],
         "public_key": public_key,
         "issued_at": issued_at,
         "expires_at": expires_at,
