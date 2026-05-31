@@ -59,7 +59,7 @@ export interface BanzaClientOptions {
   hooks?:         BanzamiHooks;
   /**
    * Webhook secret for this client (obtained when registering a webhook endpoint).
-   * Required to call `banzami.webhooks.constructEvent()`.
+   * Required to call `banzaClient.webhooks.constructEvent()`.
    * Never expose this value in browser or client-side code.
    */
   webhookSecret?: string;

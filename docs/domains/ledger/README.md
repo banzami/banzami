@@ -1,6 +1,6 @@
 # Domain: Ledger
 
-**Crate:** `banzami-ledger`  
+**Crate:** `banza-ledger`  
 **Module:** `core/ledger/`
 
 ---

@@ -1,6 +1,6 @@
 # Domain: Payouts
 
-**Crate:** `banzami-payouts`  
+**Crate:** `banza-payouts`  
 **Module:** `core/payouts/`
 
 ---

@@ -147,7 +147,7 @@ def test_old_sha256_prefix_format_rejected():
     assert verify_signature(PAYLOAD, old_format, SECRET, current_timestamp=TIMESTAMP) is False
 
 
-def test_x_banzami_signature_header_format_rejected():
+def test_x_banza_signature_header_format_rejected():
     """Headers without 't=' and 'v1=' fields must be rejected."""
     assert verify_signature(PAYLOAD, "invalid-header-value", SECRET, current_timestamp=TIMESTAMP) is False
 

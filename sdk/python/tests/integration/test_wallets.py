@@ -5,10 +5,10 @@ from __future__ import annotations
 import httpx
 import respx
 
-from banza import Banzami
+from banza import BanzaClient
 from banza.models.wallet import WalletStatus
 
-BASE = "https://api.banzami.test"
+BASE = "https://api.banza.test"
 
 WALLET = {
     "id":          "wal_001",
@@ -28,7 +28,7 @@ BALANCE = {
 async def test_retrieve_wallet():
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/wallets/wal_001").mock(return_value=httpx.Response(200, json=WALLET))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             wallet = await c.wallets.retrieve("wal_001")
 
     assert wallet.id == "wal_001"
@@ -39,7 +39,7 @@ async def test_retrieve_wallet():
 async def test_wallet_balance():
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/wallets/wal_001/balance").mock(return_value=httpx.Response(200, json=BALANCE))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             balance = await c.wallets.balance("wal_001")
 
     assert balance.available_minor == 150000

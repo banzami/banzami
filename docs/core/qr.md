@@ -1,4 +1,4 @@
-# banzami-qr — QR Code Runtime
+# banza-qr — QR Code Runtime
 
 The QR crate manages the lifecycle of QR payment codes — generation, expiry, and the link between a QR code and its underlying payment link.
 
@@ -6,7 +6,7 @@ The QR crate manages the lifecycle of QR payment codes — generation, expiry, a
 
 ## What it is
 
-`banzami-qr` provides:
+`banza-qr` provides:
 - QR code record creation and storage
 - QR expiry (time-bound codes with configurable TTL)
 - Resolution: given a QR payload, find the associated payment link

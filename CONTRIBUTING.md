@@ -134,10 +134,10 @@ If your change requires operator-specific behavior, express it as a configurable
 ### Review requirements
 
 Changes to the following require review from a project maintainer:
-- `banzami-ledger` — any change to posting logic or the zero-sum check
-- `banzami-wallets` — any change to the reserve/release/settle mechanics
-- `banzami-transactions` — any change to the FSM transition table
-- `banzami-acquiring` — any change to the callback processing path
+- `banza-ledger` — any change to posting logic or the zero-sum check
+- `banza-wallets` — any change to the reserve/release/settle mechanics
+- `banza-transactions` — any change to the FSM transition table
+- `banza-acquiring` — any change to the callback processing path
 - `docs/core/financial-invariants.md` — invariant definitions
 
 ---

@@ -1,11 +1,11 @@
-"""Django views example — integrating Banzami into a Django project.
+"""Django views example — integrating BANZA into a Django project.
 
 In your Django settings add:
-    BANZAMI_API_KEY      = "bz_live_..."
-    BANZAMI_WEBHOOK_SECRET = "whsec_..."
+    BANZA_API_KEY      = "bz_live_..."
+    BANZA_WEBHOOK_SECRET = "whsec_..."
 
 In urls.py:
-    path("webhooks/banzami/", views.banzami_webhook),
+    path("webhooks/banzami/", views.banza_webhook),
     path("checkout/qr/", views.create_qr_checkout),
 """
 
@@ -20,14 +20,14 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from banza import Banzami, BanzaWebhookSignatureError
+from banza import BanzaClient, BanzaWebhookSignatureError
 from banza.utils.money import to_minor
 
 
-def _get_client() -> Banzami:
-    return Banzami(
-        api_key=getattr(settings, "BANZAMI_API_KEY", os.environ["BANZAMI_API_KEY"]),
-        webhook_secret=getattr(settings, "BANZAMI_WEBHOOK_SECRET", None),
+def _get_client() -> BanzaClient:
+    return BanzaClient(
+        api_key=getattr(settings, "BANZA_API_KEY", os.environ["BANZA_API_KEY"]),
+        webhook_secret=getattr(settings, "BANZA_WEBHOOK_SECRET", None),
     )
 
 
@@ -42,7 +42,7 @@ def create_qr_checkout(request):
 
     body = json.loads(request.body)
     amount_kz = float(body["amount_kz"])
-    owner_id  = body.get("owner_id") or os.environ["BANZAMI_WALLET_ID"]
+    owner_id  = body.get("owner_id") or os.environ["BANZA_WALLET_ID"]
 
     async def _create():
         async with _get_client() as client:
@@ -66,12 +66,12 @@ def create_qr_checkout(request):
 
 @csrf_exempt
 @require_POST
-def banzami_webhook(request):
-    """Receive and verify Banzami webhook events."""
+def banza_webhook(request):
+    """Receive and verify BANZA webhook events."""
     signature = request.headers.get("Banza-Signature", "")
     raw       = request.body
 
-    webhook_secret = getattr(settings, "BANZAMI_WEBHOOK_SECRET", os.environ.get("BANZAMI_WEBHOOK_SECRET", ""))
+    webhook_secret = getattr(settings, "BANZA_WEBHOOK_SECRET", os.environ.get("BANZA_WEBHOOK_SECRET", ""))
     client = _get_client()
 
     try:

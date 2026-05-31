@@ -40,7 +40,7 @@ curl http://localhost:3100/health
 
 ## Operator Manifest
 
-### `GET /.well-known/banzami/operator.json`
+### `GET /.well-known/banza/operator.json`
 
 Returns the operator's capability manifest. This path follows the RFC-0005
 operator discovery protocol and is the canonical way for clients to discover
@@ -84,7 +84,7 @@ what a Banza operator supports.
 **curl**
 
 ```bash
-curl http://localhost:3100/.well-known/banzami/operator.json
+curl http://localhost:3100/.well-known/banza/operator.json
 ```
 
 ---

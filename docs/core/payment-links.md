@@ -1,4 +1,4 @@
-# banzami-payment-links — Payment Link Engine
+# banza-payment-links — Payment Link Engine
 
 Payment links are reusable, shareable URLs (and QR-backing objects) that customers use to pay a specific merchant a specific amount.
 
@@ -6,7 +6,7 @@ Payment links are reusable, shareable URLs (and QR-backing objects) that custome
 
 ## What it is
 
-`banzami-payment-links` provides:
+`banza-payment-links` provides:
 - Payment link creation and storage
 - Link expiry management
 - Resolution: given a link ID, return the link details for the payment UI

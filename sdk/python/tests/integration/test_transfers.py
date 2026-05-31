@@ -5,11 +5,11 @@ from __future__ import annotations
 import httpx
 import respx
 
-from banza import Banzami
+from banza import BanzaClient
 from banza.models.transfer import TransferStatus
 from banza.pagination import auto_paginate
 
-BASE = "https://api.banzami.test"
+BASE = "https://api.banza.test"
 
 TRANSFER = {
     "id":           "xfr_001",
@@ -29,7 +29,7 @@ PAGE_2 = {"data": [{**TRANSFER, "id": "xfr_002"}]}
 async def test_send_transfer():
     with respx.mock(base_url=BASE) as mock:
         mock.post("/v1/transfers").mock(return_value=httpx.Response(200, json=TRANSFER))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             xfr = await c.transfers.send(
                 sender_id="wal_sender",
                 recipient_id="wal_receiver",
@@ -45,7 +45,7 @@ async def test_send_transfer():
 async def test_retrieve_transfer():
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/transfers/xfr_001").mock(return_value=httpx.Response(200, json=TRANSFER))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             xfr = await c.transfers.retrieve("xfr_001")
 
     assert xfr.id == "xfr_001"
@@ -64,7 +64,7 @@ async def test_list_transfers_paginates():
 
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/transfers").mock(side_effect=side_effect)
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             all_xfrs = [x async for x in auto_paginate(c.transfers.list, consumer_id="wal_sender")]
 
     assert len(all_xfrs) == 2

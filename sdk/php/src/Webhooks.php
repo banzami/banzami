@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Banzami;
+namespace Banza;
 
-use Banzami\Exceptions\WebhookSignatureException;
+use Banza\Exceptions\WebhookSignatureException;
 
 /**
- * Banzami webhook signature verification.
+ * Banza webhook signature verification.
  *
  * Implements the canonical signature format:
  *   Banza-Signature: t=<unix_seconds>,v1=<hex_hmac_sha256>
@@ -26,7 +26,7 @@ final class Webhooks
      *
      * @param  string $rawBody   Raw HTTP request body (do NOT JSON-decode first).
      * @param  string $signature Value of the Banza-Signature header.
-     * @param  string $secret    Webhook signing secret from the Banzami dashboard.
+     * @param  string $secret    Webhook signing secret from the operator dashboard.
      * @return array<string, mixed>
      *
      * @throws WebhookSignatureException

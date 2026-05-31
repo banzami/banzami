@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Banzami\Laravel\Tests;
+namespace Banza\Laravel\Tests;
 
-use Banzami\Laravel\BanzamiServiceProvider;
-use Banzami\Laravel\Events\PaymentLinkUsed;
-use Banzami\Laravel\Events\PayoutRequested;
-use Banzami\Laravel\Events\TransactionCompleted;
-use Banzami\Laravel\Events\TransactionFailed;
-use Banzami\Laravel\Events\WalletProvisioned;
+use Banza\Laravel\BanzaServiceProvider;
+use Banza\Laravel\Events\PaymentLinkUsed;
+use Banza\Laravel\Events\PayoutRequested;
+use Banza\Laravel\Events\TransactionCompleted;
+use Banza\Laravel\Events\TransactionFailed;
+use Banza\Laravel\Events\WalletProvisioned;
 use Illuminate\Support\Facades\Event;
 use Orchestra\Testbench\TestCase;
 
@@ -17,7 +17,7 @@ class WebhookControllerTest extends TestCase
 {
     protected function getPackageProviders($app): array
     {
-        return [BanzamiServiceProvider::class];
+        return [BanzaServiceProvider::class];
     }
 
     protected function getEnvironmentSetUp($app): void

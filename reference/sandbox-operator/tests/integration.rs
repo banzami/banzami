@@ -54,10 +54,10 @@ async fn health_endpoint_returns_ok() {
 #[tokio::test]
 async fn operator_manifest_is_valid() {
     let app = build_router();
-    let res = app.oneshot(get("/.well-known/banzami/operator.json")).await.unwrap();
+    let res = app.oneshot(get("/.well-known/banza/operator.json")).await.unwrap();
     assert_eq!(res.status(), StatusCode::OK);
     let json = body_json(res.into_body()).await;
-    assert_eq!(json["operator_id"], "banzami-sandbox");
+    assert_eq!(json["operator_id"], "banza-sandbox");
     assert_eq!(json["environment"], "sandbox");
     assert_eq!(json["simulated"], true);
     assert_eq!(json["production_allowed"], false);
@@ -70,7 +70,7 @@ async fn operator_manifest_is_valid() {
 #[tokio::test]
 async fn manifest_explicitly_blocks_production() {
     let app = build_router();
-    let res = app.oneshot(get("/.well-known/banzami/operator.json")).await.unwrap();
+    let res = app.oneshot(get("/.well-known/banza/operator.json")).await.unwrap();
     let json = body_json(res.into_body()).await;
     assert_eq!(json["production_allowed"], false,
         "manifest must explicitly set production_allowed=false");

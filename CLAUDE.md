@@ -111,14 +111,9 @@ No operator implementation may reference a feature that has not first been speci
 
 ## Validation Governance
 
-Status changes to `docs/validation/BANZAMI_IMPLEMENTATION_MATRIX.json` require governed approval:
+The Banzami implementation matrix lives in `~/banzami/docs/validation/BANZAMI_IMPLEMENTATION_MATRIX.json` (the reference operator repo, not this repo). Status changes to that matrix require governed approval per the Banzami repo's governance model.
 
-```
-APPROVE VALIDATION <ID> <fingerprint>
-APPROVE COMMIT <ID>
-```
-
-Never write validation status changes without a full proposal and the exact approval phrase. See `docs/validation/` for the full governance model.
+This repo (`~/banza`) does not own a validation matrix — it owns protocol specifications in `contracts/`, conformance vectors in `conformance/`, and certification criteria in `BANZA_CERTIFICATION.md`.
 
 ---
 

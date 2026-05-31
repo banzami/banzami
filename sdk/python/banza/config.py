@@ -9,7 +9,7 @@ SANDBOX_URL = "https://sandbox-api.banzami.com"
 
 
 @dataclass(frozen=True)
-class BanzamiConfig:
+class BanzaConfig:
     """Immutable configuration snapshot passed to every component of the client."""
 
     base_url: str = LIVE_URL

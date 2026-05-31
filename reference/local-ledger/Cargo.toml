@@ -6,7 +6,7 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-banzami-types = { workspace = true }
+banza-types = { workspace = true }
 sqlx          = { workspace = true }
 tokio         = { workspace = true }
 uuid          = { workspace = true }

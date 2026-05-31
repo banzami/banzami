@@ -6,14 +6,14 @@ import httpx
 import pytest
 import respx
 
-from banza import BanzaHooks, Banzami
+from banza import BanzaHooks, BanzaClient
 from banza.exceptions import (
-    BanzamiAuthenticationError,
-    BanzamiNotFoundError,
-    BanzamiServerError,
+    BanzaAuthenticationError,
+    BanzaNotFoundError,
+    BanzaServerError,
 )
 
-BASE = "https://api.banzami.test"
+BASE = "https://api.banza.test"
 
 TX_PAYLOAD = {
     "id":           "tx_001",
@@ -33,7 +33,7 @@ TX_PAYLOAD = {
 async def test_create_transaction_success():
     with respx.mock(base_url=BASE) as mock:
         mock.post("/v1/transactions").mock(return_value=httpx.Response(200, json=TX_PAYLOAD))
-        async with Banzami(api_key="bz_test", base_url=BASE) as client:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as client:
             tx = await client.transactions.create(amount=50000, currency="AOA")
     assert tx.id == "tx_001"
     assert tx.amount_minor == 50000
@@ -42,7 +42,7 @@ async def test_create_transaction_success():
 async def test_retrieve_transaction_success():
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/transactions/tx_001").mock(return_value=httpx.Response(200, json=TX_PAYLOAD))
-        async with Banzami(api_key="bz_test", base_url=BASE) as client:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as client:
             tx = await client.transactions.retrieve("tx_001")
     assert tx.id == "tx_001"
 
@@ -56,8 +56,8 @@ async def test_401_raises_authentication_error():
         mock.get("/v1/transactions/tx_x").mock(
             return_value=httpx.Response(401, json={"code": "UNAUTHORIZED", "message": "Bad key"})
         )
-        async with Banzami(api_key="bz_test", base_url=BASE) as client:
-            with pytest.raises(BanzamiAuthenticationError):
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as client:
+            with pytest.raises(BanzaAuthenticationError):
                 await client.transactions.retrieve("tx_x")
 
 
@@ -66,8 +66,8 @@ async def test_404_raises_not_found():
         mock.get("/v1/transactions/missing").mock(
             return_value=httpx.Response(404, json={"code": "NOT_FOUND", "message": "Not found"})
         )
-        async with Banzami(api_key="bz_test", base_url=BASE) as client:
-            with pytest.raises(BanzamiNotFoundError):
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as client:
+            with pytest.raises(BanzaNotFoundError):
                 await client.transactions.retrieve("missing")
 
 
@@ -76,8 +76,8 @@ async def test_500_raises_server_error():
         mock.get("/v1/transactions/tx_err").mock(
             return_value=httpx.Response(500, json={"code": "INTERNAL", "message": "Oops"})
         )
-        async with Banzami(api_key="bz_test", base_url=BASE, max_retries=0) as client:
-            with pytest.raises(BanzamiServerError):
+        async with BanzaClient(api_key="bz_test", base_url=BASE, max_retries=0) as client:
+            with pytest.raises(BanzaServerError):
                 await client.transactions.retrieve("tx_err")
 
 
@@ -94,7 +94,7 @@ async def test_post_sends_idempotency_key():
 
     with respx.mock(base_url=BASE) as mock:
         mock.post("/v1/transactions").mock(side_effect=capture)
-        async with Banzami(api_key="bz_test", base_url=BASE) as client:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as client:
             await client.transactions.create(amount=1000)
     assert captured[0] != ""
 
@@ -108,7 +108,7 @@ async def test_custom_idempotency_key_preserved():
 
     with respx.mock(base_url=BASE) as mock:
         mock.post("/v1/transactions").mock(side_effect=capture)
-        async with Banzami(api_key="bz_test", base_url=BASE) as client:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as client:
             await client.transactions.create(amount=1000, idempotency_key="my-key-123")
     assert captured[0] == "my-key-123"
 
@@ -129,7 +129,7 @@ async def test_retries_on_503_then_succeeds():
 
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/transactions/tx_001").mock(side_effect=flaky)
-        async with Banzami(api_key="bz_test", base_url=BASE, max_retries=3, retry_delay=0.01) as client:
+        async with BanzaClient(api_key="bz_test", base_url=BASE, max_retries=3, retry_delay=0.01) as client:
             tx = await client.transactions.retrieve("tx_001")
     assert tx.id == "tx_001"
     assert call_count == 3
@@ -145,8 +145,8 @@ async def test_no_retry_on_404():
 
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/transactions/missing").mock(side_effect=count)
-        async with Banzami(api_key="bz_test", base_url=BASE) as client:
-            with pytest.raises(BanzamiNotFoundError):
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as client:
+            with pytest.raises(BanzaNotFoundError):
                 await client.transactions.retrieve("missing")
     assert call_count == 1
 
@@ -162,7 +162,7 @@ async def test_retry_reuses_idempotency_key():
 
     with respx.mock(base_url=BASE) as mock:
         mock.post("/v1/transactions").mock(side_effect=capture)
-        async with Banzami(api_key="bz_test", base_url=BASE, max_retries=3, retry_delay=0.01) as client:
+        async with BanzaClient(api_key="bz_test", base_url=BASE, max_retries=3, retry_delay=0.01) as client:
             await client.transactions.create(amount=1000)
     assert len(set(seen_keys)) == 1, "All retries must share the same idempotency key"
 
@@ -177,7 +177,7 @@ async def test_on_request_hook_fires():
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/transactions/tx_001").mock(return_value=httpx.Response(200, json=TX_PAYLOAD))
         hooks = BanzaHooks(on_request=lambda m, p, a: calls.append((m, p, a)))
-        async with Banzami(api_key="bz_test", base_url=BASE, hooks=hooks) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE, hooks=hooks) as c:
             await c.transactions.retrieve("tx_001")
 
     assert len(calls) == 1
@@ -193,9 +193,9 @@ async def test_on_error_hook_fires_on_4xx():
             return_value=httpx.Response(404, json={"code": "NOT_FOUND", "message": "x"})
         )
         hooks = BanzaHooks(on_error=lambda m, p, e, a: errors.append((m, p, e, a)))
-        async with Banzami(api_key="bz_test", base_url=BASE, hooks=hooks) as c:
-            with pytest.raises(BanzamiNotFoundError):
+        async with BanzaClient(api_key="bz_test", base_url=BASE, hooks=hooks) as c:
+            with pytest.raises(BanzaNotFoundError):
                 await c.transactions.retrieve("bad")
 
     assert len(errors) == 1
-    assert isinstance(errors[0][2], BanzamiNotFoundError)
+    assert isinstance(errors[0][2], BanzaNotFoundError)

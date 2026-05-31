@@ -1,0 +1,24 @@
+[package]
+name        = "banza-transfers"
+description = "Instant P2P transfer engine — atomic double-entry ledger postings"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+repository.workspace = true
+authors.workspace    = true
+
+[dependencies]
+banza-types            = { workspace = true }
+banza-consumer-wallets = { workspace = true }
+serde                    = { workspace = true }
+uuid                     = { workspace = true }
+chrono                   = { workspace = true }
+thiserror                = { workspace = true }
+tracing                  = { workspace = true }
+sqlx                     = { workspace = true }
+tokio                    = { workspace = true }
+
+[dev-dependencies]
+banza-ledger = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+sqlx  = { workspace = true }

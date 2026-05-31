@@ -13,24 +13,24 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel
 
-from banza import Banzami, BanzaWebhookSignatureError
+from banza import BanzaClient, BanzaWebhookSignatureError
 from banza.models import PaymentLink, Transaction, WebhookEvent
 
-client: Banzami
+client: BanzaClient
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global client
-    client = Banzami(
-        api_key=os.environ["BANZAMI_API_KEY"],
-        webhook_secret=os.environ.get("BANZAMI_WEBHOOK_SECRET"),
+    client = BanzaClient(
+        api_key=os.environ["BANZA_API_KEY"],
+        webhook_secret=os.environ.get("BANZA_WEBHOOK_SECRET"),
     )
     yield
     await client.close()
 
 
-app = FastAPI(title="Banzami FastAPI Demo", lifespan=lifespan)
+app = FastAPI(title="BANZA FastAPI Demo", lifespan=lifespan)
 
 
 # ---------------------------------------------------------------------------
@@ -70,7 +70,7 @@ async def create_qr(body: QrRequest):
     from banza.utils.money import to_minor
     from datetime import datetime, timedelta, timezone
 
-    owner_id = os.environ["BANZAMI_WALLET_ID"]
+    owner_id = os.environ["BANZA_WALLET_ID"]
     qr = await client.qr_payments.create_dynamic(
         owner_id=owner_id,
         amount=to_minor(body.amount_kz, "AOA"),
@@ -90,13 +90,13 @@ async def create_qr(body: QrRequest):
 @app.post("/webhooks/banzami")
 async def handle_webhook(
     request: Request,
-    x_banzami_signature: str = Header(...),
+    x_banza_signature: str = Header(...),
 ):
-    """Receive and verify Banzami webhook events."""
+    """Receive and verify BANZA webhook events."""
     raw = await request.body()
 
     try:
-        event: WebhookEvent = client.webhooks.construct_event(raw, x_banzami_signature)
+        event: WebhookEvent = client.webhooks.construct_event(raw, x_banza_signature)
     except BanzaWebhookSignatureError:
         raise HTTPException(status_code=400, detail="Invalid webhook signature")
 

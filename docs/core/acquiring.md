@@ -1,4 +1,4 @@
-# banzami-acquiring — Acquiring Abstraction
+# banza-acquiring — Acquiring Abstraction
 
 The acquiring crate bridges Banza payment links to external payment networks. It is fully operator-defined: Banza provides the engine and trait; operators bring their own provider implementations.
 
@@ -6,7 +6,7 @@ The acquiring crate bridges Banza payment links to external payment networks. It
 
 ## What it is
 
-`banzami-acquiring` provides:
+`banza-acquiring` provides:
 - The `AcquirerProvider` trait — the interface operators implement for their payment rails
 - `PostgresAcquiringEngine` — a generic PostgreSQL-backed engine that orchestrates payment initiation and callback processing
 - Domain types: `AcquiringPayment`, `AcquiringCallback`, `PaymentInstructions`

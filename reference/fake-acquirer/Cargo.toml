@@ -6,8 +6,8 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-banzami-acquiring = { workspace = true }
-banzami-types     = { workspace = true }
+banza-acquiring = { workspace = true }
+banza-types     = { workspace = true }
 serde_json        = { workspace = true }
 chrono            = { workspace = true }
 hmac              = { workspace = true }

@@ -1,0 +1,16 @@
+[package]
+name        = "banza-risk"
+description = "Risk scoring, velocity checks, fraud signals"
+version.workspace   = true
+edition.workspace   = true
+license.workspace   = true
+repository.workspace = true
+authors.workspace   = true
+
+[dependencies]
+banza-types = { workspace = true }
+serde         = { workspace = true }
+chrono        = { workspace = true }
+thiserror     = { workspace = true }
+tracing       = { workspace = true }
+tokio         = { workspace = true }

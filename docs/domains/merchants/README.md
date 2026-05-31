@@ -1,6 +1,6 @@
 # Domain: Merchants
 
-**Crate:** `banzami-merchants`  
+**Crate:** `banza-merchants`  
 **Module:** `core/merchants/`
 
 ---

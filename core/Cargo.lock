@@ -81,10 +81,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
-name = "banzami-acquiring"
+name = "banza-acquiring"
 version = "0.1.0"
 dependencies = [
- "banzami-types",
+ "banza-types",
  "chrono",
  "hex",
  "hmac",
@@ -99,19 +99,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-capabilities"
+name = "banza-capabilities"
 version = "0.1.0"
 dependencies = [
- "banzami-types",
+ "banza-types",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "banzami-compliance"
+name = "banza-compliance"
 version = "0.1.0"
 dependencies = [
- "banzami-types",
+ "banza-types",
  "chrono",
  "serde",
  "serde_json",
@@ -123,13 +123,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-consumer-wallets"
+name = "banza-consumer-wallets"
 version = "0.1.0"
 dependencies = [
  "argon2",
- "banzami-identity",
- "banzami-ledger",
- "banzami-types",
+ "banza-identity",
+ "banza-ledger",
+ "banza-types",
  "chrono",
  "futures",
  "rand",
@@ -144,10 +144,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-identity"
+name = "banza-identity"
 version = "0.1.0"
 dependencies = [
- "banzami-types",
+ "banza-types",
  "chrono",
  "serde",
  "sqlx",
@@ -158,10 +158,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-ledger"
+name = "banza-ledger"
 version = "0.1.0"
 dependencies = [
- "banzami-types",
+ "banza-types",
  "chrono",
  "serde",
  "sqlx",
@@ -172,10 +172,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-merchants"
+name = "banza-merchants"
 version = "0.1.0"
 dependencies = [
- "banzami-types",
+ "banza-types",
  "chrono",
  "serde",
  "sha2",
@@ -187,7 +187,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-notifications"
+name = "banza-notifications"
 version = "0.1.0"
 dependencies = [
  "serde",
@@ -196,10 +196,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-payment-links"
+name = "banza-payment-links"
 version = "0.1.0"
 dependencies = [
- "banzami-types",
+ "banza-types",
  "chrono",
  "serde",
  "serde_json",
@@ -211,12 +211,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-payouts"
+name = "banza-payouts"
 version = "0.1.0"
 dependencies = [
- "banzami-ledger",
- "banzami-types",
- "banzami-wallets",
+ "banza-ledger",
+ "banza-types",
+ "banza-wallets",
  "chrono",
  "serde",
  "serde_json",
@@ -228,10 +228,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-qr"
+name = "banza-qr"
 version = "0.1.0"
 dependencies = [
- "banzami-types",
+ "banza-types",
  "base64 0.22.1",
  "chrono",
  "hmac",
@@ -246,10 +246,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-reconciliation"
+name = "banza-reconciliation"
 version = "0.1.0"
 dependencies = [
- "banzami-types",
+ "banza-types",
  "chrono",
  "serde",
  "serde_json",
@@ -261,10 +261,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-risk"
+name = "banza-risk"
 version = "0.1.0"
 dependencies = [
- "banzami-types",
+ "banza-types",
  "chrono",
  "serde",
  "thiserror",
@@ -273,10 +273,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-routing"
+name = "banza-routing"
 version = "0.1.0"
 dependencies = [
- "banzami-types",
+ "banza-types",
  "chrono",
  "serde",
  "thiserror",
@@ -285,12 +285,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-settlement"
+name = "banza-settlement"
 version = "0.1.0"
 dependencies = [
- "banzami-ledger",
- "banzami-types",
- "banzami-wallets",
+ "banza-ledger",
+ "banza-types",
+ "banza-wallets",
  "chrono",
  "serde",
  "sqlx",
@@ -301,11 +301,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-transactions"
+name = "banza-transactions"
 version = "0.1.0"
 dependencies = [
- "banzami-types",
- "banzami-wallets",
+ "banza-types",
+ "banza-wallets",
  "chrono",
  "serde",
  "sqlx",
@@ -316,12 +316,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-transfers"
+name = "banza-transfers"
 version = "0.1.0"
 dependencies = [
- "banzami-consumer-wallets",
- "banzami-ledger",
- "banzami-types",
+ "banza-consumer-wallets",
+ "banza-ledger",
+ "banza-types",
  "chrono",
  "serde",
  "sqlx",
@@ -332,7 +332,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-types"
+name = "banza-types"
 version = "0.1.0"
 dependencies = [
  "chrono",
@@ -342,11 +342,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-wallets"
+name = "banza-wallets"
 version = "0.1.0"
 dependencies = [
- "banzami-ledger",
- "banzami-types",
+ "banza-ledger",
+ "banza-types",
  "chrono",
  "serde",
  "sqlx",

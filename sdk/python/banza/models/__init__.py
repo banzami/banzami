@@ -1,4 +1,4 @@
-"""Banzami Pydantic response models."""
+"""BANZA Pydantic response models."""
 
 from .common import Money
 from .dispute import Dispute, DisputeStatus

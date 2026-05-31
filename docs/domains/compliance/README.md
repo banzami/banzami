@@ -1,6 +1,6 @@
 # Domain: Compliance
 
-**Crate:** `banzami-compliance`  
+**Crate:** `banza-compliance`  
 **Module:** `core/compliance/`
 
 ---

@@ -23,7 +23,7 @@ export interface CoverageReport {
 
 const ALL_SOURCE_TYPES: SourceType[] = [
   'reference', 'accepted_rfc', 'accepted_adr', 'openapi', 'conformance',
-  'certification', 'invariant', 'manifest_schema', 'glossary', 'banzamia_doc',
+  'certification', 'invariant', 'manifest_schema', 'glossary', 'banzai_doc',
   'architecture_doc', 'readme', 'sdk_doc', 'website', 'draft_rfc',
 ];
 

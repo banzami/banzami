@@ -10,7 +10,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 
-use banzami_types::Currency;
+use banza_types::Currency;
 use tokio::sync::broadcast;
 use uuid::Uuid;
 

@@ -1,5 +1,5 @@
 {
-    "name": "banzami/banzami-php",
+    "name": "banza/banza-php",
     "description": "Banzami payment integration library for PHP — payment links, webhooks, and signature verification",
     "license": "UNLICENSED",
     "type": "library",

@@ -70,7 +70,7 @@ const LEVEL_DEFINITIONS: Array<{ level: number; name: string; requirements: Leve
     level: 3,
     name: 'Federation Operator',
     requirements: [
-      { id: 'L3-001', description: 'Valid /.well-known/banzami/operator.json manifest', conformance_check: 'manifest', rfc: 'RFC-0006', manifest_field: 'operator_id', capability: 'supports_manifest' },
+      { id: 'L3-001', description: 'Valid /.well-known/banza/operator.json manifest', conformance_check: 'manifest', rfc: 'RFC-0006', manifest_field: 'operator_id', capability: 'supports_manifest' },
       { id: 'L3-002', description: 'Federation discovery endpoint', conformance_check: 'federation-discovery', rfc: 'RFC-0008', capability: 'supports_federation' },
       { id: 'L3-003', description: 'Cross-operator event exchange', conformance_check: 'event-exchange', rfc: 'RFC-0008', capability: 'supports_cross_operator' },
     ],
@@ -110,7 +110,7 @@ const ROADMAP_STEPS: Array<{ from_level: number; to_level: number; steps: string
   {
     from_level: 2, to_level: 3,
     steps: [
-      'Publish /.well-known/banzami/operator.json with all required fields (RFC-0006)',
+      'Publish /.well-known/banza/operator.json with all required fields (RFC-0006)',
       'Implement federation discovery endpoint',
       'Add cross-operator event exchange capability',
       'Submit manifest for Banzami network review',

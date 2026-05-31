@@ -1,7 +1,7 @@
 """QR checkout flow — create, poll, and confirm a dynamic QR payment.
 
 Run:
-    BANZAMI_API_KEY=bz_live_... BANZAMI_OWNER_ID=wallet_... python -m examples.qr_checkout.checkout
+    BANZA_API_KEY=bz_live_... BANZA_OWNER_ID=wallet_... python -m examples.qr_checkout.checkout
 """
 
 from __future__ import annotations
@@ -10,19 +10,19 @@ import asyncio
 import os
 from datetime import datetime, timedelta, timezone
 
-from banza import Banzami
+from banza import BanzaClient
 from banza.models.qr_payment import QrCodeStatus
 from banza.utils.money import format_minor, to_minor
 
 
 async def main() -> None:
-    async with Banzami(api_key=os.environ["BANZAMI_API_KEY"]) as client:
+    async with BanzaClient(api_key=os.environ["BANZA_API_KEY"]) as client:
         amount_kz = 2500  # 2 500 Kz
 
         print(f"Creating QR for {format_minor(amount_kz, 'AOA')}...")
 
         qr = await client.qr_payments.create_dynamic(
-            owner_id=os.environ["BANZAMI_OWNER_ID"],
+            owner_id=os.environ["BANZA_OWNER_ID"],
             amount=to_minor(amount_kz, "AOA"),
             expires_at=datetime.now(tz=timezone.utc) + timedelta(minutes=10),
             reference="ordem-001",

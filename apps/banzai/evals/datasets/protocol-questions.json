@@ -113,8 +113,8 @@
   },
   {
     "id": "PB-015",
-    "question": "What does the Banzami kernel crate banzami-types provide?",
-    "expected_sources": ["README.md", "core/crates/banzami-types"],
+    "question": "What does the Banzami kernel crate banza-types provide?",
+    "expected_sources": ["README.md", "core/crates/banza-types"],
     "expected_answer_keywords": ["Money", "Currency", "typed", "ID", "types"],
     "difficulty": "medium",
     "category": "Protocol Basics"
@@ -204,7 +204,7 @@
     "id": "CERT-006",
     "question": "How do you run the Banzami conformance suite?",
     "expected_sources": ["docs/conformance.md"],
-    "expected_answer_keywords": ["python3", "banzami-conformance", "run.py", "--level", "--url"],
+    "expected_answer_keywords": ["python3", "banza-conformance", "run.py", "--level", "--url"],
     "difficulty": "easy",
     "category": "Certification"
   },
@@ -508,7 +508,7 @@
   },
   {
     "id": "SET-009",
-    "question": "What is the banzami-payouts crate?",
+    "question": "What is the banza-payouts crate?",
     "expected_sources": ["README.md"],
     "expected_answer_keywords": ["payouts", "disbursements", "outbound"],
     "difficulty": "easy",
@@ -572,7 +572,7 @@
   },
   {
     "id": "SET-017",
-    "question": "What is the banzami-routing crate responsible for?",
+    "question": "What is the banza-routing crate responsible for?",
     "expected_sources": ["README.md"],
     "expected_answer_keywords": ["routing", "rail", "payment", "selection"],
     "difficulty": "easy",
@@ -1299,7 +1299,7 @@
     "id": "INV-017",
     "question": "What is the Banzami typing system for money?",
     "expected_sources": ["README.md", "docs/BANZA_REFERENCE.md"],
-    "expected_answer_keywords": ["Money", "Currency", "typed", "banzami-types", "safety"],
+    "expected_answer_keywords": ["Money", "Currency", "typed", "banza-types", "safety"],
     "difficulty": "medium",
     "category": "Invariants"
   },

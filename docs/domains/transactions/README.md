@@ -1,6 +1,6 @@
 # Domain: Transactions
 
-**Crate:** `banzami-transactions`  
+**Crate:** `banza-transactions`  
 **Module:** `core/transactions/`
 
 ---

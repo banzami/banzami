@@ -1,4 +1,4 @@
-# banzami-wallets — Merchant Wallet Engine
+# banza-wallets — Merchant Wallet Engine
 
 Merchant wallets hold the funds that merchants accumulate from payments. The wallet engine manages the reserve/release/settle lifecycle and derives balances from the ledger.
 
@@ -6,14 +6,14 @@ Merchant wallets hold the funds that merchants accumulate from payments. The wal
 
 ## What it is
 
-`banzami-wallets` provides the merchant wallet lifecycle:
+`banza-wallets` provides the merchant wallet lifecycle:
 - Create wallets
 - Check balances (derived from ledger, never stored separately)
 - Reserve funds (hold before payment capture)
 - Release reservations (cancel a hold)
 - Settle (move funds from reserved to available after payment capture)
 
-For consumer wallets, see `banzami-consumer-wallets`.
+For consumer wallets, see `banza-consumer-wallets`.
 
 ---
 

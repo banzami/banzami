@@ -1,4 +1,4 @@
-# banzami-settlement — Settlement Lifecycle
+# banza-settlement — Settlement Lifecycle
 
 The settlement crate manages the lifecycle of merchant settlement batches — the process by which accumulated transaction funds are grouped and disbursed to merchants.
 
@@ -6,7 +6,7 @@ The settlement crate manages the lifecycle of merchant settlement batches — th
 
 ## What it is
 
-`banzami-settlement` provides:
+`banza-settlement` provides:
 - Settlement batch creation (grouping captured transactions by merchant + currency + period)
 - Settlement state machine (PENDING → PROCESSING → COMPLETED / FAILED)
 - Background scheduler that auto-creates daily settlement batches

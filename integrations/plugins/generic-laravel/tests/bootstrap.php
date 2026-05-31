@@ -2,7 +2,7 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-// Provide stub classes for the banzami/banzami-php SDK so the test suite
+// Provide stub classes for the banza/banza-php SDK so the test suite
 // runs without requiring the real HTTP client to be installed or reachable.
 // These stubs replicate only the interface that the Laravel package depends on.
 

@@ -5,10 +5,10 @@ from __future__ import annotations
 import httpx
 import respx
 
-from banza import Banzami
+from banza import BanzaClient
 from banza.models.dispute import DisputeStatus
 
-BASE = "https://api.banzami.test"
+BASE = "https://api.banza.test"
 
 DISPUTE = {
     "id":                "dsp_001",
@@ -32,7 +32,7 @@ PAGE = {"data": [DISPUTE]}
 async def test_open_dispute():
     with respx.mock(base_url=BASE) as mock:
         mock.post("/v1/disputes").mock(return_value=httpx.Response(200, json=DISPUTE))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             dispute = await c.disputes.open(
                 transaction_id="tx_001",
                 consumer_id="con_001",
@@ -48,7 +48,7 @@ async def test_open_dispute():
 async def test_retrieve_dispute():
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/disputes/dsp_001").mock(return_value=httpx.Response(200, json=DISPUTE))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             dispute = await c.disputes.retrieve("dsp_001")
 
     assert dispute.transaction_id == "tx_001"
@@ -58,7 +58,7 @@ async def test_retrieve_dispute():
 async def test_list_disputes():
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/disputes").mock(return_value=httpx.Response(200, json=PAGE))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             page = await c.disputes.list()
 
     assert len(page.data) == 1
@@ -67,7 +67,7 @@ async def test_list_disputes():
 async def test_list_disputes_filter_by_status():
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/disputes").mock(return_value=httpx.Response(200, json=PAGE))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             page = await c.disputes.list(status=DisputeStatus.OPEN)
 
     assert page.data[0].status == DisputeStatus.OPEN
@@ -79,7 +79,7 @@ async def test_add_evidence():
         mock.post("/v1/disputes/dsp_001/evidence").mock(
             return_value=httpx.Response(200, json=under_review)
         )
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             dispute = await c.disputes.add_evidence(
                 "dsp_001",
                 evidence="https://storage.banzami.com/receipts/rec_001.pdf",
@@ -97,7 +97,7 @@ async def test_dispute_resolved():
     }
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/disputes/dsp_001").mock(return_value=httpx.Response(200, json=resolved))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             dispute = await c.disputes.retrieve("dsp_001")
 
     assert dispute.status == DisputeStatus.WON_BY_MERCHANT

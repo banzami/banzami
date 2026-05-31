@@ -3,57 +3,57 @@
 
 from banza.exceptions import (
     BanzaAPIError,
-    BanzamiAuthenticationError,
-    BanzamiInsufficientFundsError,
-    BanzamiNotFoundError,
-    BanzamiPermissionError,
-    BanzamiRateLimitError,
-    BanzamiServerError,
-    BanzamiValidationError,
+    BanzaAuthenticationError,
+    BanzaInsufficientFundsError,
+    BanzaNotFoundError,
+    BanzaPermissionError,
+    BanzaRateLimitError,
+    BanzaServerError,
+    BanzaValidationError,
     api_error_from_response,
 )
 
 
 def test_factory_401():
     err = api_error_from_response(401, "UNAUTHORIZED", "Invalid API key")
-    assert isinstance(err, BanzamiAuthenticationError)
+    assert isinstance(err, BanzaAuthenticationError)
     assert err.status_code == 401
 
 
 def test_factory_403():
     err = api_error_from_response(403, "FORBIDDEN", "No permission")
-    assert isinstance(err, BanzamiPermissionError)
+    assert isinstance(err, BanzaPermissionError)
 
 
 def test_factory_404():
     err = api_error_from_response(404, "NOT_FOUND", "Resource not found")
-    assert isinstance(err, BanzamiNotFoundError)
+    assert isinstance(err, BanzaNotFoundError)
 
 
 def test_factory_422():
     err = api_error_from_response(422, "VALIDATION_ERROR", "Bad input")
-    assert isinstance(err, BanzamiValidationError)
+    assert isinstance(err, BanzaValidationError)
 
 
 def test_factory_429():
     err = api_error_from_response(429, "RATE_LIMIT", "Slow down")
-    assert isinstance(err, BanzamiRateLimitError)
+    assert isinstance(err, BanzaRateLimitError)
 
 
 def test_factory_500():
     err = api_error_from_response(500, "INTERNAL", "Server error")
-    assert isinstance(err, BanzamiServerError)
+    assert isinstance(err, BanzaServerError)
     assert err.status_code == 500
 
 
 def test_factory_502():
     err = api_error_from_response(502, "BAD_GATEWAY", "Bad gateway")
-    assert isinstance(err, BanzamiServerError)
+    assert isinstance(err, BanzaServerError)
 
 
 def test_factory_insufficient_funds():
     err = api_error_from_response(402, "INSUFFICIENT_FUNDS", "Not enough Kz")
-    assert isinstance(err, BanzamiInsufficientFundsError)
+    assert isinstance(err, BanzaInsufficientFundsError)
     assert err.code == "INSUFFICIENT_FUNDS"
 
 

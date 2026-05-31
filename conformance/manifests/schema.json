@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://banzami.com/conformance/manifests/schema.json",
+  "$id": "https://banza.network/conformance/manifests/schema.json",
   "title": "Banzami Operator Manifest",
-  "description": "Schema for the operator manifest served at /.well-known/banzami/operator.json",
+  "description": "Schema for the operator manifest served at /.well-known/banza/operator.json (legacy: /.well-known/banzami/operator.json)",
   "type": "object",
 
   "required": ["operator_id", "environment", "simulated", "production_allowed", "capabilities"],

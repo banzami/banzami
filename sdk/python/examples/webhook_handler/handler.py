@@ -3,7 +3,7 @@
 Demonstrates signature verification and typed event parsing without any framework.
 
 Run:
-    BANZAMI_WEBHOOK_SECRET=whsec_... python -m examples.webhook_handler.handler
+    BANZA_WEBHOOK_SECRET=whsec_... python -m examples.webhook_handler.handler
 """
 
 from __future__ import annotations
@@ -13,13 +13,13 @@ import json
 import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from banza import Banzami, BanzaWebhookSignatureError
+from banza import BanzaClient, BanzaWebhookSignatureError
 from banza.models.webhook import WebhookEvent
 
-WEBHOOK_SECRET = os.environ["BANZAMI_WEBHOOK_SECRET"]
+WEBHOOK_SECRET = os.environ["BANZA_WEBHOOK_SECRET"]
 PORT           = int(os.environ.get("PORT", "8090"))
 
-_client = Banzami(api_key="not_used_for_verification", webhook_secret=WEBHOOK_SECRET)
+_client = BanzaClient(api_key="not_used_for_verification", webhook_secret=WEBHOOK_SECRET)
 
 
 class WebhookHandler(BaseHTTPRequestHandler):

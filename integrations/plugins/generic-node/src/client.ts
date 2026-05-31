@@ -117,7 +117,7 @@ export interface Merchant {
  * Uses the native fetch API (Node >= 18). No external dependencies.
  *
  * ```ts
- * import { BanzaClient } from '@banzami/node';
+ * import { BanzaClient } from '@banza/node';
  *
  * const client = new BanzaClient({
  *   gatewayUrl: 'https://api.banzami.com',

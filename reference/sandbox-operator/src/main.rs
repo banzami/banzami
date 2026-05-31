@@ -16,7 +16,7 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
             std::env::var("RUST_LOG")
-                .unwrap_or_else(|_| "sandbox_operator=debug,banzami=debug,info".into())
+                .unwrap_or_else(|_| "sandbox_operator=debug,banza=debug,info".into())
         )
         .init();
 
@@ -60,7 +60,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("");
     tracing::info!("Endpoints:");
     tracing::info!("  GET  /health");
-    tracing::info!("  GET  /.well-known/banzami/operator.json");
+    tracing::info!("  GET  /.well-known/banza/operator.json");
     tracing::info!("  GET  /wallets            POST /wallets");
     tracing::info!("  GET  /wallets/:id");
     tracing::info!("  GET  /transfers          POST /transfers");

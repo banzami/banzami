@@ -1,4 +1,4 @@
-"""Banzami exception hierarchy.
+"""BANZA exception hierarchy.
 
 All exceptions raised by the SDK inherit from BanzaError, so callers
 can either catch specific sub-classes or handle everything in one place.
@@ -8,14 +8,14 @@ from __future__ import annotations
 
 
 class BanzaError(Exception):
-    """Base class for all Banzami SDK errors."""
+    """Base class for all BANZA SDK errors."""
 
 
 class BanzaNetworkError(BanzaError):
     """Raised when a network-level failure occurs (connection refused, DNS, TLS)."""
 
 
-class BanzamiTimeoutError(BanzaNetworkError):
+class BanzaTimeoutError(BanzaNetworkError):
     """Raised when the HTTP request exceeds the configured timeout."""
 
 
@@ -44,35 +44,35 @@ class BanzaAPIError(BanzaError):
         )
 
 
-class BanzamiAuthenticationError(BanzaAPIError):
+class BanzaAuthenticationError(BanzaAPIError):
     """HTTP 401 — the API key is missing or invalid."""
 
 
-class BanzamiPermissionError(BanzaAPIError):
+class BanzaPermissionError(BanzaAPIError):
     """HTTP 403 — the API key lacks permission for this operation."""
 
 
-class BanzamiNotFoundError(BanzaAPIError):
+class BanzaNotFoundError(BanzaAPIError):
     """HTTP 404 — the requested resource does not exist."""
 
 
-class BanzamiConflictError(BanzaAPIError):
+class BanzaConflictError(BanzaAPIError):
     """HTTP 409 — a conflict with an existing resource (e.g. duplicate idempotency key)."""
 
 
-class BanzamiValidationError(BanzaAPIError):
+class BanzaValidationError(BanzaAPIError):
     """HTTP 422 — the request body failed server-side validation."""
 
 
-class BanzamiRateLimitError(BanzaAPIError):
+class BanzaRateLimitError(BanzaAPIError):
     """HTTP 429 — too many requests; the SDK will retry automatically."""
 
 
-class BanzamiInsufficientFundsError(BanzaAPIError):
+class BanzaInsufficientFundsError(BanzaAPIError):
     """Insufficient funds to complete the financial operation."""
 
 
-class BanzamiServerError(BanzaAPIError):
+class BanzaServerError(BanzaAPIError):
     """HTTP 5xx — a transient server-side error; the SDK will retry automatically."""
 
 
@@ -85,12 +85,12 @@ class BanzaWebhookSignatureError(BanzaError):
 # ---------------------------------------------------------------------------
 
 _STATUS_MAP: dict[int, type[BanzaAPIError]] = {
-    401: BanzamiAuthenticationError,
-    403: BanzamiPermissionError,
-    404: BanzamiNotFoundError,
-    409: BanzamiConflictError,
-    422: BanzamiValidationError,
-    429: BanzamiRateLimitError,
+    401: BanzaAuthenticationError,
+    403: BanzaPermissionError,
+    404: BanzaNotFoundError,
+    409: BanzaConflictError,
+    422: BanzaValidationError,
+    429: BanzaRateLimitError,
 }
 
 
@@ -102,8 +102,8 @@ def api_error_from_response(
 ) -> BanzaAPIError:
     """Return the most specific BanzaAPIError subclass for a given HTTP status."""
     if code == "INSUFFICIENT_FUNDS":
-        return BanzamiInsufficientFundsError(status_code, code, message, request_id)
+        return BanzaInsufficientFundsError(status_code, code, message, request_id)
     if status_code >= 500:
-        return BanzamiServerError(status_code, code, message, request_id)
+        return BanzaServerError(status_code, code, message, request_id)
     cls = _STATUS_MAP.get(status_code, BanzaAPIError)
     return cls(status_code, code, message, request_id)

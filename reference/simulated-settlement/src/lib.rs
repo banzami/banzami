@@ -3,11 +3,11 @@
 //! This is NOT a real bank integration. It accepts all settlements instantly
 //! and logs them to stdout. No external banking system is contacted.
 
-use banzami_settlement::{
+use banza_settlement::{
     SettlementExecutionProvider, SettlementProviderError,
     SettlementSubmissionResult, SubmitSettlementRequest,
 };
-use banzami_settlement::provider::SettlementStatus;
+use banza_settlement::provider::SettlementStatus;
 
 /// A settlement provider that simulates immediate bank acceptance.
 ///
@@ -40,7 +40,7 @@ impl SettlementExecutionProvider for SimulatedSettlementProvider {
 
     async fn check_status(
         &self,
-        settlement_id: banzami_types::SettlementId,
+        settlement_id: banza_types::SettlementId,
         provider_ref:  &str,
     ) -> Result<SettlementStatus, SettlementProviderError> {
         tracing::info!(

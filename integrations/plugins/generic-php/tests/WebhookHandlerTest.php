@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Banza\Tests;
 
 use Banza\BanzaClient;
-use Banza\BanzamiException;
+use Banza\BanzaException;
 use Banza\WebhookHandler;
 use PHPUnit\Framework\TestCase;
 

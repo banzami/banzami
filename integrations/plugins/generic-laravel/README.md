@@ -14,10 +14,10 @@ Official Laravel integration for the Banza payment gateway. Provides a service p
 ## Installation
 
 ```bash
-composer require banzami/banzami-laravel
+composer require banza/banza-laravel
 ```
 
-Laravel auto-discovery registers `BanzamiServiceProvider` and the `Banzami` facade automatically. No manual registration is needed.
+Laravel auto-discovery registers `BanzaServiceProvider` and the `Banza` facade automatically. No manual registration is needed.
 
 ---
 
@@ -26,41 +26,41 @@ Laravel auto-discovery registers `BanzamiServiceProvider` and the `Banzami` faca
 Publish the config file:
 
 ```bash
-php artisan vendor:publish --tag=banzami-config
+php artisan vendor:publish --tag=banza-config
 ```
 
-This creates `config/banzami.php`. Set your credentials in `.env`:
+This creates `config/banza.php`. Set your credentials in `.env`:
 
 ```env
-BANZAMI_GATEWAY_URL=https://api.banzami.com
-BANZAMI_API_KEY=your_api_key_here
-BANZAMI_WEBHOOK_SECRET=your_webhook_secret_here
-BANZAMI_MERCHANT_ID=your_merchant_id
-BANZAMI_WALLET_ID=your_default_wallet_id
+BANZA_GATEWAY_URL=https://api.banzami.com
+BANZA_API_KEY=your_api_key_here
+BANZA_WEBHOOK_SECRET=your_webhook_secret_here
+BANZA_MERCHANT_ID=your_merchant_id
+BANZA_WALLET_ID=your_default_wallet_id
 ```
 
 | Variable | Description |
 |---|---|
-| `BANZAMI_GATEWAY_URL` | Banza API base URL (default: `https://api.banzami.com`) |
-| `BANZAMI_API_KEY` | Your merchant API key |
-| `BANZAMI_WEBHOOK_SECRET` | HMAC secret for webhook signature verification |
-| `BANZAMI_MERCHANT_ID` | Default merchant ID (optional, can be passed per-request) |
-| `BANZAMI_WALLET_ID` | Default wallet ID (optional, can be passed per-request) |
+| `BANZA_GATEWAY_URL` | Banza API base URL (default: `https://api.banzami.com`) |
+| `BANZA_API_KEY` | Your merchant API key |
+| `BANZA_WEBHOOK_SECRET` | HMAC secret for webhook signature verification |
+| `BANZA_MERCHANT_ID` | Default merchant ID (optional, can be passed per-request) |
+| `BANZA_WALLET_ID` | Default wallet ID (optional, can be passed per-request) |
 
 ---
 
 ## Facade Usage
 
-The `Banzami` facade proxies all calls to the underlying `BanzaClient`.
+The `Banza` facade proxies all calls to the underlying `BanzaClient`.
 
 ### Payment Links
 
 ```php
-use Banzami\Laravel\Facades\Banzami;
+use Banza\Laravel\Facades\Banza;
 
 // Create a payment link
-$link = Banzami::createPaymentLink([
-    'merchant_id' => config('banzami.merchant_id'),
+$link = Banza::createPaymentLink([
+    'merchant_id' => config('banza.merchant_id'),
     'amount'      => 5000,
     'currency'    => 'AOA',
     'reference'   => 'order-123',
@@ -68,55 +68,55 @@ $link = Banzami::createPaymentLink([
 ]);
 
 // Retrieve a payment link
-$link = Banzami::getPaymentLink($linkId);
+$link = Banza::getPaymentLink($linkId);
 
 // List payment links for a merchant
-$links = Banzami::listPaymentLinks($merchantId, limit: 20);
+$links = Banza::listPaymentLinks($merchantId, limit: 20);
 
 // Cancel a payment link
-Banzami::cancelPaymentLink($linkId);
+Banza::cancelPaymentLink($linkId);
 ```
 
 ### Transactions
 
 ```php
 // Create a transaction
-$txn = Banzami::createTransaction([
-    'merchant_id' => config('banzami.merchant_id'),
-    'wallet_id'   => config('banzami.wallet_id'),
+$txn = Banza::createTransaction([
+    'merchant_id' => config('banza.merchant_id'),
+    'wallet_id'   => config('banza.wallet_id'),
     'amount'      => 5000,
     'currency'    => 'AOA',
     'reference'   => 'order-123',
 ]);
 
 // Retrieve a transaction
-$txn = Banzami::getTransaction($transactionId);
+$txn = Banza::getTransaction($transactionId);
 
 // List transactions
-$txns = Banzami::listTransactions($merchantId, limit: 50);
+$txns = Banza::listTransactions($merchantId, limit: 50);
 ```
 
 ### Wallets
 
 ```php
 // Provision a wallet for a merchant
-$wallet = Banzami::provisionWallet([
+$wallet = Banza::provisionWallet([
     'merchant_id' => $merchantId,
     'currency'    => 'AOA',
 ]);
 
 // Get wallet details
-$wallet = Banzami::getWallet($walletId);
+$wallet = Banza::getWallet($walletId);
 
 // Get wallet balance
-$balance = Banzami::getWalletBalance($walletId);
+$balance = Banza::getWalletBalance($walletId);
 ```
 
 ### Payouts
 
 ```php
 // Request a payout
-$payout = Banzami::createPayout([
+$payout = Banza::createPayout([
     'merchant_id' => $merchantId,
     'wallet_id'   => $walletId,
     'amount'      => 10000,
@@ -125,16 +125,16 @@ $payout = Banzami::createPayout([
 ]);
 
 // List payouts
-$payouts = Banzami::listPayouts($merchantId, limit: 20);
+$payouts = Banza::listPayouts($merchantId, limit: 20);
 
 // Get a specific payout
-$payout = Banzami::getPayout($payoutId);
+$payout = Banza::getPayout($payoutId);
 ```
 
 ### Merchants
 
 ```php
-$merchant = Banzami::getMerchant($merchantId);
+$merchant = Banza::getMerchant($merchantId);
 ```
 
 ---
@@ -145,13 +145,13 @@ Banza sends webhook events to your application when payment state changes occur.
 
 ### 1. Register the webhook route
 
-The SDK registers `POST /banzami/webhook` automatically. You must **exclude this route from CSRF verification** since it receives external POST requests.
+The SDK registers `POST /banza/webhook` automatically. You must **exclude this route from CSRF verification** since it receives external POST requests.
 
 In `app/Http/Middleware/VerifyCsrfToken.php`:
 
 ```php
 protected $except = [
-    'banzami/webhook',
+    'banza/webhook',
 ];
 ```
 
@@ -160,7 +160,7 @@ protected $except = [
 Point your webhook URL to:
 
 ```
-https://yourdomain.com/banzami/webhook
+https://yourdomain.com/banza/webhook
 ```
 
 ### 3. Listen for events
@@ -168,11 +168,11 @@ https://yourdomain.com/banzami/webhook
 Register event listeners in `app/Providers/EventServiceProvider.php`:
 
 ```php
-use Banzami\Laravel\Events\TransactionCompleted;
-use Banzami\Laravel\Events\TransactionFailed;
-use Banzami\Laravel\Events\PaymentLinkUsed;
-use Banzami\Laravel\Events\WalletProvisioned;
-use Banzami\Laravel\Events\PayoutRequested;
+use Banza\Laravel\Events\TransactionCompleted;
+use Banza\Laravel\Events\TransactionFailed;
+use Banza\Laravel\Events\PaymentLinkUsed;
+use Banza\Laravel\Events\WalletProvisioned;
+use Banza\Laravel\Events\PayoutRequested;
 
 protected $listen = [
     TransactionCompleted::class => [
@@ -198,8 +198,8 @@ You can also listen for all Banza webhooks generically:
 ```php
 use Illuminate\Support\Facades\Event;
 
-Event::listen('banzami.webhook', function (array $event) {
-    // $event contains the full parsed payload from Banzami
+Event::listen('banza.webhook', function (array $event) {
+    // $event contains the full parsed webhook payload
 });
 ```
 
@@ -221,17 +221,17 @@ All typed events are dispatched with the data from the `payload` field of the we
 
 ## Error Handling
 
-All API calls throw `Banzami\BanzamiException` on failure. Wrap calls accordingly:
+All API calls throw `Banza\BanzaException` on failure. Wrap calls accordingly:
 
 ```php
-use Banzami\BanzamiException;
-use Banzami\Laravel\Facades\Banzami;
+use Banza\BanzaException;
+use Banza\Laravel\Facades\Banza;
 
 try {
-    $link = Banzami::createPaymentLink([...]);
-} catch (BanzamiException $e) {
+    $link = Banza::createPaymentLink([...]);
+} catch (BanzaException $e) {
     // Log, retry, or surface error to the user
-    logger()->error('Banzami API error', ['message' => $e->getMessage()]);
+    logger()->error('Banza API error', ['message' => $e->getMessage()]);
 }
 ```
 
@@ -249,8 +249,8 @@ This example shows a WooCommerce-style order checkout using the facade.
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use Banzami\BanzamiException;
-use Banzami\Laravel\Facades\Banzami;
+use Banza\BanzaException;
+use Banza\Laravel\Facades\Banza;
 use Illuminate\Http\Request;
 
 class CheckoutController extends Controller
@@ -265,15 +265,15 @@ class CheckoutController extends Controller
         $order = Order::findOrFail($validated['order_id']);
 
         try {
-            $link = Banzami::createPaymentLink([
-                'merchant_id' => config('banzami.merchant_id'),
+            $link = Banza::createPaymentLink([
+                'merchant_id' => config('banza.merchant_id'),
                 'amount'      => $validated['amount'],
                 'currency'    => 'AOA',
                 'reference'   => (string) $order->id,
                 'description' => "Order #{$order->id}",
                 'redirect_url' => route('checkout.success', $order),
             ]);
-        } catch (BanzamiException $e) {
+        } catch (BanzaException $e) {
             return response()->json(['error' => 'Payment gateway error. Please try again.'], 502);
         }
 
@@ -290,7 +290,7 @@ class CheckoutController extends Controller
 namespace App\Listeners;
 
 use App\Models\Order;
-use Banzami\Laravel\Events\TransactionCompleted;
+use Banza\Laravel\Events\TransactionCompleted;
 
 class HandleTransactionCompleted
 {

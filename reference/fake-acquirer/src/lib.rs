@@ -8,12 +8,12 @@ use chrono::Utc;
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
-use banzami_acquiring::provider::{
+use banza_acquiring::provider::{
     AcquirerError, AcquirerProvider, ExternalPaymentRef, InitiatePaymentRequest,
     PaymentConfirmation, PaymentInstructions,
 };
 
-const FAKE_SECRET: &[u8] = b"banzami-sandbox-hmac-secret-not-for-production";
+const FAKE_SECRET: &[u8] = b"banza-sandbox-hmac-secret-not-for-production";
 
 /// A simulated acquiring provider for local development.
 ///

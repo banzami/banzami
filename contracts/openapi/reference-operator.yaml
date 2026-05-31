@@ -17,7 +17,7 @@ info:
 
   contact:
     name: Banzami
-    url: https://github.com/banzami/banzami
+    url: https://github.com/banza-protocols/banza
 
   license:
     name: Apache 2.0
@@ -62,12 +62,12 @@ paths:
               example:
                 status: ok
                 environment: sandbox
-                operator: banzami-sandbox
+                operator: banza-sandbox
                 simulated: true
                 production_allowed: false
                 note: "This is a local development sandbox — not a production system."
 
-  /.well-known/banzami/operator.json:
+  /.well-known/banza/operator.json:
     get:
       summary: Operator capability manifest
       description: |
@@ -537,7 +537,7 @@ components:
       properties:
         status:             { type: string, example: ok }
         environment:        { type: string, example: sandbox }
-        operator:           { type: string, example: banzami-sandbox }
+        operator:           { type: string, example: banza-sandbox }
         simulated:          { type: boolean, example: true }
         production_allowed: { type: boolean, example: false }
         note:               { type: string }
@@ -546,7 +546,7 @@ components:
     OperatorManifest:
       type: object
       properties:
-        operator_id:        { type: string, example: banzami-sandbox }
+        operator_id:        { type: string, example: banza-sandbox }
         environment:        { type: string, example: sandbox }
         simulated:          { type: boolean }
         production_allowed: { type: boolean }

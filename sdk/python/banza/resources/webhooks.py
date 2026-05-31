@@ -37,7 +37,7 @@ class WebhooksResource(AsyncResource):
         Parameters
         ----------
         url:
-            HTTPS URL that Banzami will POST events to.
+            HTTPS URL that BANZA will POST events to.
         events:
             List of event type strings to subscribe to, e.g.
             ``["transaction.completed", "payout.created"]``.
@@ -104,7 +104,7 @@ class WebhooksResource(AsyncResource):
         if not secret:
             raise ValueError(
                 "A webhook_secret is required to verify webhook signatures. "
-                "Pass it to Banzami(webhook_secret=...) or to construct_event()."
+                "Pass it to BanzaClient(webhook_secret=...) or to construct_event()."
             )
 
         if not verify_signature(payload, signature, secret):

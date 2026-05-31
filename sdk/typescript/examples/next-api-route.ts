@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BanzaClient }             from '@banza/sdk';
 
-const banzami = new BanzaClient({
+const banzaClient = new BanzaClient({
   baseUrl: process.env.BANZAMI_GATEWAY_URL!,
   apiKey:  process.env.BANZA_API_KEY!,
 });
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     orderId:     string;
   };
 
-  const link = await banzami.createPaymentLink({
+  const link = await banzaClient.createPaymentLink({
     merchantId:  process.env.BANZAMI_MERCHANT_ID!,
     walletId:    process.env.BANZAMI_WALLET_ID!,
     amountMinor,

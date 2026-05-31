@@ -7,10 +7,10 @@ from datetime import UTC, datetime, timedelta
 import httpx
 import respx
 
-from banza import Banzami
+from banza import BanzaClient
 from banza.models.qr_payment import QrCodeStatus, QrCodeType
 
-BASE = "https://api.banzami.test"
+BASE = "https://api.banza.test"
 
 STATIC_QR = {
     "qr_code": {
@@ -54,7 +54,7 @@ PARSED_QR = {
 async def test_create_static_qr():
     with respx.mock(base_url=BASE) as mock:
         mock.post("/v1/qr/static").mock(return_value=httpx.Response(200, json=STATIC_QR))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             qr = await c.qr_payments.create_static(owner_id="wal_merchant")
 
     assert qr.qr_code.type == QrCodeType.STATIC
@@ -67,7 +67,7 @@ async def test_create_dynamic_qr():
     expires = datetime.now(tz=UTC) + timedelta(minutes=15)
     with respx.mock(base_url=BASE) as mock:
         mock.post("/v1/qr/dynamic").mock(return_value=httpx.Response(200, json=DYNAMIC_QR))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             qr = await c.qr_payments.create_dynamic(
                 owner_id="wal_merchant",
                 amount=75000,
@@ -83,7 +83,7 @@ async def test_create_dynamic_qr():
 async def test_retrieve_qr():
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/qr/qr_dyn_001").mock(return_value=httpx.Response(200, json=DYNAMIC_QR))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             qr = await c.qr_payments.retrieve("qr_dyn_001")
 
     assert qr.qr_code.id == "qr_dyn_001"
@@ -92,7 +92,7 @@ async def test_retrieve_qr():
 async def test_decode_qr():
     with respx.mock(base_url=BASE) as mock:
         mock.post("/v1/qr/decode").mock(return_value=httpx.Response(200, json=PARSED_QR))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             parsed = await c.qr_payments.decode("banza://qr/dynamic/qr_dyn_001?amt=75000")
 
     assert parsed.qr_code_id == "qr_dyn_001"
@@ -103,14 +103,14 @@ async def test_mark_used():
     used_qr = {**DYNAMIC_QR, "qr_code": {**DYNAMIC_QR["qr_code"], "status": "USED"}}
     with respx.mock(base_url=BASE) as mock:
         mock.post("/v1/qr/qr_dyn_001/use").mock(return_value=httpx.Response(200, json=used_qr))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             await c.qr_payments.mark_used("qr_dyn_001")
 
 
 async def test_check_status():
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/qr/qr_dyn_001").mock(return_value=httpx.Response(200, json=DYNAMIC_QR))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             status = await c.qr_payments.check_status("qr_dyn_001")
 
     assert status == "ACTIVE"

@@ -10,7 +10,7 @@
       "stability": "stable",
       "input": {
         "method": "GET",
-        "path": "/.well-known/banzami/operator.json"
+        "path": "/.well-known/banza/operator.json"
       },
       "expected": {
         "status": 200,
@@ -30,7 +30,7 @@
       "stability": "stable",
       "input": {
         "method": "GET",
-        "path": "/.well-known/banzami/operator.json"
+        "path": "/.well-known/banza/operator.json"
       },
       "expected": {
         "status": 200,
@@ -49,7 +49,7 @@
       "stability": "stable",
       "input": {
         "method": "GET",
-        "path": "/.well-known/banzami/operator.json"
+        "path": "/.well-known/banza/operator.json"
       },
       "expected": {
         "status": 200,

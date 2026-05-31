@@ -116,7 +116,7 @@ Include a badge in your operator's README to declare the certification level:
 
 ## Operator manifest
 
-Federation Operators (Level 3+) must serve a manifest at `/.well-known/banzami/operator.json`:
+Federation Operators (Level 3+) must serve a manifest at `/.well-known/banza/operator.json`:
 
 ```json
 {

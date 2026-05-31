@@ -20,10 +20,10 @@ Canonical QR payment payload format specification for the BANZA protocol.
 
 | Environment | Prefix |
 |---|---|
-| Sandbox (`simulated=true`) | `BANZAMI-SBX:` |
-| Production (`simulated=false`) | `BANZAMI:` |
+| Sandbox (`simulated=true`) | `BANZA-SBX:` (legacy: `BANZAMI-SBX:`) |
+| Production (`simulated=false`) | `BANZA:` (legacy: `BANZAMI:`) |
 
-An operator MUST NOT use `BANZAMI:` (production prefix) in a sandbox environment. This is a certification FAIL.
+An operator MUST NOT use `BANZA:` (production prefix) in a sandbox environment. This is a certification FAIL.
 
 ## Known divergence
 

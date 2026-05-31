@@ -11,7 +11,7 @@ export type SourceType =
   | 'glossary'
   | 'architecture_doc'
   | 'sdk_doc'
-  | 'banzamia_doc'
+  | 'banzai_doc'
   | 'readme'
   | 'website';
 

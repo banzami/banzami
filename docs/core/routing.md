@@ -1,4 +1,4 @@
-# banzami-routing — Payment Rail Routing
+# banza-routing — Payment Rail Routing
 
 The routing crate selects which payment rail to use for a given payment, based on operator-defined rules.
 
@@ -6,7 +6,7 @@ The routing crate selects which payment rail to use for a given payment, based o
 
 ## What it is
 
-`banzami-routing` provides a simple, configurable rule engine that maps (currency, amount, metadata) to a payment rail. Operators define their routing rules; the engine evaluates them.
+`banza-routing` provides a simple, configurable rule engine that maps (currency, amount, metadata) to a payment rail. Operators define their routing rules; the engine evaluates them.
 
 There are no hardcoded rails, no hardcoded currencies, no geographic assumptions in the core crate.
 

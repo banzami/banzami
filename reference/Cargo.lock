@@ -150,10 +150,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-acquiring"
+name = "banza-acquiring"
 version = "0.1.0"
 dependencies = [
- "banzami-types",
+ "banza-types",
  "chrono",
  "hex",
  "hmac",
@@ -168,18 +168,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-capabilities"
+name = "banza-capabilities"
 version = "0.1.0"
 dependencies = [
- "banzami-types",
+ "banza-types",
  "serde",
 ]
 
 [[package]]
-name = "banzami-ledger"
+name = "banza-ledger"
 version = "0.1.0"
 dependencies = [
- "banzami-types",
+ "banza-types",
  "chrono",
  "serde",
  "sqlx",
@@ -190,7 +190,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-notifications"
+name = "banza-notifications"
 version = "0.1.0"
 dependencies = [
  "serde",
@@ -199,10 +199,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-routing"
+name = "banza-routing"
 version = "0.1.0"
 dependencies = [
- "banzami-types",
+ "banza-types",
  "chrono",
  "serde",
  "thiserror",
@@ -211,11 +211,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-settlement"
+name = "banza-settlement"
 version = "0.1.0"
 dependencies = [
- "banzami-ledger",
- "banzami-types",
+ "banza-ledger",
+ "banza-types",
  "chrono",
  "serde",
  "sqlx",
@@ -226,7 +226,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "banzami-types"
+name = "banza-types"
 version = "0.1.0"
 dependencies = [
  "chrono",
@@ -524,8 +524,8 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 name = "fake-acquirer"
 version = "0.1.0"
 dependencies = [
- "banzami-acquiring",
- "banzami-types",
+ "banza-acquiring",
+ "banza-types",
  "chrono",
  "hex",
  "hmac",
@@ -1124,7 +1124,7 @@ checksum = "92daf443525c4cce67b150400bc2316076100ce0b3686209eb8cf3c31612e6f0"
 name = "local-ledger"
 version = "0.1.0"
 dependencies = [
- "banzami-types",
+ "banza-types",
  "chrono",
  "serde",
  "serde_json",
@@ -1139,7 +1139,7 @@ dependencies = [
 name = "local-notifications"
 version = "0.1.0"
 dependencies = [
- "banzami-notifications",
+ "banza-notifications",
  "serde_json",
  "tracing",
 ]
@@ -1217,8 +1217,8 @@ dependencies = [
 name = "mock-routing"
 version = "0.1.0"
 dependencies = [
- "banzami-routing",
- "banzami-types",
+ "banza-routing",
+ "banza-types",
  "tokio",
  "tracing",
 ]
@@ -1705,8 +1705,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
- "banzami-capabilities",
- "banzami-types",
+ "banza-capabilities",
+ "banza-types",
  "chrono",
  "fake-acquirer",
  "futures",
@@ -1884,8 +1884,8 @@ checksum = "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e"
 name = "simulated-settlement"
 version = "0.1.0"
 dependencies = [
- "banzami-settlement",
- "banzami-types",
+ "banza-settlement",
+ "banza-types",
  "tracing",
 ]
 

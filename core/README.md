@@ -10,23 +10,23 @@ This workspace contains the financial primitives that power Banza-compatible pay
 
 | Crate | Description |
 |---|---|
-| `banzami-types` | Money, Currency, typed IDs — the shared financial primitives |
-| `banzami-ledger` | Double-entry ledger engine — the single financial truth |
-| `banzami-wallets` | Merchant wallet engine — ledger-backed balances |
-| `banzami-consumer-wallets` | Consumer wallet engine — end-user ledger-backed wallets |
-| `banzami-transactions` | Transaction lifecycle — authorize, capture, reverse |
-| `banzami-transfers` | P2P wallet-to-wallet transfers via @handle |
-| `banzami-qr` | QR code generation and validation (static + dynamic) |
-| `banzami-payment-links` | Shareable payment links with expiry |
-| `banzami-merchants` | Merchant onboarding and API key management |
-| `banzami-identity` | Consumer @handle identity and validation |
-| `banzami-routing` | Payment rail routing engine (rule-based, pluggable) |
-| `banzami-acquiring` | Acquiring layer — bridge to external payment providers |
-| `banzami-settlement` | Settlement batch lifecycle |
-| `banzami-reconciliation` | External statement reconciliation |
-| `banzami-risk` | Risk limit evaluation framework |
-| `banzami-compliance` | KYC/KYB status tracking |
-| `banzami-payouts` | Outbound payout/disbursement model |
+| `banza-types` | Money, Currency, typed IDs — the shared financial primitives |
+| `banza-ledger` | Double-entry ledger engine — the single financial truth |
+| `banza-wallets` | Merchant wallet engine — ledger-backed balances |
+| `banza-consumer-wallets` | Consumer wallet engine — end-user ledger-backed wallets |
+| `banza-transactions` | Transaction lifecycle — authorize, capture, reverse |
+| `banza-transfers` | P2P wallet-to-wallet transfers via @handle |
+| `banza-qr` | QR code generation and validation (static + dynamic) |
+| `banza-payment-links` | Shareable payment links with expiry |
+| `banza-merchants` | Merchant onboarding and API key management |
+| `banza-identity` | Consumer @handle identity and validation |
+| `banza-routing` | Payment rail routing engine (rule-based, pluggable) |
+| `banza-acquiring` | Acquiring layer — bridge to external payment providers |
+| `banza-settlement` | Settlement batch lifecycle |
+| `banza-reconciliation` | External statement reconciliation |
+| `banza-risk` | Risk limit evaluation framework |
+| `banza-compliance` | KYC/KYB status tracking |
+| `banza-payouts` | Outbound payout/disbursement model |
 
 ---
 
@@ -41,11 +41,11 @@ The core follows a **layered architecture** with clear domain boundaries:
 └───────────────────┬──────────────────────────────────────────┘
                     │ depends on
 ┌───────────────────▼──────────────────────────────────────────┐
-│  Banzami Core (this workspace — public)                      │
+│  BANZA Core (this workspace — public)                        │
 │                                                              │
-│  banzami-ledger  ←  banzami-wallets  ←  banzami-transactions │
-│  banzami-qr      ←  banzami-routing  ←  banzami-acquiring    │
-│  banzami-types (foundation — no upstream deps)              │
+│  banza-ledger  ←  banza-wallets  ←  banza-transactions │
+│  banza-qr      ←  banza-routing  ←  banza-acquiring    │
+│  banza-types (foundation — no upstream deps)              │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -69,15 +69,15 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-banzami-types  = { git = "https://github.com/banzami/banzami" }
-banzami-ledger = { git = "https://github.com/banzami/banzami" }
+banza-types  = { git = "https://github.com/banza-protocols/banza" }
+banza-ledger = { git = "https://github.com/banza-protocols/banza" }
 ```
 
 Core financial operation — ledger transfer between two wallets:
 
 ```rust
-use banzami_types::{Money, Currency, AccountId};
-use banzami_ledger::PostingBuilder;
+use banza_types::{Money, Currency, AccountId};
+use banza_ledger::PostingBuilder;
 
 let amount = Money::new(100_000, Currency::AOA); // 1000.00 AOA
 
@@ -128,14 +128,14 @@ cargo build
 cargo test
 
 # Run tests for a specific crate
-cargo test -p banzami-ledger
+cargo test -p banza-ledger
 ```
 
 Database-dependent tests require a running PostgreSQL instance:
 
 ```bash
-export DATABASE_URL=postgres://user:pass@localhost/banzami_dev
-cargo test -p banzami-ledger -- --include-ignored
+export DATABASE_URL=postgres://user:pass@localhost/banza_dev
+cargo test -p banza-ledger -- --include-ignored
 ```
 
 ---

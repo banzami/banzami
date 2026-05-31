@@ -11,7 +11,7 @@ use axum::{
     response::sse::{Event, KeepAlive, Sse},
     routing::{get, post},
 };
-use banzami_types::Currency;
+use banza_types::Currency;
 use futures::StreamExt as _;
 use tokio_stream::wrappers::BroadcastStream;
 
@@ -28,6 +28,8 @@ pub fn build_router() -> Router {
     Router::new()
         // Health & manifest
         .route("/health",      get(health))
+        .route("/.well-known/banza/operator.json", get(operator_manifest))
+        // Legacy compatibility alias — will be removed after 90-day deprecation (MIGRATE-001)
         .route("/.well-known/banzami/operator.json", get(operator_manifest))
         // Wallets
         .route("/wallets",     get(list_wallets).post(create_wallet))
@@ -68,7 +70,7 @@ async fn health(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
     Json(serde_json::json!({
         "status":             "ok",
         "environment":        "sandbox",
-        "operator":           "banzami-sandbox",
+        "operator":           "banza-sandbox",
         "simulated":          true,
         "production_allowed": false,
         "wallet_count":       wallet_count,

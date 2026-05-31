@@ -5,11 +5,11 @@ from __future__ import annotations
 import httpx
 import respx
 
-from banza import Banzami
+from banza import BanzaClient
 from banza.models.payout import PayoutStatus
 from banza.pagination import auto_paginate
 
-BASE = "https://api.banzami.test"
+BASE = "https://api.banza.test"
 
 PAYOUT = {
     "id":           "pay_001",
@@ -29,7 +29,7 @@ PAGE_2 = {"data": [{**PAYOUT, "id": "pay_002"}]}
 async def test_create_payout():
     with respx.mock(base_url=BASE) as mock:
         mock.post("/v1/payouts").mock(return_value=httpx.Response(200, json=PAYOUT))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             payout = await c.payouts.create(wallet_id="wal_001", amount=200000)
 
     assert payout.id == "pay_001"
@@ -40,7 +40,7 @@ async def test_create_payout():
 async def test_retrieve_payout():
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/payouts/pay_001").mock(return_value=httpx.Response(200, json=PAYOUT))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             payout = await c.payouts.retrieve("pay_001")
 
     assert payout.wallet_id == "wal_001"
@@ -58,7 +58,7 @@ async def test_list_payouts_paginates():
 
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/payouts").mock(side_effect=side_effect)
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             all_payouts = [p async for p in auto_paginate(c.payouts.list)]
 
     assert len(all_payouts) == 2

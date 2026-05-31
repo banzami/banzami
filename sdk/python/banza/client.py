@@ -1,4 +1,4 @@
-"""Banzami async HTTP client."""
+"""BANZA async HTTP client."""
 
 from __future__ import annotations
 
@@ -10,9 +10,9 @@ from typing import Any
 import httpx
 
 from .auth import APIKeyAuth
-from .config import BanzamiConfig
+from .config import BanzaConfig
 from .exceptions import (
-    BanzamiTimeoutError,
+    BanzaTimeoutError,
     BanzaNetworkError,
     api_error_from_response,
 )
@@ -32,7 +32,7 @@ from .resources import (
 from .retries import build_retry_policy
 from .utils.ids import new_idempotency_key
 
-logger = logging.getLogger("banzami")
+logger = logging.getLogger("banza")
 
 
 # ---------------------------------------------------------------------------
@@ -63,7 +63,7 @@ class BanzaHooks:
 # ---------------------------------------------------------------------------
 
 class BanzaClient:
-    """Async HTTP client for the Banzami API.
+    """Async HTTP client for the BANZA API.
 
     All network operations are async. Use this client with ``async with``
     for connection-pool lifecycle management, or call ``close()`` explicitly.
@@ -99,7 +99,7 @@ class BanzaClient:
         if retry_delay is not None:
             overrides["retry_delay"] = retry_delay
 
-        self._config = BanzamiConfig(**overrides)
+        self._config = BanzaConfig(**overrides)
         self._hooks  = hooks or BanzaHooks()
 
         self._retry_policy = build_retry_policy(
@@ -115,7 +115,7 @@ class BanzaClient:
             headers={
                 "Accept":       "application/json",
                 "Content-Type": "application/json",
-                "User-Agent":   "banzami-python/0.1.0",
+                "User-Agent":   "banza-python/0.1.0",
             },
         )
 
@@ -211,7 +211,7 @@ class BanzaClient:
                 headers=headers,
             )
         except httpx.TimeoutException as exc:
-            err: BanzaNetworkError = BanzamiTimeoutError(str(exc))
+            err: BanzaNetworkError = BanzaTimeoutError(str(exc))
             self._hooks.on_error and self._hooks.on_error(method, path, err, attempt)
             raise err from exc
         except httpx.NetworkError as exc:
@@ -267,4 +267,4 @@ def _is_retryable_status(status: int) -> bool:
 # Convenience alias
 # ---------------------------------------------------------------------------
 
-Banzami = BanzaClient
+BanzaClient = BanzaClient  # canonical alias

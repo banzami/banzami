@@ -27,7 +27,7 @@ Every external integration point is expressed as a **Rust trait** in the kernel.
 The canonical pattern:
 
 ```rust
-// In banzami-acquiring (kernel):
+// In banza-acquiring (kernel):
 pub trait AcquirerProvider: Send + Sync {
     fn provider_name(&self) -> &'static str;
     async fn initiate_payment(&self, req: InitiatePaymentRequest) 
@@ -36,7 +36,7 @@ pub trait AcquirerProvider: Send + Sync {
         -> Result<PaymentConfirmation, AcquirerError>;
 }
 
-// In banzami-acquiring (kernel):
+// In banza-acquiring (kernel):
 pub struct PostgresAcquiringEngine<P: AcquirerProvider> {
     provider: P,
     repo: PostgresAcquiringRepository,
@@ -51,11 +51,11 @@ impl AcquirerProvider for SimulatedProvider { ... }
 
 | Trait | Crate | Purpose |
 |---|---|---|
-| `AcquirerProvider` | `banzami-acquiring` | Payment rail integration |
-| `RoutingProvider` | `banzami-routing` | Payment rail selection |
+| `AcquirerProvider` | `banza-acquiring` | Payment rail integration |
+| `RoutingProvider` | `banza-routing` | Payment rail selection |
 | `NotificationProvider` | *(reference/local-notifications)* | Push/event delivery |
-| `RiskProvider` | `banzami-risk` | Transaction risk assessment |
-| `SettlementProvider` | `banzami-settlement` | Settlement execution |
+| `RiskProvider` | `banza-risk` | Transaction risk assessment |
+| `SettlementProvider` | `banza-settlement` | Settlement execution |
 
 ### Reference implementations
 

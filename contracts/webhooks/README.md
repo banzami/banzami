@@ -17,7 +17,7 @@ Banza-Signature
 
 This is the protocol-level constant. Every SDK MUST use this exact name. Case-insensitive lookup is acceptable on receipt; canonical form uses title case as written above.
 
-**Known implementation discrepancy:** `sdk/python/banza/signature.py` uses `Banzami-Signature`. This is a bug — the Python SDK must be updated to `Banza-Signature` to match this specification.
+All current SDK implementations use `Banza-Signature` as required.
 
 ## Quick reference
 

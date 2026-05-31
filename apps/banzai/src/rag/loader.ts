@@ -59,8 +59,8 @@ const PATH_PATTERNS: PathPattern[] = [
     sourceType: () => 'manifest_schema',
   },
   {
-    test: (r) => r.startsWith('docs/banzamia/') && r.endsWith('.md'),
-    sourceType: () => 'banzamia_doc',
+    test: (r) => r.startsWith('docs/banza/') && r.endsWith('.md'),
+    sourceType: () => 'banzai_doc',
   },
   {
     test: (r) => r.startsWith('docs/architecture/') && r.endsWith('.md'),
@@ -164,7 +164,7 @@ export async function loadDocuments(repoRoot: string): Promise<Document[]> {
         version: extractVersion(content),
         authority: authorityWeight(sourceType),
         language: 'pt',
-        repo: 'banzami/banzami',
+        repo: 'banza-protocols/banza',
         updated_at: s.mtime.toISOString(),
         content,
       });

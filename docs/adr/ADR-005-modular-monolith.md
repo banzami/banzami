@@ -106,7 +106,7 @@ A component growing large in lines of code is **not** a reason to extract it.
 
 The codebase is designed to make future extraction straightforward:
 
-- Each Rust domain is a separate crate with explicit public interfaces. Extracting `banzami-risk` to its own service means the existing interface becomes an HTTP client.
+- Each Rust domain is a separate crate with explicit public interfaces. Extracting `banza-risk` to its own service means the existing interface becomes an HTTP client.
 - The Go services already communicate with the Rust core over HTTP. Adding a new upstream service follows the same pattern as `CoreAdminClient` or `CoreApiClient`.
 - Migrations are domain-scoped (one file per domain) and can be split if schemas diverge.
 

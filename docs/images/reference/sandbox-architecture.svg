@@ -42,7 +42,7 @@
   <!-- Manifest -->
   <rect x="320" y="196" width="260" height="36" rx="4" fill="#1a1a1a" stroke="#2a2a2a" stroke-width="1"/>
   <text x="450" y="210" fill="#666" font-size="8" text-anchor="middle" letter-spacing="0.6">OPERATOR MANIFEST</text>
-  <text x="450" y="224" fill="#ccc" font-size="9" text-anchor="middle">/.well-known/banzami/operator.json</text>
+  <text x="450" y="224" fill="#ccc" font-size="9" text-anchor="middle">/.well-known/banza/operator.json</text>
 
   <!-- Divider -->
   <line x1="320" y1="248" x2="580" y2="248" stroke="#222" stroke-width="1"/>
@@ -72,9 +72,9 @@
   <!-- Kernel crates box -->
   <rect x="303" y="434" width="294" height="64" rx="4" fill="#0f1510" stroke="#1a2e1a" stroke-width="1"/>
   <text x="450" y="451" fill="#2a4a2a" font-size="8" text-anchor="middle" letter-spacing="0.8">BANZA KERNEL CRATES  (path deps)</text>
-  <text x="450" y="467" fill="#3d7a3d" font-size="9" text-anchor="middle">banzami-types · banzami-ledger · banzami-wallets</text>
-  <text x="450" y="483" fill="#3d7a3d" font-size="9" text-anchor="middle">banzami-transfers · banzami-qr · banzami-routing</text>
-  <text x="450" y="499" fill="#3d7a3d" font-size="9" text-anchor="middle">banzami-acquiring · banzami-settlement · banzami-capabilities</text>
+  <text x="450" y="467" fill="#3d7a3d" font-size="9" text-anchor="middle">banza-types · banza-ledger · banza-wallets</text>
+  <text x="450" y="483" fill="#3d7a3d" font-size="9" text-anchor="middle">banza-transfers · banza-qr · banza-routing</text>
+  <text x="450" y="499" fill="#3d7a3d" font-size="9" text-anchor="middle">banza-acquiring · banza-settlement · banza-capabilities</text>
 
   <!-- Arrow: Operator → Kernel -->
   <line x1="450" y1="420" x2="450" y2="434" stroke="#1a2e1a" stroke-width="1" stroke-dasharray="3,2"/>

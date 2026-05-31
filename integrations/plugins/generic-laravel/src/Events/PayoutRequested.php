@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Banzami\Laravel\Events;
+namespace Banza\Laravel\Events;
 
 class PayoutRequested
 {

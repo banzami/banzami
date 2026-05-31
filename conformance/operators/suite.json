@@ -144,7 +144,7 @@
           "id": "CAP-001",
           "title": "Manifest declares supports_wallets=true",
           "method": "GET",
-          "path": "/.well-known/banzami/operator.json",
+          "path": "/.well-known/banza/operator.json",
           "expect_status": 200,
           "expect_nested": { "capabilities.supports_wallets": true }
         },
@@ -152,7 +152,7 @@
           "id": "CAP-002",
           "title": "Manifest declares supports_qr=true",
           "method": "GET",
-          "path": "/.well-known/banzami/operator.json",
+          "path": "/.well-known/banza/operator.json",
           "expect_status": 200,
           "expect_nested": { "capabilities.supports_qr": true }
         }

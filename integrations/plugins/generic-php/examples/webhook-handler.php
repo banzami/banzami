@@ -8,8 +8,8 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use Banza\WebhookHandler;
 
 $rawBody = file_get_contents('php://input');
-$sig     = $_SERVER['HTTP_X_BANZAMI_SIGNATURE'] ?? '';
-$secret  = getenv('BANZAMI_WEBHOOK_SECRET');
+$sig     = $_SERVER['HTTP_BANZA_SIGNATURE'] ?? '';
+$secret  = getenv('BANZA_WEBHOOK_SECRET');
 
 $handler = new WebhookHandler($secret);
 

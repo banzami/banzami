@@ -13,9 +13,9 @@ namespace Banza;
  *   try {
  *       $event = $handler->parse(
  *           file_get_contents('php://input'),
- *           $_SERVER['HTTP_X_BANZAMI_SIGNATURE'] ?? ''
+ *           $_SERVER['HTTP_BANZA_SIGNATURE'] ?? ''
  *       );
- *   } catch (BanzamiException $e) {
+ *   } catch (BanzaException $e) {
  *       http_response_code(401);
  *       exit('Invalid signature');
  *   }
@@ -42,17 +42,17 @@ class WebhookHandler
      * Verify the signature and decode the event payload.
      *
      * @return array{type: string, payload: array}
-     * @throws BanzamiException if signature is invalid or body is malformed.
+     * @throws BanzaException if signature is invalid or body is malformed.
      */
     public function parse(string $rawBody, string $signature): array
     {
         if (!BanzaClient::verifyWebhookSignature($rawBody, $signature, $this->secret)) {
-            throw new BanzamiException('Invalid webhook signature', 401);
+            throw new BanzaException('Invalid webhook signature', 401);
         }
 
         $data = json_decode($rawBody, true, 512, JSON_THROW_ON_ERROR);
         if (!is_array($data) || !isset($data['type'])) {
-            throw new BanzamiException('Invalid webhook payload', 400);
+            throw new BanzaException('Invalid webhook payload', 400);
         }
 
         return $data;

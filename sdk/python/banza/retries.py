@@ -13,11 +13,11 @@ from tenacity import (
     wait_exponential,
 )
 
-from .exceptions import BanzamiRateLimitError, BanzamiServerError
+from .exceptions import BanzaRateLimitError, BanzaServerError
 
 
 def _is_retryable(exc: BaseException) -> bool:
-    return isinstance(exc, (BanzamiRateLimitError, BanzamiServerError))
+    return isinstance(exc, (BanzaRateLimitError, BanzaServerError))
 
 
 def build_retry_policy(

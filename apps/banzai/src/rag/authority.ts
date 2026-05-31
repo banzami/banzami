@@ -10,7 +10,7 @@ const AUTHORITY_BASE: Record<SourceType, number> = {
   invariant: 0.85,
   manifest_schema: 0.85,
   glossary: 0.80,
-  banzamia_doc: 0.80,
+  banzai_doc: 0.80,
   architecture_doc: 0.75,
   readme: 0.70,
   sdk_doc: 0.70,

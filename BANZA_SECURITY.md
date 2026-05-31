@@ -76,10 +76,10 @@ The `contracts/sdk-certification/` suite includes webhook signature vectors. If 
 
 All pull requests that touch the following require explicit security review:
 
-- `banzami-ledger/src/` — zero-sum enforcement
-- `banzami-wallets/src/` — balance arithmetic and non-negative enforcement
-- `banzami-acquiring/src/` — signature validation and callback processing
-- `banzami-transactions/src/` — FSM transitions and atomicity
+- `banza-ledger/src/` — zero-sum enforcement
+- `banza-wallets/src/` — balance arithmetic and non-negative enforcement
+- `banza-acquiring/src/` — signature validation and callback processing
+- `banza-transactions/src/` — FSM transitions and atomicity
 
 ---
 

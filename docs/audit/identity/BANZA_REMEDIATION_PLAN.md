@@ -2,7 +2,7 @@
 
 **Audit ID:** BANZA-BANZAMI-CONTAMINATION-AUDIT-001  
 **Date:** 2026-05-31  
-**Status:** APPROVED FOR REVIEW — no changes applied yet
+**Status:** EXECUTED — all Wave 1 fixes applied in BANZA-FULL-DECONTAMINATION-AND-IDENTITY-ALIGNMENT-001; Waves 2-4 also executed (crate renames, protocol surface migration, integration plugin renames)
 
 ---
 

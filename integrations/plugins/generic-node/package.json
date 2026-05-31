@@ -1,5 +1,5 @@
 {
-  "name": "@banzami/node",
+  "name": "@banza/node",
   "version": "0.1.0",
   "description": "Banzami payment integration for Node.js — payment links, webhooks, and signature verification",
   "license": "UNLICENSED",

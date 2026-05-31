@@ -132,7 +132,7 @@ jobs:
                   expected = case.get("expected")
                   if not expected:
                       continue
-                  for prefix in ["BANZAMI-SBX:", "BANZAMI:"]:
+                  for prefix in ["BANZA-SBX:", "BANZA:", "BANZAMI-SBX:", "BANZAMI:"]  # BANZAMI: legacy aliases:
                       if inp.startswith(prefix):
                           raw = inp[len(prefix):]
                           # Pad base64 if needed
@@ -251,7 +251,7 @@ jobs:
 
       - name: Run conformance suite (Level 2)
         run: |
-          python3 tools/banzami-conformance/run.py \
+          python3 tools/banza-conformance/run.py \
             --url http://localhost:3100 \
             --level 2 \
             --output conformance-report.json \

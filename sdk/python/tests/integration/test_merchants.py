@@ -5,10 +5,10 @@ from __future__ import annotations
 import httpx
 import respx
 
-from banza import Banzami
+from banza import BanzaClient
 from banza.models.merchant import MerchantStatus
 
-BASE = "https://api.banzami.test"
+BASE = "https://api.banza.test"
 
 MERCHANT = {
     "id":         "m_001",
@@ -31,7 +31,7 @@ NEW_API_KEY = {**API_KEY, "key": "bz_live_abcdef1234567890_secretpart"}
 async def test_retrieve_merchant():
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/merchants/m_001").mock(return_value=httpx.Response(200, json=MERCHANT))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             merchant = await c.merchants.retrieve("m_001")
 
     assert merchant.id == "m_001"
@@ -44,7 +44,7 @@ async def test_list_api_keys():
         mock.get("/v1/merchants/m_001/api-keys").mock(
             return_value=httpx.Response(200, json=[API_KEY])
         )
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             keys = await c.merchants.list_api_keys("m_001")
 
     assert len(keys) == 1
@@ -56,7 +56,7 @@ async def test_create_api_key():
         mock.post("/v1/merchants/m_001/api-keys").mock(
             return_value=httpx.Response(200, json=NEW_API_KEY)
         )
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             new_key = await c.merchants.create_api_key("m_001", label="Produção")
 
     assert new_key.key == "bz_live_abcdef1234567890_secretpart"
@@ -68,5 +68,5 @@ async def test_revoke_api_key():
         mock.delete("/v1/merchants/m_001/api-keys/key_001").mock(
             return_value=httpx.Response(204)
         )
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             await c.merchants.revoke_api_key("m_001", "key_001")

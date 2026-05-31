@@ -4,7 +4,7 @@
 //! APNs for local development, allowing contributors to observe notification
 //! events without any external service credentials.
 
-use banzami_notifications::{NotificationError, NotificationEvent, NotificationProvider};
+use banza_notifications::{NotificationError, NotificationEvent, NotificationProvider};
 
 /// A notification provider that logs all events to stdout via `tracing`.
 ///

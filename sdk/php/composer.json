@@ -1,10 +1,10 @@
 {
-  "name": "banzami/sdk",
-  "description": "Official Banzami PHP SDK — wallet-native payment network for Angola",
+  "name": "banza/sdk",
+  "description": "Official Banza PHP SDK — wallet-native payment network for Angola",
   "type": "library",
   "license": "MIT",
-  "keywords": ["banzami", "payments", "angola", "qr", "wallets", "fintech"],
-  "homepage": "https://banzami.com",
+  "keywords": ["banza", "payments", "angola", "qr", "wallets", "fintech"],
+  "homepage": "https://banza.network",
   "require": {
     "php": "^8.1",
     "psr/http-client": "^1.0",
@@ -18,26 +18,26 @@
   },
   "suggest": {
     "guzzlehttp/guzzle": "Required if you do not bring your own PSR-18 client.",
-    "laravel/framework": "Required for the BanzamiServiceProvider."
+    "laravel/framework": "Required for the BanzaServiceProvider."
   },
   "autoload": {
     "psr-4": {
-      "Banzami\\": "src/",
-      "Banzami\\Laravel\\": "laravel/"
+      "Banza\\": "src/",
+      "Banza\\Laravel\\": "laravel/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "Banzami\\Tests\\": "tests/"
+      "Banza\\Tests\\": "tests/"
     }
   },
   "extra": {
     "laravel": {
       "providers": [
-        "Banzami\\Laravel\\BanzamiServiceProvider"
+        "Banza\\Laravel\\BanzaServiceProvider"
       ],
       "aliases": {
-        "Banzami": "Banzami\\Laravel\\Facades\\Banzami"
+        "Banza": "Banza\\Laravel\\Facades\\Banza"
       }
     }
   },

@@ -207,23 +207,23 @@ banzami/
 ├── core/                   Open-source Rust financial infrastructure
 │   ├── Cargo.toml          Workspace root
 │   ├── crates/
-│   │   ├── banzami-types/          Money, Currency, typed IDs
-│   │   ├── banzami-ledger/         Double-entry ledger engine
-│   │   ├── banzami-wallets/        Merchant wallet engine
-│   │   ├── banzami-consumer-wallets/ Consumer wallet engine
-│   │   ├── banzami-transactions/   Transaction lifecycle
-│   │   ├── banzami-transfers/      P2P wallet transfers
-│   │   ├── banzami-qr/             QR code runtime
-│   │   ├── banzami-payment-links/  Payment link engine
-│   │   ├── banzami-merchants/      Merchant onboarding
-│   │   ├── banzami-identity/       @handle identity
-│   │   ├── banzami-routing/        Payment rail routing
-│   │   ├── banzami-acquiring/      Acquiring abstraction
-│   │   ├── banzami-settlement/     Settlement lifecycle
-│   │   ├── banzami-reconciliation/ Statement reconciliation
-│   │   ├── banzami-risk/           Risk limit framework
-│   │   ├── banzami-compliance/     KYC/KYB tracking
-│   │   └── banzami-payouts/        Outbound disbursements
+│   │   ├── banza-types/          Money, Currency, typed IDs
+│   │   ├── banza-ledger/         Double-entry ledger engine
+│   │   ├── banza-wallets/        Merchant wallet engine
+│   │   ├── banza-consumer-wallets/ Consumer wallet engine
+│   │   ├── banza-transactions/   Transaction lifecycle
+│   │   ├── banza-transfers/      P2P wallet transfers
+│   │   ├── banza-qr/             QR code runtime
+│   │   ├── banza-payment-links/  Payment link engine
+│   │   ├── banza-merchants/      Merchant onboarding
+│   │   ├── banza-identity/       @handle identity
+│   │   ├── banza-routing/        Payment rail routing
+│   │   ├── banza-acquiring/      Acquiring abstraction
+│   │   ├── banza-settlement/     Settlement lifecycle
+│   │   ├── banza-reconciliation/ Statement reconciliation
+│   │   ├── banza-risk/           Risk limit framework
+│   │   ├── banza-compliance/     KYC/KYB tracking
+│   │   └── banza-payouts/        Outbound disbursements
 │   └── README.md
 ├── contracts/              Protocol contracts (canonical specs)
 │   ├── openapi/            REST API specifications
@@ -272,15 +272,15 @@ The core is a Rust workspace. Each crate is independently usable.
 
 ```toml
 [dependencies]
-banzami-types  = { git = "https://github.com/banzami/banzami" }
-banzami-ledger = { git = "https://github.com/banzami/banzami" }
+banza-types  = { git = "https://github.com/banza-protocols/banza" }
+banza-ledger = { git = "https://github.com/banza-protocols/banza" }
 ```
 
 Core financial operation — double-entry ledger transfer:
 
 ```rust
-use banzami_types::{Money, Currency};
-use banzami_ledger::PostingBuilder;
+use banza_types::{Money, Currency};
+use banza_ledger::PostingBuilder;
 
 let amount = Money::new(100_000, Currency::AOA); // 1000.00 AOA
 
@@ -319,7 +319,7 @@ cd reference && cargo run --bin sandbox-operator
 | Settlement simulation | `POST /settlement/batches` | Stable |
 | Live event stream (SSE) | `GET /events` | Stable |
 | Financial trace API | `GET /traces/{trace_id}` | Stable |
-| Operator manifest | `GET /.well-known/banzami/operator.json` | Experimental |
+| Operator manifest | `GET /.well-known/banza/operator.json` | Experimental |
 
 ```bash
 # Health check

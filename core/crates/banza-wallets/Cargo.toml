@@ -1,0 +1,23 @@
+[package]
+name        = "banza-wallets"
+description = "Wallet domain — two-account ledger model for available and reserved merchant funds"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+repository.workspace = true
+authors.workspace    = true
+
+[dependencies]
+banza-types  = { workspace = true }
+banza-ledger = { workspace = true }
+serde          = { workspace = true }
+uuid           = { workspace = true }
+chrono         = { workspace = true }
+thiserror      = { workspace = true }
+tracing        = { workspace = true }
+sqlx           = { workspace = true }
+tokio          = { workspace = true }
+
+[dev-dependencies]
+sqlx  = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

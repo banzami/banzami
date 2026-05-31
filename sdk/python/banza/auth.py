@@ -8,7 +8,7 @@ import httpx
 
 
 class APIKeyAuth(httpx.Auth):
-    """Attaches a Bearer token derived from the Banzami API key to every request."""
+    """Attaches a Bearer token derived from the BANZA API key to every request."""
 
     def __init__(self, api_key: str) -> None:
         self._api_key = api_key

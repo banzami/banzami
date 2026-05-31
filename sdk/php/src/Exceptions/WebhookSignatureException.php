@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Banzami\Exceptions;
+namespace Banza\Exceptions;
 
-class WebhookSignatureException extends BanzamiException
+class WebhookSignatureException extends BanzaException
 {
 }

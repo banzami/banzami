@@ -82,7 +82,7 @@ Mutable financial records enable fraud, mask bugs, and destroy audit trails. An 
 
 IEEE 754 floating-point cannot represent all decimal values exactly. `0.1 + 0.2 = 0.30000000000000004` in most languages. In financial systems, these errors compound across millions of transactions.
 
-Using `i64` minor units (centavos for AOA) means all arithmetic is exact integer arithmetic. The `Money` type in `banzami-types` enforces this at the type level — it is impossible to accidentally use a float for a monetary value.
+Using `i64` minor units (centavos for AOA) means all arithmetic is exact integer arithmetic. The `Money` type in `banza-types` enforces this at the type level — it is impossible to accidentally use a float for a monetary value.
 
 ### Why enforce balance at the application layer and not a DB constraint?
 

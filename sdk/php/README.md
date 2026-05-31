@@ -34,7 +34,7 @@ composer require banzami/sdk-php guzzlehttp/guzzle php-http/guzzle7-adapter
 ## Quick start
 
 ```php
-use Banzami\BanzaClient;
+use Banza\BanzaClient;
 
 $client = new BanzaClient(
     apiKey:      'bz_live_...',
@@ -217,8 +217,8 @@ echo $payout['status']; // "PENDING"
 Banza signs every webhook delivery. Always verify the signature before processing.
 
 ```php
-use Banzami\Webhooks;
-use Banzami\Exceptions\WebhookSignatureException;
+use Banza\Webhooks;
+use Banza\Exceptions\WebhookSignatureException;
 
 // In your webhook handler (raw request body required — do not parse first):
 $rawBody  = file_get_contents('php://input');
@@ -256,8 +256,8 @@ The signed payload is `"${timestamp}.${raw_body}"`. Timestamps older than 5 minu
 ## Error handling
 
 ```php
-use Banzami\Exceptions\ApiException;
-use Banzami\Exceptions\BanzamiException;
+use Banza\Exceptions\ApiException;
+use Banza\Exceptions\BanzaException;
 
 try {
     $transfer = $client->sendTransfer([...]);
@@ -270,7 +270,7 @@ try {
         echo "Erro API {$e->getCode()}: {$e->getMessage()}\n";
         echo "HTTP status: {$e->getStatus()}\n";
     }
-} catch (BanzamiException $e) {
+} catch (BanzaException $e) {
     // Network or configuration errors
     echo "Erro: {$e->getMessage()}\n";
 }
@@ -292,10 +292,10 @@ try {
 ### Install and publish config
 
 ```bash
-php artisan vendor:publish --provider="Banzami\Laravel\BanzamiServiceProvider"
+php artisan vendor:publish --provider="Banza\Laravel\BanzaServiceProvider"
 ```
 
-### Configure (`config/banzami.php`)
+### Configure (`config/banza.php`)
 
 ```php
 return [
@@ -308,10 +308,10 @@ return [
 ### Use the facade
 
 ```php
-use Banzami\Laravel\Facades\Banzami;
+use Banza\Laravel\Facades\Banza;
 
 // Create a payment link
-$link = Banzami::createPaymentLink([
+$link = Banza::createPaymentLink([
     'merchant_id'  => 'mch_...',
     'wallet_id'    => 'wlt_...',
     'amount_minor' => 10000,
@@ -319,7 +319,7 @@ $link = Banzami::createPaymentLink([
 ]);
 
 // Verify a webhook
-$event = Banzami::webhooks()->constructEvent(
+$event = Banza::webhooks()->constructEvent(
     rawBody:   $rawBody,
     signature: $sigHeader,
     secret:    config('banzami.webhook_secret'),

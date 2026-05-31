@@ -1,6 +1,6 @@
 # Domain: Settlements
 
-**Crate:** `banzami-settlement`  
+**Crate:** `banza-settlement`  
 **Module:** `core/settlement/`
 
 ---

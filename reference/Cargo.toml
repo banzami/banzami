@@ -16,20 +16,20 @@ license  = "Apache-2.0"
 
 [workspace.dependencies]
 # Banzami kernel crates (path deps — no crates.io publish yet)
-banzami-types           = { path = "../core/crates/banzami-types" }
-banzami-ledger          = { path = "../core/crates/banzami-ledger" }
-banzami-wallets         = { path = "../core/crates/banzami-wallets" }
-banzami-transactions    = { path = "../core/crates/banzami-transactions" }
-banzami-acquiring       = { path = "../core/crates/banzami-acquiring" }
-banzami-routing         = { path = "../core/crates/banzami-routing" }
-banzami-settlement      = { path = "../core/crates/banzami-settlement" }
-banzami-notifications   = { path = "../core/crates/banzami-notifications" }
-banzami-identity        = { path = "../core/crates/banzami-identity" }
-banzami-qr              = { path = "../core/crates/banzami-qr" }
-banzami-payment-links   = { path = "../core/crates/banzami-payment-links" }
-banzami-risk            = { path = "../core/crates/banzami-risk" }
-banzami-transfers       = { path = "../core/crates/banzami-transfers" }
-banzami-capabilities    = { path = "../core/crates/banzami-capabilities" }
+banza-types           = { path = "../core/crates/banza-types" }
+banza-ledger          = { path = "../core/crates/banza-ledger" }
+banza-wallets         = { path = "../core/crates/banza-wallets" }
+banza-transactions    = { path = "../core/crates/banza-transactions" }
+banza-acquiring       = { path = "../core/crates/banza-acquiring" }
+banza-routing         = { path = "../core/crates/banza-routing" }
+banza-settlement      = { path = "../core/crates/banza-settlement" }
+banza-notifications   = { path = "../core/crates/banza-notifications" }
+banza-identity        = { path = "../core/crates/banza-identity" }
+banza-qr              = { path = "../core/crates/banza-qr" }
+banza-payment-links   = { path = "../core/crates/banza-payment-links" }
+banza-risk            = { path = "../core/crates/banza-risk" }
+banza-transfers       = { path = "../core/crates/banza-transfers" }
+banza-capabilities    = { path = "../core/crates/banza-capabilities" }
 
 # Reference implementations (within this workspace)
 fake-acquirer         = { path = "fake-acquirer" }

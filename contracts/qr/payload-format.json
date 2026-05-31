@@ -13,17 +13,17 @@
     "description": "Every BANZA QR payload MUST begin with an environment-specific prefix followed by ':' and the encoded payload body. A scanner MUST reject any string that does not begin with a recognized BANZA prefix.",
     "prefixes": {
       "production": {
-        "value": "BANZAMI:",
+        "value": "BANZA:",
         "condition": "simulated=false in the operator manifest",
         "note": "Used for real payments against live wallets."
       },
       "sandbox": {
-        "value": "BANZAMI-SBX:",
+        "value": "BANZA-SBX:",
         "condition": "simulated=true in the operator manifest",
-        "note": "Used in development and conformance testing. A payment against a BANZAMI-SBX: payload MUST NOT move real funds."
+        "note": "Used in development and conformance testing. A payment against a BANZA-SBX: payload MUST NOT move real funds."
       }
     },
-    "invariant": "INV-QR-ENV-001: An operator with simulated=true MUST NOT emit payloads with the BANZAMI: (production) prefix. This is a certification FAIL."
+    "invariant": "INV-QR-ENV-001: An operator with simulated=true MUST NOT emit payloads with the BANZA: (production) prefix. This is a certification FAIL."
   },
 
   "encoding": {
@@ -49,7 +49,7 @@
       },
       "required": ["t", "oid", "ot", "c"],
       "example_json": { "t": "S", "oid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890", "ot": "M", "c": "AOA" },
-      "example_encoded": "BANZAMI:eyJ0IjoiUyIsIm9pZCI6ImExYjJjM2Q0LWU1ZjYtNzg5MC1hYmNkLWVmMTIzNDU2Nzg5MCIsIm90IjoiTSIsImMiOiJBT0EifQ"
+      "example_encoded": "BANZA:eyJ0IjoiUyIsIm9pZCI6ImExYjJjM2Q0LWU1ZjYtNzg5MC1hYmNkLWVmMTIzNDU2Nzg5MCIsIm90IjoiTSIsImMiOiJBT0EifQ"
     },
 
     "dynamic": {
@@ -62,7 +62,7 @@
       },
       "required": ["t", "id", "sig"],
       "example_json": { "t": "D", "id": "f1e2d3c4-b5a6-7890-fedc-ba9876543210", "sig": "Xk3mNpQwRv..." },
-      "example_encoded": "BANZAMI:eyJ0IjoiRCIsImlkIjoiZjFlMmQzYzQtYjVhNi03ODkwLWZlZGMtYmE5ODc2NTQzMjEwIiwic2lnIjoiWGszbU5wUXdSdi4uLiJ9"
+      "example_encoded": "BANZA:eyJ0IjoiRCIsImlkIjoiZjFlMmQzYzQtYjVhNi03ODkwLWZlZGMtYmE5ODc2NTQzMjEwIiwic2lnIjoiWGszbU5wUXdSdi4uLiJ9"
     }
 
   },
@@ -114,7 +114,7 @@
 
   "sandbox_debug_format": {
     "description": "The reference sandbox operator uses an extended debug format for development convenience. This format is NOT the canonical protocol format and MUST NOT be used in production.",
-    "prefix": "BANZAMI-SBX:",
+    "prefix": "BANZA-SBX:",
     "json_structure": {
       "sandbox":             true,
       "v":                   1,
@@ -131,14 +131,14 @@
     "INV-QR-001": "A dynamic QR code MUST be used at most once. After one successful payment, status MUST transition to USED and no further payments are accepted.",
     "INV-QR-002": "A dynamic QR code MUST have expires_at set. Static QR codes MUST have expires_at = null.",
     "INV-QR-003": "A QR code with status EXPIRED or USED MUST reject payment with an appropriate error.",
-    "INV-QR-ENV-001": "An operator with simulated=true MUST emit BANZAMI-SBX: prefix payloads. Use of BANZAMI: (production prefix) in sandbox is a certification FAIL.",
+    "INV-QR-ENV-001": "An operator with simulated=true MUST emit BANZA-SBX: prefix payloads. Use of BANZA: (production prefix) in sandbox is a certification FAIL.",
     "INV-QR-SIGN-001": "The 'sig' field in dynamic QR payloads MUST be verified against the server-side QrCode record before any payment is initiated. Client-only signature validation without database record verification is insufficient."
   },
 
   "conformance_requirements": [
     "Operator MUST accept POST /qr with { merchant_wallet_id, amount_minor?, currency, description? }",
     "Operator MUST return { id, merchant_wallet_id, amount_minor, currency, payload_data, status, created_at }",
-    "payload_data MUST start with BANZAMI-SBX: (sandbox) or BANZAMI: (production)",
+    "payload_data MUST start with BANZA-SBX: (sandbox) or BANZAMI: (production)",
     "Operator MUST accept POST /qr/{id}/pay with { consumer_wallet_id, amount_minor? }",
     "A second POST /qr/{id}/pay on a USED QR MUST return HTTP 422",
     "An open-amount QR (amount_minor=null) MUST require amount_minor in the pay request",

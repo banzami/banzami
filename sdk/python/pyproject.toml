@@ -5,11 +5,11 @@ build-backend = "hatchling.build"
 [project]
 name = "banza-python"
 version = "0.1.0"
-description = "Official Python SDK for the Banzami payments platform"
+description = "Official Python SDK for the BANZA payments protocol"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.12"
-keywords = ["banza", "banzami", "payments", "angola", "aoa", "fintech"]
+keywords = ["banza", "banza", "payments", "angola", "aoa", "fintech"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -38,7 +38,7 @@ dev = [
 ]
 
 [project.urls]
-Homepage    = "https://banzami.com"
+Homepage    = "https://banza.network"
 Repository  = "https://github.com/banza-protocol/sdk-python"
 "Bug Tracker" = "https://github.com/banza-protocol/sdk-python/issues"
 

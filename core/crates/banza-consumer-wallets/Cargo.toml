@@ -1,0 +1,29 @@
+[package]
+name        = "banza-consumer-wallets"
+description = "Consumer wallet domain — double-entry ledger-backed wallets for end-users"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+repository.workspace = true
+authors.workspace    = true
+
+[dependencies]
+banza-types    = { workspace = true }
+banza-ledger   = { workspace = true }
+banza-identity = { workspace = true }
+serde          = { workspace = true }
+serde_json     = { workspace = true }
+uuid           = { workspace = true }
+chrono         = { workspace = true }
+thiserror      = { workspace = true }
+tracing        = { workspace = true }
+sqlx           = { workspace = true }
+tokio          = { workspace = true }
+argon2         = { workspace = true }
+rand           = { workspace = true }
+sha2           = { workspace = true }
+
+[dev-dependencies]
+sqlx    = { workspace = true }
+tokio   = { workspace = true, features = ["macros", "rt-multi-thread"] }
+futures = "0.3"

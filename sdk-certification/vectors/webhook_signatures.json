@@ -2,7 +2,7 @@
   "_comment": "Golden test vectors for Banzami webhook signature verification. All SDKs MUST produce identical results for each vector. Generated from the canonical Go implementation (services/api-gateway/internal/webhook/signer.go).",
   "_spec": "docs/standards/webhook-signature-spec.md",
   "_algorithm": "HMAC-SHA256(key=secret, msg='{timestamp}.{raw_body}')",
-  "_header_format": "Banzami-Signature: t=<unix_seconds>,v1=<hex_hmac_sha256>",
+  "_header_format": "Banza-Signature: t=<unix_seconds>,v1=<hex_hmac_sha256>",
   "_tolerance_seconds": 300,
 
   "shared_secret": "whsec_test_secret_for_vectors_32by",

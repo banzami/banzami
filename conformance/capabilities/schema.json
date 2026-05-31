@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://banzami.com/conformance/capabilities/schema.json",
+  "$id": "https://banza.network/conformance/capabilities/schema.json",
   "title": "Banzami Operator Capability Descriptor",
   "description": "Describes the declared capabilities of a Banzami operator and the certification level each implies.",
   "type": "object",

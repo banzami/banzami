@@ -10,17 +10,17 @@ Official async Python SDK for the [Banza](https://banzami.com) payments platform
 ## Installation
 
 ```bash
-pip install banzami
+pip install banza
 ```
 
 ## Quick start
 
 ```python
 import asyncio
-from banza import Banzami
+from banza import BanzaClient
 
 async def main():
-    async with Banzami(api_key="bz_live_...") as client:
+    async with BanzaClient(api_key="bz_live_...") as client:
         tx = await client.transactions.create(
             amount=50000,   # 50 000 Kz
             currency="AOA",
@@ -59,9 +59,9 @@ print(transfer.status)  # COMPLETED
 ## Webhook verification
 
 ```python
-from banza import Banzami, BanzaWebhookSignatureError
+from banza import BanzaClient, BanzaWebhookSignatureError
 
-client = Banzami(api_key="...", webhook_secret="whsec_...")
+client = BanzaClient(api_key="...", webhook_secret="whsec_...")
 
 # In your request handler — pass the raw bytes body, do NOT decode first.
 try:
@@ -79,7 +79,7 @@ except BanzaWebhookSignatureError:
 Retries happen automatically on `429 / 502 / 503 / 504` with exponential backoff (500 ms, 1 s, 2 s). Every `POST` is assigned an `Idempotency-Key` before the first attempt and reused across all retries, so financial operations are never duplicated.
 
 ```python
-client = Banzami(
+client = BanzaClient(
     api_key="...",
     max_retries=5,       # default 3
     retry_delay=1.0,     # base delay in seconds, default 0.5
@@ -89,12 +89,12 @@ client = Banzami(
 ## Observability hooks
 
 ```python
-from banza import Banzami, BanzaHooks
+from banza import BanzaClient, BanzaHooks
 import logging
 
 log = logging.getLogger("payments")
 
-client = Banzami(
+client = BanzaClient(
     api_key="...",
     hooks=BanzaHooks(
         on_request=lambda method, path, attempt:
@@ -132,11 +132,11 @@ async for tx in auto_paginate(client.transactions.list, limit=50):
 
 ```python
 # Preferred — closes the connection pool automatically.
-async with Banzami(api_key="...") as client:
+async with BanzaClient(api_key="...") as client:
     ...
 
 # Alternative — call close() when done.
-client = Banzami(api_key="...")
+client = BanzaClient(api_key="...")
 try:
     ...
 finally:

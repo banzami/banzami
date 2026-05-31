@@ -1,7 +1,7 @@
 {
   "name": "@banza/sdk",
   "version": "0.1.0",
-  "description": "Official JavaScript/TypeScript SDK for the Banzami payment platform",
+  "description": "Official JavaScript/TypeScript SDK for the BANZA payment platform",
   "license": "UNLICENSED",
   "main": "./dist/cjs/index.js",
   "types": "./dist/index.d.ts",

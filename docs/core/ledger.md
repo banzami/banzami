@@ -1,4 +1,4 @@
-# banzami-ledger — Double-Entry Ledger Engine
+# banza-ledger — Double-Entry Ledger Engine
 
 The ledger is the foundation of Banza's financial correctness. All money movement flows through it.
 
@@ -6,7 +6,7 @@ The ledger is the foundation of Banza's financial correctness. All money movemen
 
 ## What it is
 
-`banzami-ledger` is a double-entry accounting ledger engine backed by PostgreSQL. It provides:
+`banza-ledger` is a double-entry accounting ledger engine backed by PostgreSQL. It provides:
 
 - **Accounts** — named buckets of a single currency, typed as ASSET or LIABILITY
 - **Postings** — balanced journal entries that move money between accounts
@@ -44,8 +44,8 @@ A group of balanced entries. The atomic unit of the ledger.
 ## How postings work
 
 ```rust
-use banzami_ledger::{PostingBuilder, LedgerEngine};
-use banzami_types::{Money, Currency};
+use banza_ledger::{PostingBuilder, LedgerEngine};
+use banza_types::{Money, Currency};
 
 let amount = Money::new(500_000, Currency::AOA); // 5000.00 AOA
 

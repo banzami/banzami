@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Banzami Design Tokens — TypeScript/Web
+// BANZA Design Tokens — TypeScript/Web
 // ---------------------------------------------------------------------------
 // Single source of truth for web apps (dashboard, admin, docs, developer portal).
 // All values are CSS-compatible strings unless noted.

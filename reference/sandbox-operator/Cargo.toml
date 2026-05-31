@@ -15,8 +15,8 @@ path = "src/main.rs"
 
 [dependencies]
 # Banzami kernel
-banzami-types        = { workspace = true }
-banzami-capabilities = { workspace = true }
+banza-types        = { workspace = true }
+banza-capabilities = { workspace = true }
 
 # Reference implementations
 fake-acquirer        = { workspace = true }

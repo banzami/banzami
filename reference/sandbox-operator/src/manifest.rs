@@ -1,4 +1,4 @@
-//! Operator manifest for GET /.well-known/banzami/operator.json
+//! Operator manifest for GET /.well-known/banza/operator.json
 //!
 //! The manifest declares what this operator supports, explicitly marks itself
 //! as a sandbox, and blocks production use via `production_allowed: false`.
@@ -10,7 +10,7 @@ pub struct OperatorManifest {
     pub operator_id:             &'static str,
     pub display_name:            &'static str,
     pub environment:             &'static str,
-    pub banzami_kernel_version:  &'static str,
+    pub banza_kernel_version:  &'static str,
     pub simulated:               bool,
     pub production_allowed:      bool,
     pub capabilities:            ManifestCapabilities,
@@ -59,10 +59,10 @@ pub struct SeedWalletIds {
 
 pub fn build_manifest() -> OperatorManifest {
     OperatorManifest {
-        operator_id:            "banzami-sandbox",
-        display_name:           "Banzami Sandbox Operator",
+        operator_id:            "banza-sandbox",
+        display_name:           "BANZA Sandbox Operator",
         environment:            "sandbox",
-        banzami_kernel_version: "0.1.x",
+        banza_kernel_version: "0.1.x",
         simulated:              true,
         production_allowed:     false,
         capabilities: ManifestCapabilities {
@@ -81,7 +81,7 @@ pub fn build_manifest() -> OperatorManifest {
         endpoints: ManifestEndpoints {
             api:      "http://localhost:3100",
             events:   "http://localhost:3100/events",
-            manifest: "http://localhost:3100/.well-known/banzami/operator.json",
+            manifest: "http://localhost:3100/.well-known/banza/operator.json",
         },
         providers: ManifestProviders {
             acquirer:      "FakeAcquirer",

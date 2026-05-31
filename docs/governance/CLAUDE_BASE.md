@@ -87,7 +87,7 @@ The following are architectural errors. Never generate content that implies them
 - `banzami.com` — domain, deferred
 - `contact@banzami.com`, `security@banzami.com` — emails, deferred
 - `github.com/banzami` — old org, deferred
-- Rust crate names `banzami-types`, `banzami-ledger`, etc. — explicitly out of scope
+- Rust crate names `banza-types`, `banza-ledger`, etc. — renamed from `banzami-*` in BANZA-FULL-DECONTAMINATION-AND-IDENTITY-ALIGNMENT-001; now canonical
 
 ---
 

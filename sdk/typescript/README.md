@@ -94,7 +94,7 @@ try {
 
 ```typescript
 const qr = await client.createStaticQr(consumer.id);
-console.log(qr.payload);      // banzami://pay/...
+console.log(qr.payload);      // banza://pay/...
 console.log(qr.qr_code.type); // "STATIC"
 ```
 
@@ -304,7 +304,7 @@ await client.cancelPaymentRequest(request.id);
 
 ```typescript
 const endpoint = await client.registerWebhookEndpoint(
-  'https://meusite.ao/webhooks/banzami',
+  'https://meusite.ao/webhooks/banza',
   ['transaction.completed', 'payout.completed'],
 );
 

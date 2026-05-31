@@ -40,17 +40,17 @@ O Kernel BANZA é o núcleo financeiro escrito em **Rust**. É composto por crat
 
 | Crate | Responsabilidade |
 |-------|-----------------|
-| `banzami-ledger` | Motor de contabilidade de dupla entrada — a fonte de verdade financeira |
-| `banzami-wallets` | Estado de carteira, reservas, lógica de saldo disponível |
-| `banzami-transactions` | Máquina de estados de transacção (PENDING → CAPTURED → SETTLED) |
-| `banzami-transfers` | Motor de transferência P2P |
-| `banzami-qr` | Domínio de pagamento QR (estático, dinâmico, de uso único) |
-| `banzami-settlement` | Orquestração de liquidação e modelo de taxas |
-| `banzami-routing` | Encaminhamento de pagamentos baseado em capacidades |
-| `banzami-acquiring` | Abstracção de provider de aquisição |
-| `banzami-reconciliation` | Reconciliação e verificação de liquidação |
-| `banzami-payouts` | Orquestração de payouts para carris bancários |
-| `banzami-types` | Tipos partilhados: `Money`, `WalletId`, `TransactionId`, `TraceId` |
+| `banza-ledger` | Motor de contabilidade de dupla entrada — a fonte de verdade financeira |
+| `banza-wallets` | Estado de carteira, reservas, lógica de saldo disponível |
+| `banza-transactions` | Máquina de estados de transacção (PENDING → CAPTURED → SETTLED) |
+| `banza-transfers` | Motor de transferência P2P |
+| `banza-qr` | Domínio de pagamento QR (estático, dinâmico, de uso único) |
+| `banza-settlement` | Orquestração de liquidação e modelo de taxas |
+| `banza-routing` | Encaminhamento de pagamentos baseado em capacidades |
+| `banza-acquiring` | Abstracção de provider de aquisição |
+| `banza-reconciliation` | Reconciliação e verificação de liquidação |
+| `banza-payouts` | Orquestração de payouts para carris bancários |
+| `banza-types` | Tipos partilhados: `Money`, `WalletId`, `TransactionId`, `TraceId` |
 
 ### Por que Rust
 

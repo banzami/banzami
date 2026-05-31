@@ -1,28 +1,28 @@
-"""Banzami Python SDK.
+"""BANZA Python SDK.
 
 Quick start:
 
-    from banza import Banzami
+    from banza import BanzaClient
 
-    async with Banzami(api_key="bz_live_...") as client:
+    async with BanzaClient(api_key="bz_live_...") as client:
         tx = await client.transactions.create(amount=50000, currency="AOA")
         print(tx.id)
 """
 
-from .client import BanzaClient, BanzaHooks, Banzami
-from .config import BanzamiConfig, LIVE_URL, SANDBOX_URL
+from .client import BanzaClient, BanzaHooks
+from .config import BanzaConfig, LIVE_URL, SANDBOX_URL
 from .exceptions import (
     BanzaAPIError,
     BanzaError,
-    BanzamiAuthenticationError,
-    BanzamiConflictError,
-    BanzamiInsufficientFundsError,
-    BanzamiNotFoundError,
-    BanzamiPermissionError,
-    BanzamiRateLimitError,
-    BanzamiServerError,
-    BanzamiTimeoutError,
-    BanzamiValidationError,
+    BanzaAuthenticationError,
+    BanzaConflictError,
+    BanzaInsufficientFundsError,
+    BanzaNotFoundError,
+    BanzaPermissionError,
+    BanzaRateLimitError,
+    BanzaServerError,
+    BanzaTimeoutError,
+    BanzaValidationError,
     BanzaNetworkError,
     BanzaWebhookSignatureError,
 )
@@ -60,23 +60,23 @@ __version__ = "0.1.0"
 
 __all__ = [
     # Primary entry point
-    "Banzami",
     "BanzaClient",
-    "BanzamiConfig",
+    "BanzaClient",
+    "BanzaConfig",
     "BanzaHooks",
     # Exceptions
     "BanzaError",
     "BanzaAPIError",
-    "BanzamiAuthenticationError",
-    "BanzamiPermissionError",
-    "BanzamiNotFoundError",
-    "BanzamiConflictError",
-    "BanzamiValidationError",
-    "BanzamiRateLimitError",
-    "BanzamiInsufficientFundsError",
-    "BanzamiServerError",
+    "BanzaAuthenticationError",
+    "BanzaPermissionError",
+    "BanzaNotFoundError",
+    "BanzaConflictError",
+    "BanzaValidationError",
+    "BanzaRateLimitError",
+    "BanzaInsufficientFundsError",
+    "BanzaServerError",
     "BanzaNetworkError",
-    "BanzamiTimeoutError",
+    "BanzaTimeoutError",
     "BanzaWebhookSignatureError",
     # Models
     "Transaction",

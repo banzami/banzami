@@ -68,7 +68,7 @@ describing its identity and capabilities:
 
 Manifests are:
 - Cryptographically signed by the operator.
-- Published at a well-known URL (`/.well-known/banzami-operator.json`).
+- Published at a well-known URL (`/.well-known/banza-operator.json`).
 - Valid for a finite duration and renewed periodically.
 
 ### Discovery modes
@@ -77,7 +77,7 @@ Manifests are:
 The routing engine fetches the manifest and caches it. Simple for small ecosystems.
 
 **Mode B — DNS-based**: Operators publish a DNS TXT record:
-`_banzami.example.ao TXT "https://interop.example.ao/.well-known/banzami-operator.json"`
+`_banza.example.ao TXT "https://interop.example.ao/.well-known/banza-operator.json"`
 
 **Mode C — Federated registry**: A community-operated registry indexes manifests.
 The registry does not have authority — it is an index only. Operators are

@@ -16,19 +16,19 @@
 //!
 //! ```
 //! use mock_routing::{MockRoutingEngine, RailConfig};
-//! use banzami_types::Currency;
-//! use banzami_routing::PaymentRail;
+//! use banza_types::Currency;
+//! use banza_routing::PaymentRail;
 //!
 //! let engine = MockRoutingEngine::with_rails(vec![
 //!     RailConfig { currency: Currency::AOA, rail: PaymentRail::MulticaixaExpress, priority: 100 },
 //! ]);
 //! ```
 
-use banzami_routing::{
+use banza_routing::{
     PaymentRail, RouteRequest, RoutingDecision, RoutingEngine, RoutingError, RoutingRule,
     StaticRoutingEngine,
 };
-use banzami_types::Currency;
+use banza_types::Currency;
 
 // ---------------------------------------------------------------------------
 // RailConfig
@@ -36,7 +36,7 @@ use banzami_types::Currency;
 
 /// A routing rule supplied at engine construction time.
 ///
-/// Mirrors [`RoutingRule`] from `banzami-routing` but is local to this crate
+/// Mirrors [`RoutingRule`] from `banza-routing` but is local to this crate
 /// so callers don't need to depend on the routing crate's internals.
 pub struct RailConfig {
     pub currency: Currency,
@@ -180,7 +180,7 @@ pub fn sandbox_routing_engine() -> SandboxRoutingEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use banzami_types::{Currency, Money, MerchantId, TransactionId};
+    use banza_types::{Currency, Money, MerchantId, TransactionId};
 
     fn aoa_request() -> RouteRequest {
         RouteRequest {

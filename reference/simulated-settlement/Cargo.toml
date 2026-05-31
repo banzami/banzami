@@ -6,6 +6,6 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-banzami-settlement = { workspace = true }
-banzami-types      = { workspace = true }
+banza-settlement = { workspace = true }
+banza-types      = { workspace = true }
 tracing            = { workspace = true }

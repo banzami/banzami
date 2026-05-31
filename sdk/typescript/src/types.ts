@@ -323,7 +323,7 @@ export interface WebhookEndpoint {
 }
 
 /**
- * Canonical event types dispatched by the Banzami api-gateway.
+ * Canonical event types dispatched by the BANZA api-gateway.
  * Use `string` for forward-compatibility with types not yet in this list.
  */
 export type WebhookEventType =

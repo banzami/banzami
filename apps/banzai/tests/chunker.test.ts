@@ -11,7 +11,7 @@ const baseDoc: Omit<Document, 'content'> = {
   version: '1.0',
   authority: 1.0,
   language: 'pt',
-  repo: 'banzami/banzami',
+  repo: 'banza-protocols/banza',
   updated_at: '2026-01-01T00:00:00.000Z',
 };
 

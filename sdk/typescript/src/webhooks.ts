@@ -1,5 +1,5 @@
 /**
- * Banzami webhook signature verification.
+ * Banza webhook signature verification.
  *
  * Implements the canonical webhook signature format:
  *   Banza-Signature: t=<unix_seconds>,v1=<hex_hmac_sha256>
@@ -20,7 +20,7 @@ import type { WebhookEvent, WebhookEventType } from './types.js';
 // Constants
 // ---------------------------------------------------------------------------
 
-/** The canonical name of the Banzami webhook signature header. */
+/** The canonical name of the Banza webhook signature header. */
 export const SIGNATURE_HEADER = 'Banza-Signature';
 
 /** Maximum age of a signed request before it is rejected (seconds). */
@@ -151,7 +151,7 @@ export function verifySignature(
  *
  * @param rawBody  Raw HTTP request body (Buffer or string).
  * @param header   Value of the `Banza-Signature` request header.
- * @param secret   Webhook secret from the Banzami dashboard.
+ * @param secret   Webhook secret from the operator dashboard.
  * @returns        Parsed and verified {@link WebhookEvent}.
  *
  * @throws {BanzamiWebhookSignatureError} If signature verification fails.
@@ -162,7 +162,7 @@ export function verifySignature(
  * import express from 'express';
  * import { constructEvent, SIGNATURE_HEADER } from '@banza/sdk/webhooks';
  *
- * app.post('/webhooks/banzami', express.raw({ type: '*\/*' }), (req, res) => {
+ * app.post('/webhooks/banza', express.raw({ type: '*\/*' }), (req, res) => {
  *   const event = constructEvent(
  *     req.body,
  *     req.headers[SIGNATURE_HEADER.toLowerCase()],
@@ -192,7 +192,7 @@ export function constructEvent(
  * Generate a valid `Banza-Signature` header value for local testing.
  *
  * Use this in test suites and development environments to simulate incoming
- * Banzami webhook deliveries without a real Banzami account.
+ * Banza webhook deliveries without a real operator account.
  *
  * @param rawBody   The webhook body to sign.
  * @param secret    Any test webhook secret string.
@@ -247,7 +247,7 @@ export function generateTestEvent(
 /**
  * Webhook verification and test-helper methods.
  *
- * Access via `banzami.webhooks.constructEvent(...)`.
+ * Access via `banzaClient.webhooks.constructEvent(...)`.
  */
 export class WebhooksClient {
   private readonly webhookSecret?: string;

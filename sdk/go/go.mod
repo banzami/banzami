@@ -1,4 +1,4 @@
-module github.com/banzami/banzami-go
+module github.com/banza-protocols/banza-go
 
 go 1.22
 

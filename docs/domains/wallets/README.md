@@ -1,6 +1,6 @@
 # Domain: Wallets
 
-**Crate:** `banzami-wallets`  
+**Crate:** `banza-wallets`  
 **Module:** `core/wallets/`
 
 ---

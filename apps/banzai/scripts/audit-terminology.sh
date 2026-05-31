@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Detects forbidden terminology across Banzami ecosystem repos.
-# Run from: apps/banzamia/
+# Run from: apps/banza/
 # Usage: bash scripts/audit-terminology.sh [repo-root-or-path]
 
 set -euo pipefail

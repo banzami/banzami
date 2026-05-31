@@ -1,4 +1,4 @@
-# banzami-transactions — Transaction Lifecycle
+# banza-transactions — Transaction Lifecycle
 
 The transactions crate manages the state machine for merchant payment transactions from initiation through capture, settlement, and refund.
 
@@ -6,7 +6,7 @@ The transactions crate manages the state machine for merchant payment transactio
 
 ## What it is
 
-`banzami-transactions` provides:
+`banza-transactions` provides:
 - Transaction state machine with strict transitions
 - Lifecycle operations: initiate, capture, cancel, fail, refund
 - Integration with wallet reserve/release/settle

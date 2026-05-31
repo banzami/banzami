@@ -2,7 +2,7 @@
 
 Run:
     pip install flask banzami
-    BANZAMI_API_KEY=bz_live_... flask --app examples.flask.app run
+    BANZA_API_KEY=bz_live_... flask --app examples.flask.app run
 """
 
 from __future__ import annotations
@@ -12,16 +12,16 @@ import os
 
 from flask import Flask, jsonify, request
 
-from banza import Banzami, BanzaWebhookSignatureError
+from banza import BanzaClient, BanzaWebhookSignatureError
 from banza.utils.money import to_minor
 
 app = Flask(__name__)
 
 
-def _client() -> Banzami:
-    return Banzami(
-        api_key=os.environ["BANZAMI_API_KEY"],
-        webhook_secret=os.environ.get("BANZAMI_WEBHOOK_SECRET"),
+def _client() -> BanzaClient:
+    return BanzaClient(
+        api_key=os.environ["BANZA_API_KEY"],
+        webhook_secret=os.environ.get("BANZA_WEBHOOK_SECRET"),
     )
 
 

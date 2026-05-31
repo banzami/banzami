@@ -109,10 +109,10 @@ conformance/
 Run suites against any operator:
 
 ```bash
-./tools/banzami-conformance/run.sh --url http://localhost:3100
+./tools/banza-conformance/run.sh --url http://localhost:3100
 ```
 
-See [`tools/banzami-conformance/README.md`](../tools/banzami-conformance/README.md) for full usage.
+See [`tools/banza-conformance/README.md`](../tools/banza-conformance/README.md) for full usage.
 
 ---
 

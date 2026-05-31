@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Banzami\Exceptions;
+namespace Banza\Exceptions;
 
-class ApiException extends BanzamiException
+class ApiException extends BanzaException
 {
     public function __construct(
         private readonly int    $statusCode,

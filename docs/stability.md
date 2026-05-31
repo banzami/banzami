@@ -15,31 +15,31 @@ These surfaces are safe to depend on. Breaking changes require:
 
 ---
 
-### Ledger primitives — `banzami-ledger`
+### Ledger primitives — `banza-ledger`
 
 - `PostingBuilder`, `LedgerEntry`, `LedgerAccount`
 - Double-entry invariant: every posting sums to zero
 - Append-only semantics: entries are never modified or deleted
 - Derived balance: `SUM(CREDIT) - SUM(DEBIT)`, never stored
 
-### Wallet primitives — `banzami-wallets`, `banzami-types`
+### Wallet primitives — `banza-wallets`, `banza-types`
 
 - `Wallet`, `WalletBalance`, `Money`, `Currency`
 - No-negative-balance invariant
 - Atomic balance updates
 
-### Transaction FSM — `banzami-transactions`
+### Transaction FSM — `banza-transactions`
 
 - Core state transitions and their invariants
 - States: `initiated → authorised → captured → settled | failed | refunded`
 
-### Transfer model — `banzami-transfers`
+### Transfer model — `banza-transfers`
 
 - `TransferRequest`, `TransferResult`
 - Idempotency semantics: same key, same result, always
 - Double-entry guarantee on every transfer
 
-### QR payload format — `banzami-qr`, `contracts/qr/`
+### QR payload format — `banza-qr`, `contracts/qr/`
 
 - `BANZAMI:{base64json}` payload structure and field names
 - QR code lifecycle: `active → paid | expired`
@@ -54,10 +54,10 @@ These surfaces are safe to depend on. Breaking changes require:
 ### Webhook signature scheme — `contracts/webhooks/`
 
 - HMAC-SHA256 over the raw request body
-- `X-Banzami-Signature` header format
+- `Banza-Signature` header format
 - Key rotation protocol
 
-### Provider trait interfaces — `banzami-acquiring`, `banzami-routing`, `banzami-settlement`, `banzami-notifications`
+### Provider trait interfaces — `banza-acquiring`, `banza-routing`, `banza-settlement`, `banza-notifications`
 
 - `AcquirerProvider`, `RoutingEngine`, `SettlementExecutionProvider`, `NotificationProvider`
 - Method signatures and error types
@@ -77,7 +77,7 @@ or `@experimental` in SDK code.
 
 ### Operator discovery — RFC-0005
 
-- `/.well-known/banzami/operator.json` manifest format
+- `/.well-known/banza/operator.json` manifest format
 - Field names and capability flags may change
 - Federation and multi-operator routing not yet ratified
 
@@ -116,7 +116,7 @@ or `@experimental` in SDK code.
 - Test vector format may change between releases
 - Compliance pass/fail definitions are not yet frozen
 
-### `banzami-capabilities` crate
+### `banza-capabilities` crate
 
 - The entire crate is experimental
 - All types in it may change without notice

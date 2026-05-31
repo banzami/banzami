@@ -5,11 +5,11 @@ import { BanzaError }     from '../src/client';
 import { parseWebhook }     from '../src/webhook';
 
 const app    = express();
-const secret = process.env.BANZAMI_WEBHOOK_SECRET!;
+const secret = process.env.BANZA_WEBHOOK_SECRET!;
 
 // IMPORTANT: use raw body for signature verification — do NOT use express.json() on this route
-app.post('/webhooks/banzami', express.raw({ type: 'application/json' }), (req, res) => {
-  const sig   = req.headers['x-banzami-signature'] as string;
+app.post('/webhooks/banza', express.raw({ type: 'application/json' }), (req, res) => {
+  const sig   = req.headers['banza-signature'] as string;
   const event = parseWebhook(req.body, sig, secret);
 
   if (!event) {

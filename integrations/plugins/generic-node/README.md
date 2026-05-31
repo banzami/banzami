@@ -241,11 +241,11 @@ import { parseWebhook } from '@banza/node';
 const app = express();
 
 // Use express.raw() — NOT express.json() — for this route
-app.post('/banzami/webhook', express.raw({ type: '*/*' }), (req, res) => {
+app.post('/webhooks/banza', express.raw({ type: '*/*' }), (req, res) => {
   const event = parseWebhook(
     req.body,
-    req.headers['x-banzami-signature'],
-    process.env.BANZAMI_WEBHOOK_SECRET!,
+    req.headers['banza-signature'],
+    process.env.BANZA_WEBHOOK_SECRET!,
   );
 
   if (!event) {
@@ -269,7 +269,7 @@ app.post('/banzami/webhook', express.raw({ type: '*/*' }), (req, res) => {
 #### Next.js App Router (Route Handler)
 
 ```ts
-// app/api/banzami/webhook/route.ts
+// app/api/banza/webhook/route.ts
 import { parseWebhook } from '@banza/node';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -277,9 +277,9 @@ export const config = { api: { bodyParser: false } };
 
 export async function POST(req: NextRequest) {
   const raw = Buffer.from(await req.arrayBuffer());
-  const sig = req.headers.get('x-banzami-signature') ?? '';
+  const sig = req.headers.get('banza-signature') ?? '';
 
-  const event = parseWebhook(raw, sig, process.env.BANZAMI_WEBHOOK_SECRET!);
+  const event = parseWebhook(raw, sig, process.env.BANZA_WEBHOOK_SECRET!);
   if (!event) {
     return NextResponse.json({ error: 'Bad signature' }, { status: 401 });
   }
@@ -299,8 +299,8 @@ import { BanzaClient } from '@banza/node';
 
 const isValid = BanzaClient.verifyWebhook(
   rawBody,                        // Buffer or string
-  req.headers['x-banzami-signature'],
-  process.env.BANZAMI_WEBHOOK_SECRET!,
+  req.headers['banza-signature'],
+  process.env.BANZA_WEBHOOK_SECRET!,
 );
 ```
 

@@ -47,7 +47,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /build/reference/target/release/sandbox-operator /usr/local/bin/sandbox-operator
 
 ENV PORT=3100
-ENV RUST_LOG=sandbox_operator=info,banzami=info,info
+ENV RUST_LOG=sandbox_operator=info,banza=info,info
 
 EXPOSE 3100
 

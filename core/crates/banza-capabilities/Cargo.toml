@@ -1,0 +1,15 @@
+[package]
+name        = "banza-capabilities"
+description = "Operator and wallet capability declarations for the Banzami kernel"
+version.workspace   = true
+edition.workspace   = true
+license.workspace   = true
+repository.workspace = true
+authors.workspace   = true
+
+[dependencies]
+banza-types = { workspace = true }
+serde         = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }

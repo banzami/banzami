@@ -154,7 +154,7 @@ List all transfers recorded in the current session.
 A production operator replaces each simulated provider with a real implementation:
 
 ```rust
-// Kernel interface (defined in banzami-acquiring)
+// Kernel interface (defined in banza-acquiring)
 pub trait AcquirerProvider: Send + Sync {
     async fn initiate_payment(&self, req: InitiatePaymentRequest)
         -> Result<PaymentInitiation, AcquirerError>;
@@ -256,7 +256,7 @@ on startup with their simulated balances.
 - Click a wallet row to auto-fill the wallet ID into all other forms
 
 **Relationship to kernel**: calls `GET /wallets` and `GET /wallets/{id}`. Wallet
-creation calls `POST /wallets`, which invokes `banzami-wallets` internally.
+creation calls `POST /wallets`, which invokes `banza-wallets` internally.
 
 **Expected output** after opening:
 
@@ -285,7 +285,7 @@ returns the same transfer ID and makes no balance change. This demonstrates the
 kernel's idempotency guarantees.
 
 **Relationship to kernel**: calls `POST /transfers`, which invokes
-`banzami-transfers` → `banzami-ledger` (two entries) → `NotificationProvider`
+`banza-transfers` → `banza-ledger` (two entries) → `NotificationProvider`
 (two events).
 
 ---
@@ -360,7 +360,7 @@ sandbox-merchant-1 ledger:
 ```
 
 **Relationship to kernel**: calls `GET /ledger/{wallet_id}`, which derives the
-balance from `banzami-ledger` entries in real time.
+balance from `banza-ledger` entries in real time.
 
 ---
 

@@ -38,11 +38,11 @@ release notes but do not require an ADR or deprecation period.
 
 Experimental surfaces:
 
-- Operator discovery manifest (`/.well-known/banzami/operator.json`)
+- Operator discovery manifest (`/.well-known/banza/operator.json`)
 - Cross-operator routing and settlement
 - Offline payment modes
 - Capability negotiation protocol
-- `banzami-capabilities` crate (capability set definitions)
+- `banza-capabilities` crate (capability set definitions)
 - SDK certification test vectors (new vectors may be added at any time)
 
 ### Internal

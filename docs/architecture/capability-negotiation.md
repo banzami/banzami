@@ -16,7 +16,7 @@ Stable status.
 Every operator exposes a discovery manifest at:
 
 ```
-GET /.well-known/banzami/operator.json
+GET /.well-known/banza/operator.json
 ```
 
 The manifest describes the operator's identity, environment, and capabilities.
@@ -70,7 +70,7 @@ The manifest describes the operator's identity, environment, and capabilities.
 
 ## Capability set negotiation (planned)
 
-The `banzami-capabilities` crate (experimental) defines a typed capability set
+The `banza-capabilities` crate (experimental) defines a typed capability set
 that operators advertise and integrators query at connection time:
 
 ```rust

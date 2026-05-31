@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://banzami.com/conformance/report-schema.json",
+  "$id": "https://banza.network/conformance/report-schema.json",
   "title": "Banzami Conformance Report",
   "description": "Canonical format for conformance test results produced by the Banzami conformance runner.",
   "type": "object",

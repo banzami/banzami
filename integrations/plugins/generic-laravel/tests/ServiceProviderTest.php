@@ -2,54 +2,54 @@
 
 declare(strict_types=1);
 
-namespace Banzami\Laravel\Tests;
+namespace Banza\Laravel\Tests;
 
-use Banzami\BanzamiClient;
-use Banzami\Laravel\BanzamiServiceProvider;
-use Banzami\Laravel\Facades\Banzami;
+use Banza\BanzaClient;
+use Banza\Laravel\BanzaServiceProvider;
+use Banza\Laravel\Facades\Banza;
 use Orchestra\Testbench\TestCase;
 
 class ServiceProviderTest extends TestCase
 {
     protected function getPackageProviders($app): array
     {
-        return [BanzamiServiceProvider::class];
+        return [BanzaServiceProvider::class];
     }
 
     protected function getEnvironmentSetUp($app): void
     {
-        $app['config']->set('banzami.gateway_url', 'https://api.banzami.ao');
-        $app['config']->set('banzami.api_key', 'test-api-key');
+        $app['config']->set('banza.gateway_url', 'https://api.banzami.ao');
+        $app['config']->set('banza.api_key', 'test-api-key');
     }
 
-    public function test_banzami_client_is_bound_as_singleton(): void
+    public function test_banza_client_is_bound_as_singleton(): void
     {
-        $a = $this->app->make(BanzamiClient::class);
-        $b = $this->app->make(BanzamiClient::class);
+        $a = $this->app->make(BanzaClient::class);
+        $b = $this->app->make(BanzaClient::class);
 
-        $this->assertInstanceOf(BanzamiClient::class, $a);
-        $this->assertSame($a, $b, 'BanzamiClient must be a singleton');
+        $this->assertInstanceOf(BanzaClient::class, $a);
+        $this->assertSame($a, $b, 'BanzaClient must be a singleton');
     }
 
     public function test_facade_resolves_to_banzami_client(): void
     {
-        $resolved = Banzami::getFacadeRoot();
+        $resolved = Banza::getFacadeRoot();
 
-        $this->assertInstanceOf(BanzamiClient::class, $resolved);
+        $this->assertInstanceOf(BanzaClient::class, $resolved);
     }
 
     public function test_config_is_merged_with_defaults(): void
     {
-        $this->assertSame('https://api.banzami.ao', config('banzami.gateway_url'));
-        $this->assertSame('test-api-key', config('banzami.api_key'));
-        $this->assertArrayHasKey('webhook_secret', config('banzami'));
-        $this->assertArrayHasKey('merchant_id', config('banzami'));
-        $this->assertArrayHasKey('wallet_id', config('banzami'));
+        $this->assertSame('https://api.banzami.ao', config('banza.gateway_url'));
+        $this->assertSame('test-api-key', config('banza.api_key'));
+        $this->assertArrayHasKey('webhook_secret', config('banza'));
+        $this->assertArrayHasKey('merchant_id', config('banza'));
+        $this->assertArrayHasKey('wallet_id', config('banza'));
     }
 
     public function test_config_is_publishable(): void
     {
-        $paths = BanzamiServiceProvider::pathsToPublish(BanzamiServiceProvider::class, 'banzami-config');
+        $paths = BanzaServiceProvider::pathsToPublish(BanzaServiceProvider::class, 'banza-config');
 
         $this->assertNotEmpty($paths, 'banzami-config tag must register at least one publishable path');
 

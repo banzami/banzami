@@ -16,21 +16,21 @@ The sandbox gives you a running system to observe, test against, and break safel
 
 ## Journey 1 — "I want to improve the ledger"
 
-**Goal:** Modify or extend double-entry ledger behaviour in `banzami-ledger`.
+**Goal:** Modify or extend double-entry ledger behaviour in `banza-ledger`.
 
 ### Where to start
 
 1. Read the ledger invariants in [`docs/core/ledger.md`](core/ledger.md)
 2. Read [`docs/adr/ADR-002-ledger-immutability.md`](adr/ADR-002-ledger-immutability.md)
-3. Read [`core/crates/banzami-ledger/src/lib.rs`](../core/crates/banzami-ledger/src/lib.rs)
+3. Read [`core/crates/banza-ledger/src/lib.rs`](../core/crates/banza-ledger/src/lib.rs)
 
 ### Crates involved
 
 | Crate | Role |
 |-------|------|
-| `banzami-ledger` | Primary — posting engine, entry types, balance derivation |
-| `banzami-types` | `Money`, `Currency`, `AccountId` types used throughout |
-| `banzami-transfers` | Calls the ledger to post transfer entries |
+| `banza-ledger` | Primary — posting engine, entry types, balance derivation |
+| `banza-types` | `Money`, `Currency`, `AccountId` types used throughout |
+| `banza-transfers` | Calls the ledger to post transfer entries |
 | `local-ledger` | SQLite reference implementation in `reference/` |
 
 ### Reference flows
@@ -73,16 +73,16 @@ double-entry postings visually.
 ### Where to start
 
 1. Read the QR payload spec in [`contracts/qr/`](../contracts/qr/)
-2. Read [`core/crates/banzami-qr/src/lib.rs`](../core/crates/banzami-qr/src/lib.rs)
+2. Read [`core/crates/banza-qr/src/lib.rs`](../core/crates/banza-qr/src/lib.rs)
 3. Explore the QR flow in the sandbox
 
 ### Crates involved
 
 | Crate | Role |
 |-------|------|
-| `banzami-qr` | QR payload encoding, QR code lifecycle (active → paid) |
-| `banzami-types` | `Money`, `Currency` |
-| `banzami-transactions` | Transaction FSM triggered on QR payment |
+| `banza-qr` | QR payload encoding, QR code lifecycle (active → paid) |
+| `banza-types` | `Money`, `Currency` |
+| `banza-transactions` | Transaction FSM triggered on QR payment |
 
 ### Reference flow — full QR lifecycle
 
@@ -125,16 +125,16 @@ and calls the operator's payment endpoint.
 ### Where to start
 
 1. Read [`docs/core/routing.md`](core/routing.md) if it exists, otherwise start with the crate
-2. Read [`core/crates/banzami-routing/src/lib.rs`](../core/crates/banzami-routing/src/lib.rs)
+2. Read [`core/crates/banza-routing/src/lib.rs`](../core/crates/banza-routing/src/lib.rs)
 3. Read the mock routing implementations in [`reference/mock-routing/`](../reference/mock-routing/)
 
 ### Crates involved
 
 | Crate | Role |
 |-------|------|
-| `banzami-routing` | `RoutingEngine` trait, `RoutingRule`, `RailDecision` |
+| `banza-routing` | `RoutingEngine` trait, `RoutingRule`, `RailDecision` |
 | `mock-routing` | Three test implementations: normal, failing, degraded |
-| `banzami-types` | `Money`, `Currency`, `PaymentRail` |
+| `banza-types` | `Money`, `Currency`, `PaymentRail` |
 
 ### Reference implementations
 
@@ -232,10 +232,10 @@ See [`sdk/typescript/`](../sdk/typescript/) for the SDK.
 
 | Provider | Trait location | Reference implementation |
 |----------|----------------|-------------------------|
-| Acquirer | `banzami-acquiring` | `reference/fake-acquirer/` |
-| Settlement | `banzami-settlement` | `reference/simulated-settlement/` |
-| Notifications | `banzami-notifications` | `reference/local-notifications/` |
-| Routing | `banzami-routing` | `reference/mock-routing/` |
+| Acquirer | `banza-acquiring` | `reference/fake-acquirer/` |
+| Settlement | `banza-settlement` | `reference/simulated-settlement/` |
+| Notifications | `banza-notifications` | `reference/local-notifications/` |
+| Routing | `banza-routing` | `reference/mock-routing/` |
 
 ### Implementation pattern
 
@@ -284,7 +284,7 @@ pub struct AcquiringEngine<P: AcquirerProvider> { provider: P }
 
 ### Where to start
 
-1. Read [`core/crates/banzami-settlement/src/lib.rs`](../core/crates/banzami-settlement/src/lib.rs)
+1. Read [`core/crates/banza-settlement/src/lib.rs`](../core/crates/banza-settlement/src/lib.rs)
 2. Read [`reference/simulated-settlement/src/lib.rs`](../reference/simulated-settlement/src/lib.rs)
 3. Run the full settlement flow in the sandbox
 

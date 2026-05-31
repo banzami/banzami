@@ -1,4 +1,4 @@
-# banzami-go
+# banza-go
 
 Official Go SDK for the Banza payment platform.
 
@@ -7,7 +7,7 @@ Official Go SDK for the Banza payment platform.
 ## Installation
 
 ```bash
-go get github.com/banzami/banzami-go
+go get github.com/banza-protocols/banza-go
 ```
 
 ## Quick start
@@ -20,17 +20,17 @@ import (
     "fmt"
     "log"
 
-    "github.com/banzami/banzami-go/banzami"
+    "github.com/banza-protocols/banza-go/banza"
 )
 
 func main() {
-    client := banzami.NewClient(banzami.ClientOptions{
+    client := banza.NewClient(banza.ClientOptions{
         APIKey:        "bz_live_...",
         WebhookSecret: "whsec_...",
     })
 
     // Create a payment link
-    link, err := client.PaymentLinks.Create(context.Background(), banzami.CreatePaymentLinkInput{
+    link, err := client.PaymentLinks.Create(context.Background(), banza.CreatePaymentLinkInput{
         MerchantID:  "mer_01jqx...",
         WalletID:    "wlt_01jqx...",
         AmountMinor: func(v int64) *int64 { return &v }(150000),
@@ -40,7 +40,7 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Printf("Payment link: https://pay.banzami.com/%s\n", link.Slug)
+    fmt.Printf("Payment link: https://pay.banza.com/%s\n", link.Slug)
 }
 ```
 
@@ -51,16 +51,16 @@ func main() {
 func webhookHandler(w http.ResponseWriter, r *http.Request) {
     rawBody, _ := io.ReadAll(r.Body)
 
-    event, err := client.Webhooks.ConstructEvent(rawBody, r.Header.Get(banzami.SignatureHeader))
+    event, err := client.Webhooks.ConstructEvent(rawBody, r.Header.Get(banza.SignatureHeader))
     if err != nil {
         http.Error(w, "Unauthorized", http.StatusUnauthorized)
         return
     }
 
     switch event.Type {
-    case banzami.EventPaymentLinkPaid:
+    case banza.EventPaymentLinkPaid:
         // handle payment confirmation
-    case banzami.EventTransactionCompleted:
+    case banza.EventTransactionCompleted:
         // handle transaction
     }
 
@@ -71,17 +71,17 @@ func webhookHandler(w http.ResponseWriter, r *http.Request) {
 ## Environment detection
 
 ```go
-client := banzami.NewClient(banzami.ClientOptions{APIKey: "bz_test_..."})
+client := banza.NewClient(banza.ClientOptions{APIKey: "bz_test_..."})
 fmt.Println(client.IsSandbox()) // true
 ```
 
-The client automatically routes to the sandbox gateway (`https://sandbox-api.banzami.com`) when a `bz_test_` key is provided. No additional configuration is needed.
+The client automatically routes to the sandbox gateway (`https://sandbox-api.banza.com`) when a `bz_test_` key is provided. No additional configuration is needed.
 
 ## Running tests
 
 ```bash
 cd sdk/go
-go test ./banzami/...
+go test ./banza/...
 ```
 
 ## Webhook signature spec

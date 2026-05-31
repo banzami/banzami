@@ -15,12 +15,12 @@ violations. Good starting points for new contributors.
 
 | Area | Crates | Examples |
 |------|--------|---------|
-| Identity | `banzami-identity` | `@handle` validation, namespace rules |
-| QR parsing | `banzami-qr` | QR payload encoding, expiry logic |
-| Payment links | `banzami-payment-links` | Link lifecycle, URL generation |
-| Routing algorithms | `banzami-routing` | New routing strategies, rail priority logic |
-| Capability model | `banzami-capabilities` | New capability flags, operator manifests |
-| Risk limits | `banzami-risk` | Limit rules, velocity checks |
+| Identity | `banza-identity` | `@handle` validation, namespace rules |
+| QR parsing | `banza-qr` | QR payload encoding, expiry logic |
+| Payment links | `banza-payment-links` | Link lifecycle, URL generation |
+| Routing algorithms | `banza-routing` | New routing strategies, rail priority logic |
+| Capability model | `banza-capabilities` | New capability flags, operator manifests |
+| Risk limits | `banza-risk` | Limit rules, velocity checks |
 
 ### Reference implementations
 
@@ -68,7 +68,7 @@ infrastructure experience.
 
 ### Double-entry ledger
 
-**Crate:** `banzami-ledger`
+**Crate:** `banza-ledger`
 
 Risk: An incorrect change could allow:
 - Unbalanced postings (money created from nothing)
@@ -81,7 +81,7 @@ preserved under the change. New operations must include an invariant test.
 
 ### Wallet balance mutation
 
-**Crate:** `banzami-wallets`, `banzami-consumer-wallets`
+**Crate:** `banza-wallets`, `banza-consumer-wallets`
 
 Risk: An incorrect change could allow:
 - Negative available balance (money spent that does not exist)
@@ -94,7 +94,7 @@ Risk: An incorrect change could allow:
 
 ### Settlement lifecycle
 
-**Crate:** `banzami-settlement`
+**Crate:** `banza-settlement`
 
 Risk: Incorrect settlement logic could cause:
 - Duplicate bank transfers (same payment settled twice)
@@ -106,7 +106,7 @@ handling of partial failures.
 
 ### Transaction FSM
 
-**Crate:** `banzami-transactions`
+**Crate:** `banza-transactions`
 
 Risk: An incorrect state transition could allow:
 - A transaction to be refunded before it is settled

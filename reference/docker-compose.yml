@@ -24,7 +24,7 @@ services:
       - "3100:3100"
     environment:
       PORT: "3100"
-      RUST_LOG: "sandbox_operator=debug,banzami=debug,info"
+      RUST_LOG: "sandbox_operator=debug,banza=debug,info"
     restart: "no"
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:3100/health"]

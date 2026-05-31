@@ -1,7 +1,7 @@
 /**
- * Banzami Webhook Handler — Node.js example
+ * BANZA Webhook Handler — Node.js example
  *
- * Uses `banzami.webhooks.constructEvent()` which handles:
+ * Uses `banzaClient.webhooks.constructEvent()` which handles:
  *   - Banza-Signature header parsing (t=<unix>,v1=<hex>)
  *   - HMAC-SHA256 verification with timestamp in the signed payload
  *   - 300-second replay-attack protection window
@@ -14,13 +14,13 @@ import { createServer, IncomingMessage, ServerResponse } from 'node:http';
 import { BanzaClient, BanzamiWebhookSignatureError, SIGNATURE_HEADER } from '../src/index.js';
 import type { WebhookEvent } from '../src/index.js';
 
-const banzami = new BanzaClient({
+const banzaClient = new BanzaClient({
   apiKey:        process.env.BANZA_API_KEY!,
   webhookSecret: process.env.BANZA_WEBHOOK_SECRET!,
 });
 
 createServer((req: IncomingMessage, res: ServerResponse) => {
-  if (req.method !== 'POST' || req.url !== '/webhooks/banzami') {
+  if (req.method !== 'POST' || req.url !== '/webhooks/banza') {
     res.writeHead(404).end();
     return;
   }
@@ -35,7 +35,7 @@ createServer((req: IncomingMessage, res: ServerResponse) => {
 
     let event: WebhookEvent;
     try {
-      event = banzami.webhooks.constructEvent(rawBody, signatureHeader);
+      event = banzaClient.webhooks.constructEvent(rawBody, signatureHeader);
     } catch (err) {
       if (err instanceof BanzamiWebhookSignatureError) {
         console.error('Webhook verification failed:', err.message);

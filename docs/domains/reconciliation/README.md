@@ -1,6 +1,6 @@
 # Domain: Reconciliation
 
-**Crate:** `banzami-reconciliation`  
+**Crate:** `banza-reconciliation`  
 **Module:** `core/reconciliation/`
 
 ---
@@ -29,7 +29,7 @@ Reconciliation is not optional infrastructure. It is the mechanism that proves t
 
 The reconciliation engine does not query settlements directly. The caller (the `reconciliation` route handler) fetches the relevant settlements and converts them to `SettlementView` slices before passing them to the engine.
 
-This keeps `banzami-reconciliation` independent of `banzami-settlement` — the engine can be tested in isolation without a database, and can be reused for any matching problem where the same logic applies.
+This keeps `banza-reconciliation` independent of `banza-settlement` — the engine can be tested in isolation without a database, and can be reused for any matching problem where the same logic applies.
 
 ---
 

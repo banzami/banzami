@@ -1,24 +1,24 @@
 [workspace]
 members = [
-    "crates/banzami-types",
-    "crates/banzami-ledger",
-    "crates/banzami-wallets",
-    "crates/banzami-transactions",
-    "crates/banzami-merchants",
-    "crates/banzami-settlement",
-    "crates/banzami-routing",
-    "crates/banzami-reconciliation",
-    "crates/banzami-risk",
-    "crates/banzami-compliance",
-    "crates/banzami-payouts",
-    "crates/banzami-identity",
-    "crates/banzami-consumer-wallets",
-    "crates/banzami-transfers",
-    "crates/banzami-qr",
-    "crates/banzami-payment-links",
-    "crates/banzami-acquiring",
-    "crates/banzami-notifications",
-    "crates/banzami-capabilities",
+    "crates/banza-types",
+    "crates/banza-ledger",
+    "crates/banza-wallets",
+    "crates/banza-transactions",
+    "crates/banza-merchants",
+    "crates/banza-settlement",
+    "crates/banza-routing",
+    "crates/banza-reconciliation",
+    "crates/banza-risk",
+    "crates/banza-compliance",
+    "crates/banza-payouts",
+    "crates/banza-identity",
+    "crates/banza-consumer-wallets",
+    "crates/banza-transfers",
+    "crates/banza-qr",
+    "crates/banza-payment-links",
+    "crates/banza-acquiring",
+    "crates/banza-notifications",
+    "crates/banza-capabilities",
 ]
 resolver = "2"
 
@@ -26,8 +26,8 @@ resolver = "2"
 version     = "0.1.0"
 edition     = "2021"
 license     = "Apache-2.0"
-repository  = "https://github.com/banzami/banzami"
-authors     = ["Banzami Engineering <engineering@banzami.com>"]
+repository  = "https://github.com/banza-protocol/banza"
+authors     = ["BANZA Protocol Contributors"]
 description = "Open-source financial infrastructure for programmable instant payments"
 keywords    = ["payments", "fintech", "ledger", "wallet", "africa"]
 categories  = ["finance"]
@@ -37,25 +37,25 @@ categories  = ["finance"]
 # ---------------------------------------------------------------------------
 [workspace.dependencies]
 # Internal crates
-banzami-types           = { path = "crates/banzami-types" }
-banzami-ledger          = { path = "crates/banzami-ledger" }
-banzami-wallets         = { path = "crates/banzami-wallets" }
-banzami-transactions    = { path = "crates/banzami-transactions" }
-banzami-merchants       = { path = "crates/banzami-merchants" }
-banzami-settlement      = { path = "crates/banzami-settlement" }
-banzami-routing         = { path = "crates/banzami-routing" }
-banzami-risk            = { path = "crates/banzami-risk" }
-banzami-reconciliation  = { path = "crates/banzami-reconciliation" }
-banzami-payouts         = { path = "crates/banzami-payouts" }
-banzami-compliance      = { path = "crates/banzami-compliance" }
-banzami-identity        = { path = "crates/banzami-identity" }
-banzami-consumer-wallets = { path = "crates/banzami-consumer-wallets" }
-banzami-transfers       = { path = "crates/banzami-transfers" }
-banzami-qr              = { path = "crates/banzami-qr" }
-banzami-payment-links   = { path = "crates/banzami-payment-links" }
-banzami-acquiring       = { path = "crates/banzami-acquiring" }
-banzami-notifications   = { path = "crates/banzami-notifications" }
-banzami-capabilities    = { path = "crates/banzami-capabilities" }
+banza-types           = { path = "crates/banza-types" }
+banza-ledger          = { path = "crates/banza-ledger" }
+banza-wallets         = { path = "crates/banza-wallets" }
+banza-transactions    = { path = "crates/banza-transactions" }
+banza-merchants       = { path = "crates/banza-merchants" }
+banza-settlement      = { path = "crates/banza-settlement" }
+banza-routing         = { path = "crates/banza-routing" }
+banza-risk            = { path = "crates/banza-risk" }
+banza-reconciliation  = { path = "crates/banza-reconciliation" }
+banza-payouts         = { path = "crates/banza-payouts" }
+banza-compliance      = { path = "crates/banza-compliance" }
+banza-identity        = { path = "crates/banza-identity" }
+banza-consumer-wallets = { path = "crates/banza-consumer-wallets" }
+banza-transfers       = { path = "crates/banza-transfers" }
+banza-qr              = { path = "crates/banza-qr" }
+banza-payment-links   = { path = "crates/banza-payment-links" }
+banza-acquiring       = { path = "crates/banza-acquiring" }
+banza-notifications   = { path = "crates/banza-notifications" }
+banza-capabilities    = { path = "crates/banza-capabilities" }
 
 # Serialization
 serde      = { version = "1", features = ["derive"] }

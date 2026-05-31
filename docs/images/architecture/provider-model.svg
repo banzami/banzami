@@ -7,8 +7,8 @@
   <!-- Kernel box -->
   <rect x="260" y="64" width="240" height="70" rx="5" fill="#0f1510" stroke="#1a2e1a"/>
   <text x="380" y="86" fill="#2a4a2a" font-size="9" text-anchor="middle" letter-spacing="0.8">BANZA KERNEL CRATES</text>
-  <text x="380" y="102" fill="#3d7a3d" font-size="10" text-anchor="middle">banzami-types · banzami-ledger</text>
-  <text x="380" y="116" fill="#3d7a3d" font-size="10" text-anchor="middle">banzami-wallets · banzami-qr</text>
+  <text x="380" y="102" fill="#3d7a3d" font-size="10" text-anchor="middle">banza-types · banza-ledger</text>
+  <text x="380" y="116" fill="#3d7a3d" font-size="10" text-anchor="middle">banza-wallets · banza-qr</text>
 
   <!-- Arrows kernel → providers -->
   <line x1="380" y1="134" x2="380" y2="170" stroke="#2a2a2a" stroke-width="1"/>

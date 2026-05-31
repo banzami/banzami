@@ -9,7 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
-- **Async-first client** (`BanzaClient` / `Banzami`) built on `httpx.AsyncClient`
+- **Async-first client** (`BanzaClient`) built built on `httpx.AsyncClient`
 - **Full API surface** across 7 resource namespaces:
   - `transactions` — create, retrieve, list, capture, reverse
   - `qr_payments` — static QR, dynamic QR, decode, check status, mark used

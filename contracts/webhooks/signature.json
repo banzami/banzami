@@ -5,7 +5,7 @@
   "_source_of_truth": "docs/standards/webhook-signature-spec.md",
   "_implemented_in": [
     "sdk/typescript/src/webhooks.ts",
-    "sdk/go/banzami/webhook.go",
+    "sdk/go/banza/webhook.go",
     "sdk/python/banza/signature.py"
   ],
 
@@ -166,17 +166,7 @@
     ]
   },
 
-  "known_implementation_discrepancies": [
-    {
-      "file": "sdk/python/banza/signature.py",
-      "line": 27,
-      "field": "SIGNATURE_HEADER",
-      "current_value": "Banzami-Signature",
-      "canonical_value": "Banza-Signature",
-      "severity": "BUG",
-      "description": "The Python SDK uses the wrong header name. Any Python integration reading 'Banzami-Signature' will silently fail to find the header when the protocol sends 'Banza-Signature'. Must be corrected before the Python SDK is marked production-ready."
-    }
-  ],
+  "known_implementation_discrepancies": [],
 
   "sdk_conformance_requirements": [
     "Use header name 'Banza-Signature' (canonical) with case-insensitive lookup",

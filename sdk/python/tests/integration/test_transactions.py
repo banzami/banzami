@@ -5,11 +5,11 @@ from __future__ import annotations
 import httpx
 import respx
 
-from banza import Banzami
+from banza import BanzaClient
 from banza.models.transaction import TransactionStatus
 from banza.pagination import auto_paginate
 
-BASE = "https://api.banzami.test"
+BASE = "https://api.banza.test"
 
 COMPLETED_TX = {
     "id":           "tx_completed",
@@ -30,7 +30,7 @@ async def test_create_and_retrieve():
     with respx.mock(base_url=BASE) as mock:
         mock.post("/v1/transactions").mock(return_value=httpx.Response(200, json=COMPLETED_TX))
         mock.get("/v1/transactions/tx_completed").mock(return_value=httpx.Response(200, json=COMPLETED_TX))
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             created   = await c.transactions.create(amount=25000, description="Compra loja #42")
             retrieved = await c.transactions.retrieve(created.id)
 
@@ -54,7 +54,7 @@ async def test_list_transactions_paginates():
 
     with respx.mock(base_url=BASE) as mock:
         mock.get("/v1/transactions").mock(side_effect=next_page)
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             all_txs = [tx async for tx in auto_paginate(c.transactions.list, limit=1)]
 
     assert len(all_txs) == 2
@@ -68,7 +68,7 @@ async def test_capture_transaction():
         mock.post("/v1/transactions/tx_completed/capture").mock(
             return_value=httpx.Response(200, json=captured_tx)
         )
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             tx = await c.transactions.capture("tx_completed")
     assert tx.status == TransactionStatus.REFUNDED
 
@@ -79,6 +79,6 @@ async def test_reverse_transaction():
         mock.post("/v1/transactions/tx_completed/reverse").mock(
             return_value=httpx.Response(200, json=reversed_tx)
         )
-        async with Banzami(api_key="bz_test", base_url=BASE) as c:
+        async with BanzaClient(api_key="bz_test", base_url=BASE) as c:
             tx = await c.transactions.reverse("tx_completed")
     assert tx.status == TransactionStatus.REFUNDED
