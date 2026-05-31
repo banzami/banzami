@@ -313,6 +313,8 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
             self._handle_netting_batches()
         elif self.path == "/conformance/federation/netting/settlement-ledger":
             self._handle_netting_settlement_ledger()
+        elif self.path == "/conformance/federation/fail/state":
+            self._handle_fail_state()
         else:
             self._respond_json(404, {"error": "not_found", "path": self.path})
 
@@ -453,6 +455,16 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
             self._handle_netting_inject_discrepancy()
         elif self.path == "/conformance/federation/netting/reset":
             self._handle_netting_reset()
+        elif self.path == "/conformance/federation/netting/reconcile":
+            self._handle_netting_reconcile()
+        elif self.path == "/conformance/federation/fail/inject-crash-state":
+            self._handle_fail_inject_crash_state()
+        elif self.path == "/conformance/federation/fail/trigger-recovery":
+            self._handle_fail_trigger_recovery()
+        elif self.path == "/conformance/federation/fail/recover-obligation":
+            self._handle_fail_recover_obligation()
+        elif self.path == "/conformance/federation/fail/inject-obligation-amount-override":
+            self._handle_fail_inject_obligation_amount_override()
         else:
             self._respond_json(404, {"error": "not_found", "path": self.path})
 
@@ -661,10 +673,30 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
         # Phase 3 (under lock): commit debit + obligation + event atomically
         with self.server.state_lock:
             fed = self.server.state["fed_exec"]
+            fail_inject = self.server.state["fail_inject"]
 
             # Re-check idempotency (guard against concurrent calls)
             if routing_request_id in fed["routing_commits"]:
                 return self._respond_json(200, fed["routing_commits"][routing_request_id])
+
+            # FED-FAIL-008: check obligation amount override (simulates INV-FED-005 mismatch)
+            amount_override = fail_inject["obligation_amount_overrides"].get(routing_request_id)
+            if amount_override is not None and routing_status == "accepted" and interop_transfer_id:
+                if amount_override != amount_minor:
+                    result = {
+                        "routing_request_id": routing_request_id,
+                        "routing_status": "failed_inv_fed_005",
+                        "error": "obligation_amount_mismatch_blocked",
+                        "routing_amount": amount_minor,
+                        "attempted_obligation_amount": amount_override,
+                        "invariant": "INV-FED-005",
+                        "payer_debited": False,
+                        "obligation_recorded": False,
+                        "event_emitted": False,
+                        "trace_id": trace_id,
+                    }
+                    # Transient failure — NOT stored in routing_commits
+                    return self._respond_json(200, result)
 
             if routing_status == "accepted" and interop_transfer_id:
                 wallet = fed["wallets"][sender_wallet_id]
@@ -756,7 +788,16 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
                     "trace_id": trace_id,
                 }
 
-            fed["routing_commits"][routing_request_id] = result
+            # Store ONLY definitive outcomes in routing_commits.
+            # Transient failures (no rejection_code, non-protocol error) are NOT stored,
+            # so the caller may retry with the same routing_request_id (INV-FED-004).
+            rejection_code = result.get("rejection_code")
+            is_definitive = (
+                result.get("routing_status") == "accepted"
+                or rejection_code in _ROUTING_REJECTION_CODES_FIXTURE
+            )
+            if is_definitive:
+                fed["routing_commits"][routing_request_id] = result
 
         self._respond_json(200, result)
 
@@ -1102,46 +1143,52 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
             })
 
         now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        bank_ref = f"simulated-bank-ref-{uuid.uuid4().hex[:12]}"
         net_amount = batch["net_amount"]
         op_a_id = batch["operator_a_id"]
         op_b_id = batch["operator_b_id"]
+        zero_net = (net_amount == 0)
 
-        # 4 settlement ledger entries: 2 on Op A side, 2 on Op B side
-        settlement_entries = [
-            {
-                "operator": op_a_id,
-                "entry_type": "DEBIT",
-                "account": f"federation_payable:{op_b_id}",
-                "amount_minor": net_amount,
-                "settlement_batch_id": batch_id,
-                "recorded_at": now_str,
-            },
-            {
-                "operator": op_a_id,
-                "entry_type": "CREDIT",
-                "account": "federation_settlement_clearing",
-                "amount_minor": net_amount,
-                "settlement_batch_id": batch_id,
-                "recorded_at": now_str,
-            },
-            {
-                "operator": op_b_id,
-                "entry_type": "DEBIT",
-                "account": "federation_settlement_clearing",
-                "amount_minor": net_amount,
-                "settlement_batch_id": batch_id,
-                "recorded_at": now_str,
-            },
-            {
-                "operator": op_b_id,
-                "entry_type": "CREDIT",
-                "account": f"federation_receivable:{op_a_id}",
-                "amount_minor": net_amount,
-                "settlement_batch_id": batch_id,
-                "recorded_at": now_str,
-            },
-        ]
+        if zero_net:
+            # Zero-net: obligations still settled but no bank transfer needed
+            bank_ref = None
+            settlement_entries = []
+        else:
+            bank_ref = f"simulated-bank-ref-{uuid.uuid4().hex[:12]}"
+            # 4 settlement ledger entries: 2 on Op A side, 2 on Op B side
+            settlement_entries = [
+                {
+                    "operator": op_a_id,
+                    "entry_type": "DEBIT",
+                    "account": f"federation_payable:{op_b_id}",
+                    "amount_minor": net_amount,
+                    "settlement_batch_id": batch_id,
+                    "recorded_at": now_str,
+                },
+                {
+                    "operator": op_a_id,
+                    "entry_type": "CREDIT",
+                    "account": "federation_settlement_clearing",
+                    "amount_minor": net_amount,
+                    "settlement_batch_id": batch_id,
+                    "recorded_at": now_str,
+                },
+                {
+                    "operator": op_b_id,
+                    "entry_type": "DEBIT",
+                    "account": "federation_settlement_clearing",
+                    "amount_minor": net_amount,
+                    "settlement_batch_id": batch_id,
+                    "recorded_at": now_str,
+                },
+                {
+                    "operator": op_b_id,
+                    "entry_type": "CREDIT",
+                    "account": f"federation_receivable:{op_a_id}",
+                    "amount_minor": net_amount,
+                    "settlement_batch_id": batch_id,
+                    "recorded_at": now_str,
+                },
+            ]
 
         routing_ids = batch.get("included_a_to_b_routing_ids", [])
         with self.server.state_lock:
@@ -1158,6 +1205,8 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
             netting["batches"][batch_id]["settlement_status"] = "settled"
             netting["batches"][batch_id]["settled_at"] = now_str
             netting["batches"][batch_id]["simulated_bank_reference"] = bank_ref
+            netting["batches"][batch_id]["zero_net"] = zero_net
+            netting["batches"][batch_id]["no_bank_transfer"] = zero_net
             updated_batch = dict(netting["batches"][batch_id])
 
         self._respond_json(200, {
@@ -1165,6 +1214,8 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
             "batch": updated_batch,
             "settlement_ledger_entries": settlement_entries,
             "simulated_bank_reference": bank_ref,
+            "zero_net": zero_net,
+            "no_bank_transfer": zero_net,
         })
 
     def _handle_netting_inject_discrepancy(self):
@@ -1204,6 +1255,301 @@ class FederationFixtureHandler(http.server.BaseHTTPRequestHandler):
             self.server.state["netting"] = _initial_netting_state()
         self._respond_json(200, {"ok": True, "message": "netting state reset"})
 
+    def _handle_netting_reconcile(self):
+        """
+        POST /conformance/federation/netting/reconcile
+
+        Cross-reference Operator A's obligations against Operator B's accepted routing IDs.
+        Returns: missing obligations (on A) and extra obligations (on A with no B acceptance).
+        Used in FED-SETTLE-009 to detect disagreement.
+
+        Body: {"operator_b_accepted_routing_ids": ["rr-...", ...]}
+        """
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            payload = json.loads(self.rfile.read(length)) if length > 0 else {}
+        except Exception as exc:
+            return self._respond_json(400, {"ok": False, "error": str(exc)})
+
+        op_b_accepted = set(payload.get("operator_b_accepted_routing_ids") or [])
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+            op_a_obligation_ids = set(fed["obligations"].keys())
+
+        missing_on_a = sorted(op_b_accepted - op_a_obligation_ids)
+        extra_on_a = sorted(op_a_obligation_ids - op_b_accepted)
+        is_clean = len(missing_on_a) == 0 and len(extra_on_a) == 0
+
+        self._respond_json(200, {
+            "ok": True,
+            "operator_a_obligation_count": len(op_a_obligation_ids),
+            "operator_b_accepted_count": len(op_b_accepted),
+            "missing_on_a": missing_on_a,
+            "extra_on_a": extra_on_a,
+            "status": "clean" if is_clean else "discrepancy",
+        })
+
+    # ── FED-FAIL injection endpoints ──────────────────────────────────────────
+
+    def _handle_fail_state(self):
+        """GET /conformance/federation/fail/state — return current fail inject state."""
+        with self.server.state_lock:
+            fi = dict(self.server.state["fail_inject"])
+        self._respond_json(200, fi)
+
+    def _handle_fail_inject_crash_state(self):
+        """
+        POST /conformance/federation/fail/inject-crash-state
+
+        Inject an "accepted but no obligation" state for a routing_request_id.
+        Simulates Operator A having received acceptance from Operator B but crashing
+        before Phase 4+5 committed.
+
+        Body: {routing_request_id, trace_id, interop_transfer_id, amount_minor,
+               currency, from_operator_id, to_operator_id, sender_wallet_id?}
+        """
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            payload = json.loads(self.rfile.read(length)) if length > 0 else {}
+        except Exception as exc:
+            return self._respond_json(400, {"ok": False, "error": str(exc)})
+
+        routing_request_id = payload.get("routing_request_id", "")
+        trace_id = payload.get("trace_id", "")
+        interop_transfer_id = payload.get("interop_transfer_id", "")
+        amount_minor = payload.get("amount_minor", 0)
+        currency = payload.get("currency", "AOA")
+        from_operator_id = payload.get("from_operator_id", "operator-a-test")
+        to_operator_id = payload.get("to_operator_id", "operator-b-test")
+        sender_wallet_id = payload.get("sender_wallet_id", "wallet-sender-test-001")
+
+        if not routing_request_id or not interop_transfer_id or amount_minor <= 0:
+            return self._respond_json(400, {
+                "ok": False,
+                "error": "routing_request_id, interop_transfer_id, amount_minor required",
+            })
+
+        crash_entry = {
+            "routing_request_id": routing_request_id,
+            "routing_status": "accepted",
+            "interop_transfer_id": interop_transfer_id,
+            "trace_id": trace_id,
+            "amount_minor": amount_minor,
+            "currency": currency,
+            "from_operator_id": from_operator_id,
+            "to_operator_id": to_operator_id,
+            "sender_wallet_id": sender_wallet_id,
+            "payer_debited": False,
+            "obligation_recorded": False,
+            "event_emitted": False,
+        }
+
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+            fi = self.server.state["fail_inject"]
+            # Store as routing_commit (accepted but unrecovered) AND in crash_states
+            fed["routing_commits"][routing_request_id] = crash_entry
+            fi["crash_states"][routing_request_id] = crash_entry
+
+        self._respond_json(200, {"ok": True, "crash_entry": crash_entry})
+
+    def _handle_fail_trigger_recovery(self):
+        """
+        POST /conformance/federation/fail/trigger-recovery
+
+        Scan routing_commits for accepted entries with obligation_recorded=False.
+        For each, create debit + obligation as recovery.
+        Returns: list of recovered routing_request_ids.
+        Used for FED-FAIL-005.
+        """
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        recovered = []
+
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+            my_op_id = (self.server.state.get("cert") or {}).get("operator_id", "operator-a-test")
+            signing_key_bytes = self.server.state.get("op_a_signing_key_bytes")
+
+            for rr_id, commit in list(fed["routing_commits"].items()):
+                if (commit.get("routing_status") == "accepted"
+                        and not commit.get("obligation_recorded")
+                        and rr_id not in fed["obligations"]):
+                    amount_minor = commit.get("amount_minor", 0)
+                    currency = commit.get("currency", "AOA")
+                    trace_id = commit.get("trace_id", "")
+                    interop_transfer_id = commit.get("interop_transfer_id", "")
+                    from_operator_id = commit.get("from_operator_id", my_op_id)
+                    to_operator_id = commit.get("to_operator_id", "operator-b-test")
+                    sender_wallet_id = commit.get("sender_wallet_id", "wallet-sender-test-001")
+
+                    if amount_minor <= 0:
+                        continue
+
+                    # Debit payer wallet
+                    wallet = fed["wallets"].get(sender_wallet_id)
+                    if wallet:
+                        wallet["balance_minor"] -= amount_minor
+
+                    # Ledger entry
+                    fed["ledger"].append({
+                        "wallet_id": sender_wallet_id,
+                        "entry_type": "DEBIT",
+                        "amount_minor": amount_minor,
+                        "currency": currency,
+                        "trace_id": trace_id,
+                        "routing_request_id": rr_id,
+                        "interop_transfer_id": interop_transfer_id,
+                        "recorded_at": now_str,
+                        "recovery": True,
+                    })
+
+                    # Create obligation
+                    obligation_id = f"ob-{uuid.uuid4()}"
+                    obligation = {
+                        "schema_version": "1",
+                        "obligation_id": obligation_id,
+                        "from_operator_id": from_operator_id,
+                        "to_operator_id": to_operator_id,
+                        "amount": {"minor": amount_minor, "currency": currency},
+                        "routing_request_id": rr_id,
+                        "interop_transfer_id": interop_transfer_id,
+                        "trace_id": trace_id,
+                        "recorded_at": now_str,
+                        "settlement_state": "pending",
+                        "recovery": True,
+                    }
+                    sig = _sign_obligation(obligation, signing_key_bytes)
+                    if sig:
+                        obligation["obligor_signature"] = sig
+                    fed["obligations"][rr_id] = obligation
+
+                    # Update commit
+                    fed["routing_commits"][rr_id] = dict(commit)
+                    fed["routing_commits"][rr_id]["payer_debited"] = True
+                    fed["routing_commits"][rr_id]["obligation_recorded"] = True
+                    fed["routing_commits"][rr_id]["obligation_id"] = obligation_id
+
+                    recovered.append(rr_id)
+
+        self._respond_json(200, {
+            "ok": True,
+            "recovered_count": len(recovered),
+            "recovered_routing_request_ids": recovered,
+        })
+
+    def _handle_fail_recover_obligation(self):
+        """
+        POST /conformance/federation/fail/recover-obligation
+
+        Create debit + obligation for a single routing_request_id using provided details.
+        Used in FED-SETTLE-009 to recover the missing obligation identified by reconciliation.
+
+        Body: {routing_request_id, trace_id, interop_transfer_id, amount_minor,
+               currency, from_operator_id, to_operator_id, sender_wallet_id?}
+        """
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            payload = json.loads(self.rfile.read(length)) if length > 0 else {}
+        except Exception as exc:
+            return self._respond_json(400, {"ok": False, "error": str(exc)})
+
+        routing_request_id = payload.get("routing_request_id", "")
+        trace_id = payload.get("trace_id", "")
+        interop_transfer_id = payload.get("interop_transfer_id", "")
+        amount_minor = payload.get("amount_minor", 0)
+        currency = payload.get("currency", "AOA")
+        from_operator_id = payload.get("from_operator_id", "operator-a-test")
+        to_operator_id = payload.get("to_operator_id", "operator-b-test")
+        sender_wallet_id = payload.get("sender_wallet_id", "wallet-sender-test-001")
+
+        if not routing_request_id or amount_minor <= 0:
+            return self._respond_json(400, {"ok": False, "error": "routing_request_id and amount_minor required"})
+
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        with self.server.state_lock:
+            fed = self.server.state["fed_exec"]
+            signing_key_bytes = self.server.state.get("op_a_signing_key_bytes")
+
+            if routing_request_id in fed["obligations"]:
+                return self._respond_json(409, {
+                    "ok": False,
+                    "error": "obligation_already_exists",
+                    "routing_request_id": routing_request_id,
+                })
+
+            # Debit payer wallet
+            wallet = fed["wallets"].get(sender_wallet_id)
+            if wallet:
+                wallet["balance_minor"] -= amount_minor
+
+            fed["ledger"].append({
+                "wallet_id": sender_wallet_id,
+                "entry_type": "DEBIT",
+                "amount_minor": amount_minor,
+                "currency": currency,
+                "trace_id": trace_id,
+                "routing_request_id": routing_request_id,
+                "interop_transfer_id": interop_transfer_id,
+                "recorded_at": now_str,
+                "recovery": True,
+            })
+
+            obligation_id = f"ob-{uuid.uuid4()}"
+            obligation = {
+                "schema_version": "1",
+                "obligation_id": obligation_id,
+                "from_operator_id": from_operator_id,
+                "to_operator_id": to_operator_id,
+                "amount": {"minor": amount_minor, "currency": currency},
+                "routing_request_id": routing_request_id,
+                "interop_transfer_id": interop_transfer_id,
+                "trace_id": trace_id,
+                "recorded_at": now_str,
+                "settlement_state": "pending",
+                "recovery": True,
+            }
+            sig = _sign_obligation(obligation, signing_key_bytes)
+            if sig:
+                obligation["obligor_signature"] = sig
+            fed["obligations"][routing_request_id] = obligation
+
+        self._respond_json(200, {"ok": True, "obligation": obligation})
+
+    def _handle_fail_inject_obligation_amount_override(self):
+        """
+        POST /conformance/federation/fail/inject-obligation-amount-override
+
+        When the fixture server next processes the given routing_request_id and the
+        routing is accepted, it will attempt to record an obligation with override_amount
+        instead of the routing amount. This triggers the INV-FED-005 mismatch check
+        and prevents the obligation from being recorded (FED-FAIL-008).
+
+        Body: {routing_request_id, override_amount_minor}
+        """
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            payload = json.loads(self.rfile.read(length)) if length > 0 else {}
+        except Exception as exc:
+            return self._respond_json(400, {"ok": False, "error": str(exc)})
+
+        routing_request_id = payload.get("routing_request_id", "")
+        override_amount = payload.get("override_amount_minor")
+
+        if not routing_request_id or not isinstance(override_amount, int):
+            return self._respond_json(400, {
+                "ok": False, "error": "routing_request_id and override_amount_minor required",
+            })
+
+        with self.server.state_lock:
+            self.server.state["fail_inject"]["obligation_amount_overrides"][routing_request_id] = override_amount
+
+        self._respond_json(200, {
+            "ok": True,
+            "routing_request_id": routing_request_id,
+            "override_amount_minor": override_amount,
+        })
+
     # ── Response helper ───────────────────────────────────────────────────────
 
     def _respond_json(self, status: int, body: dict):
@@ -1239,6 +1585,14 @@ def _sign_obligation(obligation: dict, signing_key_bytes: bytes) -> str:
         return None
 
 
+# ── Protocol-level rejection codes (definitive — persisted in routing_commits) ──
+
+_ROUTING_REJECTION_CODES_FIXTURE = frozenset({
+    "recipient_not_found", "recipient_suspended", "currency_not_supported",
+    "amount_below_minimum", "amount_above_maximum", "operator_trust_failure",
+    "capability_unavailable", "duplicate_request",
+})
+
 # ── Federation execution state ────────────────────────────────────────────────
 
 def _initial_fed_exec_state() -> dict:
@@ -1259,8 +1613,16 @@ def _initial_netting_state() -> dict:
     return {
         "b_to_a_obligations": [],     # simulated B→A obligations added via add-b-obligation
         "batches": {},                 # batch_id → settlement batch
-        "settlement_ledger": [],       # 4 entries per executed batch
+        "settlement_ledger": [],       # 4 entries per executed batch (0 entries for zero-net)
         "discrepancy_overrides": {},   # routing_request_id → op-b-reported amount (FED-SETTLE-008)
+    }
+
+
+def _initial_fail_inject_state() -> dict:
+    """Failure injection state for FED-FAIL conformance tests."""
+    return {
+        "obligation_amount_overrides": {},  # routing_request_id → override_amount (FED-FAIL-008)
+        "crash_states": {},                 # routing_request_id → crash details (FED-FAIL-005)
     }
 
 
@@ -1278,6 +1640,7 @@ def run_server(port: int) -> None:
         "op_a_signing_key_bytes": None,
         "fed_exec": _initial_fed_exec_state(),
         "netting": _initial_netting_state(),
+        "fail_inject": _initial_fail_inject_state(),
     }
 
     # ThreadingHTTPServer: each request in its own thread, preventing deadlock

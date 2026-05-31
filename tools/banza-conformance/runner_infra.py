@@ -165,6 +165,47 @@ def _make_sim_b_handler(state: dict, lock: threading.Lock):
             routing_id = req.get("routing_request_id", "")
             trace_id = req.get("trace_id", "")
 
+            # ── Failure injection (FED-FAIL suite) ───────────────────────────
+            with lock:
+                drop_count = state.get("drop_next_route_count", 0)
+                malformed = state.get("malformed_response_once", False)
+                trust_fail = state.get("trust_failure_override_once", False)
+
+            if drop_count > 0:
+                with lock:
+                    state["drop_next_route_count"] = max(0, drop_count - 1)
+                self._json(503, {
+                    "error": "service_unavailable",
+                    "routing_request_id": routing_id,
+                })
+                return
+
+            if malformed:
+                with lock:
+                    state["malformed_response_once"] = False
+                raw_bad = b"this is not valid json <<<malformed_response>>>"
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain")
+                self.send_header("Content-Length", str(len(raw_bad)))
+                self.end_headers()
+                self.wfile.write(raw_bad)
+                return
+
+            if trust_fail:
+                with lock:
+                    state["trust_failure_override_once"] = False
+                now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+                self._json(200, {
+                    "schema_version": "1",
+                    "routing_request_id": routing_id,
+                    "status": "rejected",
+                    "trace_id": trace_id,
+                    "rejection_code": "operator_trust_failure",
+                    "rejection_reason": "Operator A certificate trust verification failed (FED-FAIL-004)",
+                })
+                return
+            # ─────────────────────────────────────────────────────────────────
+
             # Read shared state once
             with lock:
                 manifest = state.get("manifest") or {}
@@ -449,6 +490,10 @@ class RunnerInfra:
             "ledger": [],
             # FED-EXEC: federation events emitted on acceptance
             "events": [],
+            # FED-FAIL: failure injection controls
+            "drop_next_route_count": 0,      # return 503 for this many next requests
+            "malformed_response_once": False, # return non-JSON 200 once
+            "trust_failure_override_once": False, # return operator_trust_failure once
         }
         self._trust_root_state = {
             "brl": self._empty_brl(),
@@ -502,6 +547,9 @@ class RunnerInfra:
             }
             self._sim_b_state["ledger"] = []
             self._sim_b_state["events"] = []
+            self._sim_b_state["drop_next_route_count"] = 0
+            self._sim_b_state["malformed_response_once"] = False
+            self._sim_b_state["trust_failure_override_once"] = False
 
     def get_wallet_balance(self, wallet_id: str):
         """Return current balance_minor for wallet_id, or None if not found."""
@@ -522,6 +570,62 @@ class RunnerInfra:
         with self._lock:
             return [e for e in self._sim_b_state["ledger"] if e.get("wallet_id") == wallet_id]
 
+    def get_sim_b_accepted_routing_ids(self) -> list:
+        """Return routing_request_ids that Sim Op B has accepted."""
+        with self._lock:
+            return [
+                rr_id for rr_id, data in self._sim_b_state["routing_store"].items()
+                if data.get("response", {}).get("status") == "accepted"
+            ]
+
+    # ── Failure injection (FED-FAIL suite) ───────────────────────────────────
+
+    def set_drop_next_route(self, count: int = 1) -> None:
+        """Make Sim Op B return HTTP 503 for the next N routing requests (F-101 / F-104)."""
+        with self._lock:
+            self._sim_b_state["drop_next_route_count"] = count
+
+    def set_malformed_response_once(self) -> None:
+        """Make Sim Op B return HTTP 200 with non-JSON body on next routing request (F-102)."""
+        with self._lock:
+            self._sim_b_state["malformed_response_once"] = True
+
+    def set_trust_failure_once(self) -> None:
+        """Make Sim Op B return rejection_code=operator_trust_failure on next routing (F-204)."""
+        with self._lock:
+            self._sim_b_state["trust_failure_override_once"] = True
+
+    def inject_accepted_routing_on_b(
+        self,
+        routing_request_id: str,
+        amount_minor: int,
+        trace_id: str,
+        currency: str = "AOA",
+        interop_transfer_id: str = None,
+    ) -> dict:
+        """
+        Directly inject an accepted routing into Sim Op B's routing_store without routing
+        through the fixture server. Used to simulate crash scenarios (FED-SETTLE-009,
+        FED-FAIL-005): Op B accepted a routing that Op A never committed.
+        """
+        itx_id = interop_transfer_id or f"itx-{uuid.uuid4()}"
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        resp = {
+            "schema_version": "1",
+            "routing_request_id": routing_request_id,
+            "status": "accepted",
+            "trace_id": trace_id,
+            "interop_transfer_id": itx_id,
+            "accepted_at": now_str,
+        }
+        body_hash = hashlib.sha256(routing_request_id.encode()).hexdigest()
+        with self._lock:
+            self._sim_b_state["routing_store"][routing_request_id] = {
+                "body_hash": body_hash,
+                "response": resp,
+            }
+        return resp
+
     # ── BRL configuration ─────────────────────────────────────────────────────
 
     def set_brl_empty(self) -> None:
@@ -534,6 +638,20 @@ class RunnerInfra:
         now = datetime.now(timezone.utc)
         issued_at = (now - timedelta(hours=8)).strftime("%Y-%m-%dT%H:%M:%SZ")
         expires_at = (now - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        with self._lock:
+            self._trust_root_state["brl"] = {
+                "schema_version": "1",
+                "issued_at": issued_at,
+                "expires_at": expires_at,
+                "revoked": [],
+                "signature": "A" * 86,
+            }
+
+    def set_brl_very_stale(self, stale_hours: int = 13) -> None:
+        """BRL that expired stale_hours ago (for FED-FAIL-006 — F-602 >12h outage)."""
+        now = datetime.now(timezone.utc)
+        issued_at = (now - timedelta(hours=stale_hours + 1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        expires_at = (now - timedelta(hours=stale_hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
         with self._lock:
             self._trust_root_state["brl"] = {
                 "schema_version": "1",
