@@ -44,6 +44,7 @@ jobs:
             -g '!scripts/check-operator-contamination.sh' \
             -g '!.github/workflows/identity-guard.yml' \
             -g '!docs/audit/identity/**' \
+            -g '!docs/governance/OPERATOR_NEUTRALITY_TERMINOLOGY.md' \
             2>/dev/null || true)
 
           if [ -n "$HITS" ]; then

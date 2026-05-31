@@ -123,7 +123,52 @@ The protocol kernel components are deployed via `./deploy.sh` in `~/banza` (the 
 
 ---
 
-## Operator Neutrality Rule (Enforced)
+## Operator Neutrality Principle
+
+**BANZA is an operator-neutral protocol. This is an architectural invariant, not a branding preference.**
+
+### Dependency graph
+
+```
+     Operators
+         ↑
+       BanzAI
+         ↑
+       BANZA
+```
+
+Operators depend on BANZA and BanzAI. BANZA and BanzAI never depend on operators. This direction is permanent and non-negotiable.
+
+### What BANZA must never contain
+
+- Specific operator brands or names
+- Operator business logic or product decisions
+- Operator ownership or governance claims
+- Operator-specific protocol extensions
+- Certification rules tied to a specific operator
+- Assumptions that only one operator exists
+
+### What BANZA defines
+
+- Protocol rules (invariants, contracts, specs)
+- Conformance criteria (what it means to be certified)
+- Certification levels (L0–L4, operator-agnostic)
+- Governance process (ADRs, RFCs — open to all operators)
+- Federation model (any certified operator may participate)
+
+### Terminology
+
+| Forbidden | Use instead |
+|-----------|-------------|
+| *(specific operator name)* | certified operator |
+| *(specific operator name)* | reference operator |
+| *(specific operator name)* | operator implementation |
+| *(specific operator name)* | federation member |
+| *(specific operator name)* as subject of protocol claim | any operator, all operators |
+
+Examples must use **Operator A**, **Operator B**, **Operator C** — never real commercial names.
+
+### Automated enforcement: identity-check
 
 **No specific commercial operator brand may appear in this repository.**
 

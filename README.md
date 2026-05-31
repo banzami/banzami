@@ -2,9 +2,9 @@
 
 > **BANZA** = open financial infrastructure protocol ← this repository  
 > **BanzAI** = Protocol Operating System · [github.com/banza-protocol/banzai](https://github.com/banza-protocol/banzai)  
-> **the reference operator** = reference operator (independent commercial startup) · [github.com/banza-protocols/banza](https://github.com/banza-protocols/banza)
+> **Certified operators** = independent commercial entities that implement BANZA
 
-> **Institutional note:** An operator is an independent company and reference operator built on BANZA. It is not part of the BANZA protocol organization (`github.com/banza-protocol`). BANZA is an open protocol — the reference operator is one operator that implements it.
+> **Operator neutrality:** BANZA is an open protocol. Any certified operator may implement it. No operator governs, owns, or has special authority over the protocol. See [BANZA_GOVERNANCE.md §Operator Neutrality](BANZA_GOVERNANCE.md).
 
 **The open financial infrastructure protocol for programmable instant payments in Angola.**
 
@@ -65,28 +65,29 @@ Banza provides:
 
 ---
 
-## What is the reference operator?
+## What is a certified operator?
 
-**A certified operator and product built on Banza.**
+**A certified operator is an entity that implements the BANZA protocol and has passed conformance testing.**
 
-the reference operator is Angola's instant payment and wallet network — the consumer app, merchant dashboard, QR infrastructure, and payment experience. The reference operator uses Banza core crates, conforms to Banza contracts, and implements Banza SDKs.
+A certified operator builds a payment product on top of BANZA — consumer wallets, merchant dashboards, QR infrastructure, payment experiences. The operator uses BANZA core crates, conforms to BANZA contracts, and implements BANZA SDKs.
 
-the reference operator is to Banza what:
+A certified operator is to BANZA what:
 - Ubuntu is to the Linux kernel
 - Google Kubernetes Engine is to Kubernetes
-- Samsung One UI is to Android AOSP
 - A managed Postgres service is to PostgreSQL
 
-The public/private split is **not** language-based. It is:
+The public/private boundary is:
 
-| Public — Banza | Private — the reference operator |
+| Public — BANZA (this repo) | Private — Operator repository |
 |---|---|
 | Generic financial infrastructure | Operator-specific business logic |
-| Ledger, wallets, routing, QR engine | EMIS/Multicaixa provider adapters |
+| Ledger, wallets, routing, QR engine | Payment rail provider adapters |
 | Transaction FSM, settlement model | Production compliance rules |
-| SDKs, contracts, protocol specs | Consumer/merchant apps |
+| SDKs, contracts, protocol specs | Consumer/merchant app products |
 | Certification test vectors | Production deployment + infra |
 | Reference sandbox | Fraud scoring heuristics |
+
+Any number of certified operators may exist simultaneously. BANZA is equally available to all of them.
 
 ---
 
@@ -115,12 +116,12 @@ The public/private split is **not** language-based. It is:
         ┌───────────┘                         ┌──────────────┘
         ▼                                     ▼
 ┌──────────────────────┐        ┌──────────────────────────────┐
-│       the reference operator        │        │           BanzAI             │
-│  Reference Operator  │        │  Protocol Operating System   │
+│   Certified Operator │        │           BanzAI             │
+│  (any operator)      │        │  Protocol Operating System   │
 │                      │        │                              │
 │  Consumer app        │        │  16 modules · 3 layers       │
 │  Merchant dashboard  │        │  8 capabilities              │
-│  EMIS/Multicaixa     │        │  6 operational verbs         │
+│  Payment rail adapt. │        │  6 operational verbs         │
 │  QR infrastructure   │        │  Compreender · Explicar      │
 │  Production infra    │        │  Validar · Simular           │
 │  L2 Certified        │        │  banza.network/banzai          │
@@ -429,6 +430,26 @@ Every core crate enforces:
 
 ---
 
+## Operator Neutrality Principle
+
+BANZA is an **operator-neutral protocol**. This is an architectural invariant.
+
+```
+Operators (Operator A, Operator B, Operator C, ...)
+    ↑
+  BanzAI  (Protocol Operating System)
+    ↑
+  BANZA   (this repository)
+```
+
+Operators depend on BANZA. BANZA never depends on operators. Any certified operator may implement the protocol. No operator is privileged. No operator governs the protocol. No operator's brand, business logic, or assumptions belong in this repository.
+
+Examples in BANZA documentation use **Operator A**, **Operator B**, **Operator C** — never real commercial names.
+
+See [BANZA_GOVERNANCE.md §Operator Neutrality](BANZA_GOVERNANCE.md) for the full principle and enforcement policy.
+
+---
+
 ## Governance
 
 Protocol changes (contracts, QR spec, webhook schemas) require an Architecture Decision Record and a minimum 7-day review period. See [BANZA_GOVERNANCE.md](BANZA_GOVERNANCE.md).
@@ -468,5 +489,5 @@ Report vulnerabilities to [security@banza.network](mailto:security@banza.network
 
 ## Related
 
-- **the reference operator** — reference operator implementation · [github.com/banza-protocols/banza](https://github.com/banza-protocols/banza)
+- **Certified operators** — independent implementations of BANZA built by third parties
 - **banza.network** — public documentation and ecosystem reference

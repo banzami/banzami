@@ -185,7 +185,53 @@ ADRs record decisions after they are made. RFCs propose changes before they are 
 
 ---
 
-## Operator Neutrality — Automated Enforcement
+## Operator Neutrality Principle
+
+Operator neutrality is an **architectural invariant** of BANZA — not a style preference, not a branding policy.
+
+### Architectural dependency
+
+```
+     Operators   (Operator A, Operator B, Operator C, ...)
+         ↑
+       BanzAI    (Protocol Operating System)
+         ↑
+       BANZA     (this repository — the protocol itself)
+```
+
+Operators build on BANZA and BanzAI. The arrows point upward. BANZA never has a downward dependency on any specific operator.
+
+### What this means in practice
+
+**BANZA defines:**
+- Protocol rules and invariants (INV-LEDGER-*, INV-WALLET-*, INV-QR-*, ...)
+- Contract specifications (OpenAPI, webhook schemas, event envelopes)
+- Conformance criteria (what counts as a passing conformance test)
+- Certification levels (L0–L4, applicable to any operator)
+- Federation protocol (any certified operator may participate)
+- Governance process (ADRs and RFCs — open to contributions from any operator)
+
+**BANZA must never contain:**
+- Specific operator brands, names, or domains
+- Operator business logic (pricing models, product decisions)
+- Operator ownership or governance claims over the protocol
+- Certification rules or conformance tests written for one specific operator
+- Assumptions that only a single operator exists or will ever exist
+- Protocol extensions that only apply to one operator's product
+
+### Violations
+
+Any content that implies a specific operator has governance authority over BANZA is a protocol contamination:
+
+| Forbidden pattern | Why it is wrong |
+|-------------------|-----------------|
+| `[Operator X] governs BANZA` | BANZA is governed by the ADR/RFC process |
+| `[Operator X] defines the protocol` | BANZA defines the protocol |
+| `[Operator X] certifies operators` | BANZA certification is operator-agnostic |
+| `[Operator X]-specific extension` | Extensions belong in the operator's own repository |
+| `[Operator X] is required for BANZA` | No operator is required; any operator may implement |
+
+### Automated Enforcement
 
 **Rule:** No specific commercial operator brand may appear in the BANZA repository.
 
