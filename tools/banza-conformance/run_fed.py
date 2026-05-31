@@ -8246,6 +8246,7 @@ def run_federation_mode(
     output: str = None,
     quiet: bool = False,
     fed_suite: str = None,
+    production_mode: bool = False,
 ) -> int:
     """
     Execute federation conformance tests (FED-CERT-001 through FED-TRUST-009).
@@ -8520,6 +8521,25 @@ def run_federation_mode(
         print("          Install: pip install 'cryptography>=41.0.0'")
 
     print()
+
+    # ── INV-ROOT-001 production mode pre-flight ───────────────────────────────
+    if production_mode:
+        try:
+            _, _, _, preflight_cert = _fetch_cert(base_url)
+            key_id_check = preflight_cert.get("issuer_key_id", "")
+            if key_id_check.startswith("test-"):
+                print("=" * 60)
+                print("PRODUCTION MODE VIOLATION — INV-ROOT-001")
+                print(f"  issuer_key_id={key_id_check!r} begins with 'test-'")
+                print("  Production certificates MUST use a production issuer_key_id")
+                print("  (e.g. banza-cert-YYYYMM). Test key IDs are rejected in")
+                print("  production mode per INV-ROOT-001.")
+                print()
+                print("Conformance suite aborted. Fix the issuer_key_id before")
+                print("submitting for production certification.")
+                return 1
+        except Exception:
+            pass
 
     # ── Run suites ────────────────────────────────────────────────────────────
     start = time.monotonic()
@@ -8835,6 +8855,8 @@ def main() -> None:
     parser.add_argument("--quiet", action="store_true", help="Suppress passing test output")
     parser.add_argument("--fed-suite", dest="fed_suite",
                         help="Run only this suite: cert | disc | trust | route | exec | obl | evt | settle | fail (default: all)")
+    parser.add_argument("--production-mode", dest="production_mode", action="store_true",
+                        help="Production mode: enforce INV-ROOT-001 (reject test- issuer_key_id)")
     args = parser.parse_args()
 
     sys.exit(run_federation_mode(
@@ -8842,6 +8864,7 @@ def main() -> None:
         output=args.output,
         quiet=args.quiet,
         fed_suite=args.fed_suite,
+        production_mode=args.production_mode,
     ))
 
 

@@ -338,27 +338,101 @@ def verify_evidence_package_signature(report: dict, root_public_key_bytes: bytes
     return True, "evidence package signature valid"
 
 
-def generate_key_manifest(keys: dict) -> dict:
+def generate_key_manifest(
+    keys: dict,
+    root_key_id: str = None,
+    root_expires_days: int = 730,
+    issuing_expires_days: int = 180,
+    key_domains: dict = None,
+    root_private_key=None,
+) -> dict:
     """
-    Generate a BANZA-KEY-MANIFEST dict.
+    Generate a BANZA Key Manifest dict (ADR-029 §Phase 6).
 
-    keys: dict of {key_id: public_key_bytes (bytes, 32)}.
-    Returns the manifest JSON structure from FEDERATION_FIXTURE_CATALOG.md.
+    keys: {key_id: public_key_bytes (bytes, 32)} — all issuing keys to include.
+    root_key_id: ID of the root key that signs this manifest (e.g. "banza-root-2026").
+    root_expires_days: validity of the root key in days (default 730 = 24 months).
+    issuing_expires_days: validity of each issuing key in days (default 180 = 6 months).
+    key_domains: {key_id: domain_string} — maps each key to its domain
+                 ("cert", "brl", "evidence"). Inferred from key_id prefix if omitted.
+    root_private_key: Ed25519PrivateKey — if provided, signs the manifest (production use).
+                      If None, manifest_signature is set to "" (test/stub use).
+
+    Returns the full manifest dict. If root_private_key is provided, manifest_signature
+    is a real base64url ed25519 signature over canonical JSON (all fields except
+    manifest_signature, sorted lexicographically, per ADR-029 signing rule).
     """
     now = datetime.now(timezone.utc)
-    return {
+    published_at = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    root_expires_at = (now + timedelta(days=root_expires_days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    issuing_expires_at = (now + timedelta(days=issuing_expires_days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def _infer_domain(kid: str) -> str:
+        if "cert" in kid:
+            return "cert"
+        if "brl" in kid:
+            return "brl"
+        if "evidence" in kid:
+            return "evidence"
+        return "cert"
+
+    key_entries = []
+    for kid, pub in keys.items():
+        domain = (key_domains or {}).get(kid) or _infer_domain(kid)
+        key_entries.append({
+            "key_id": kid,
+            "domain": domain,
+            "public_key": f"ed25519:{b64url_encode(pub)}",
+            "active_since": published_at,
+            "expires_at": issuing_expires_at,
+            "status": "active",
+        })
+
+    manifest = {
         "schema_version": "1",
-        "published_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "keys": [
-            {
-                "key_id": kid,
-                "public_key": f"ed25519:{b64url_encode(pub)}",
-                "active_since": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "status": "active",
-            }
-            for kid, pub in keys.items()
-        ],
+        "published_at": published_at,
+        "root_key_id": root_key_id or "banza-root-test",
+        "expires_at": root_expires_at,
+        "keys": key_entries,
     }
+
+    if root_private_key is not None:
+        canonical = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        sig_bytes = root_private_key.sign(canonical)
+        manifest["manifest_signature"] = b64url_encode(sig_bytes)
+    else:
+        manifest["manifest_signature"] = ""
+
+    return manifest
+
+
+def verify_key_manifest_signature(manifest: dict, root_public_key_bytes: bytes) -> tuple:
+    """
+    Verify the manifest_signature field of a BANZA Key Manifest (INV-ROOT-002).
+
+    Signed payload: all fields EXCEPT manifest_signature, sorted lexicographically.
+    Returns (verified: bool, detail: str).
+    Per INV-ROOT-002: unsigned or unverifiable manifest MUST be rejected.
+    """
+    if not CRYPTO_AVAILABLE:
+        return False, "cryptography package not installed"
+
+    sig_str = manifest.get("manifest_signature", "")
+    if not sig_str:
+        return False, "manifest_signature is absent or empty (INV-ROOT-002: unsigned manifest rejected)"
+
+    payload = {k: v for k, v in manifest.items() if k != "manifest_signature"}
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+    try:
+        public_key = Ed25519PublicKey.from_public_bytes(root_public_key_bytes)
+        sig_bytes = b64url_decode(sig_str)
+        public_key.verify(sig_bytes, canonical)
+        return True, "manifest_signature valid"
+    except InvalidSignature:
+        return False, "InvalidSignature: manifest_signature does not verify against root key (INV-ROOT-002)"
+    except Exception as exc:
+        return False, f"manifest verification error: {exc}"
 
 
 def generate_test_certificate(
